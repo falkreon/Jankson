@@ -47,6 +47,10 @@ public class JsonArray extends JsonElement implements Collection<JsonElement>, I
 		return entries.get(i).comment;
 	}
 	
+	public String toJson(boolean comments, boolean newlines) {
+		return toJson(comments, newlines, 0);
+	}
+	
 	public String toJson(boolean comments, boolean newlines, int depth) {
 		StringBuilder builder = new StringBuilder();
 		

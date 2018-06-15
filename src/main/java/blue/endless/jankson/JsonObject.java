@@ -125,6 +125,10 @@ public class JsonObject extends JsonElement {
 		return null;
 	}
 	
+	public String toJson(boolean comments, boolean newlines) {
+		return toJson(comments, newlines, 0);
+	}
+	
 	public String toJson(boolean comments, boolean newlines, int depth) {
 		StringBuilder builder = new StringBuilder();
 		builder.append("{ ");

@@ -37,7 +37,7 @@ import blue.endless.jankson.impl.ParserContext;
 import blue.endless.jankson.impl.SyntaxError;
 
 
-public class JsonLoader {
+public class Jankson {
 	private Deque<ParserFrame<?>> contextStack = new ArrayDeque<>();
 	private JsonObject root;
 	private int line = 0;
@@ -47,7 +47,7 @@ public class JsonLoader {
 	private int retries = 0;
 	private SyntaxError delayedError = null;
 	
-	private JsonLoader(Builder builder) {}
+	private Jankson(Builder builder) {}
 	
 	public JsonObject load(File f) throws IOException, SyntaxError {
 		try(InputStream in = new FileInputStream(f)) {
@@ -140,8 +140,8 @@ public class JsonLoader {
 	}
 	
 	public static class Builder {
-		public JsonLoader build() {
-			return new JsonLoader(this);
+		public Jankson build() {
+			return new Jankson(this);
 		}
 	}
 	

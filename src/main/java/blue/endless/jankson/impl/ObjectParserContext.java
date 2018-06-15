@@ -26,7 +26,7 @@ package blue.endless.jankson.impl;
 
 import java.util.Locale;
 
-import blue.endless.jankson.JsonLoader;
+import blue.endless.jankson.Jankson;
 import blue.endless.jankson.JsonNull;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
@@ -44,7 +44,7 @@ public class ObjectParserContext implements ParserContext<JsonObject> {
 	
 	
 	@Override
-	public boolean consume(int codePoint, JsonLoader loader) throws SyntaxError {
+	public boolean consume(int codePoint, Jankson loader) throws SyntaxError {
 		if (!openBraceFound) {
 			if (Character.isWhitespace(codePoint)) return true; //We're fine, this is just whitespace
 			if (codePoint=='{') { //We're good. We can start parsing the object now

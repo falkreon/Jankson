@@ -24,7 +24,7 @@
 
 package blue.endless.jankson.impl;
 
-import blue.endless.jankson.JsonLoader;
+import blue.endless.jankson.Jankson;
 import blue.endless.jankson.JsonPrimitive;
 
 public class StringParserContext implements ParserContext<JsonPrimitive> {
@@ -38,7 +38,7 @@ public class StringParserContext implements ParserContext<JsonPrimitive> {
 	}
 
 	@Override
-	public boolean consume(int codePoint, JsonLoader loader) {
+	public boolean consume(int codePoint, Jankson loader) {
 		if (escape) {
 			builder.append((char)codePoint);
 			escape = false;

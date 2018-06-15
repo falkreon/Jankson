@@ -24,7 +24,7 @@
 
 package blue.endless.jankson.impl;
 
-import blue.endless.jankson.JsonLoader;
+import blue.endless.jankson.Jankson;
 
 public interface ParserContext<T> {
 	/** Consume one codepoint from the stream, and either use it to continue composing the result or to discover that
@@ -32,7 +32,7 @@ public interface ParserContext<T> {
 	 * encountered.
 	 */
 	
-	public boolean consume(int codePoint, JsonLoader loader) throws SyntaxError;
+	public boolean consume(int codePoint, Jankson loader) throws SyntaxError;
 	/** Notifies this context that the file ended abruptly while in this context and before isComplete returned true. In
 	 * some contexts, like a single-line comment, this is fine. In most contexts, this should throw a descriptive error.
 	 */

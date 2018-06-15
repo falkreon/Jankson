@@ -24,7 +24,7 @@
 
 package blue.endless.jankson.impl;
 
-import blue.endless.jankson.JsonLoader;
+import blue.endless.jankson.Jankson;
 
 public class CommentParserContext implements ParserContext<String> {
 	int firstChar = -1;
@@ -42,7 +42,7 @@ public class CommentParserContext implements ParserContext<String> {
 	}
 	
 	@Override
-	public boolean consume(int codePoint, JsonLoader loader) throws SyntaxError {
+	public boolean consume(int codePoint, Jankson loader) throws SyntaxError {
 		if (done) return false;
 		
 		if (firstChar==-1) {

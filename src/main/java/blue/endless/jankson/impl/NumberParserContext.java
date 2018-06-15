@@ -24,7 +24,7 @@
 
 package blue.endless.jankson.impl;
 
-import blue.endless.jankson.JsonLoader;
+import blue.endless.jankson.Jankson;
 import blue.endless.jankson.JsonPrimitive;
 
 public class NumberParserContext implements ParserContext<JsonPrimitive> {
@@ -37,7 +37,7 @@ public class NumberParserContext implements ParserContext<JsonPrimitive> {
 	}
 	
 	@Override
-	public boolean consume(int codePoint, JsonLoader loader) throws SyntaxError {
+	public boolean consume(int codePoint, Jankson loader) throws SyntaxError {
 		if (complete) return false;
 		
 		if (acceptedChars.indexOf(codePoint)!=-1) {

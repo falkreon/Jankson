@@ -27,7 +27,7 @@ package blue.endless.jankson.impl;
 import java.util.Locale;
 
 import blue.endless.jankson.JsonArray;
-import blue.endless.jankson.JsonLoader;
+import blue.endless.jankson.Jankson;
 import blue.endless.jankson.JsonNull;
 import blue.endless.jankson.JsonPrimitive;
 
@@ -42,7 +42,7 @@ public class ArrayParserContext implements ParserContext<JsonArray> {
 	}
 	
 	@Override
-	public boolean consume(int codePoint, JsonLoader loader) throws SyntaxError {
+	public boolean consume(int codePoint, Jankson loader) throws SyntaxError {
 		if (foundClosingBrace) return false;
 		if (Character.isWhitespace(codePoint)) return true;
 		
