@@ -1,0 +1,83 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2018 Falkreon
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+package blue.endless.jankson.impl;
+
+import blue.endless.jankson.JsonLoader;
+import blue.endless.jankson.JsonPrimitive;
+
+public class NumberParserContext implements ParserContext<JsonPrimitive> {
+	private String numberString = "";
+	private boolean complete = false;
+	private String acceptedChars = "0123456789.+-eE";
+	
+	public NumberParserContext(int firstCodePoint) {
+		numberString += (char)firstCodePoint;
+	}
+	
+	@Override
+	public boolean consume(int codePoint, JsonLoader loader) throws SyntaxError {
+		if (complete) return false;
+		
+		if (acceptedChars.indexOf(codePoint)!=-1) {
+			numberString+=(char)codePoint;
+			return true;
+		} else {
+			complete = true;
+			return false;
+		}
+	}
+
+	@Override
+	public void eof() throws SyntaxError {
+		complete = true;
+	}
+
+	@Override
+	public boolean isComplete() {
+		return complete;
+	}
+
+	@Override
+	public JsonPrimitive getResult() throws SyntaxError {
+		if (numberString.indexOf('.')!=-1) {
+			//Return as a Double
+			try {
+				Double d = Double.valueOf(numberString);
+				return new JsonPrimitive(d);
+			} catch (NumberFormatException ex) {
+				throw new SyntaxError("Tried to parse '"+numberString+"' as a floating-point number, but it appears to be invalid.");
+			}
+		} else {
+			//Return as a Long
+			try {
+				Long l = Long.valueOf(numberString);
+				return new JsonPrimitive(l);
+			} catch (NumberFormatException ex) {
+				throw new SyntaxError("Tried to parse '"+numberString+"' as an integer, but it appears to be invalid.");
+			}
+		}
+	}
+
+}
