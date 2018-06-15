@@ -121,6 +121,16 @@ public class JsonArray extends JsonElement implements Collection<JsonElement>, I
 		return true;
 	}
 	
+	//IMPLEMENTATION for Cloneable
+	@Override
+	public JsonArray clone() {
+		JsonArray result = new JsonArray();
+		for(Entry entry : entries) {
+			result.add(entry.value.clone(), entry.comment);
+		}
+		return result;
+	}
+	
 	//IMPLEMENTATION for Collection<JsonElement>
 	
 	@Override

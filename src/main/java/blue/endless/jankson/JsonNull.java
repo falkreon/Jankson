@@ -31,4 +31,20 @@ public class JsonNull extends JsonElement {
 	public String toString() {
 		return "null";
 	}
+	
+	@Override
+	public boolean equals(Object other) {
+		return other==JsonNull.INSTANCE;
+	}
+	
+	@Override
+	public int hashCode() {
+		return 0;
+	}
+	
+	//IMPLEMENTATION for Cloneable
+	@Override
+	public JsonNull clone() {
+		return this;
+	}
 }

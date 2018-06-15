@@ -24,23 +24,51 @@
 
 package blue.endless.jankson;
 
+import java.util.Objects;
+
+import javax.annotation.Nonnull;
+
 public class JsonPrimitive extends JsonElement {
+	@Nonnull
 	private Object value;
 	
-	public JsonPrimitive(Object value) {
+	public JsonPrimitive(@Nonnull Object value) {
 		this.value = value;
 	}
 
+	@Nonnull
 	public String asString() {
 		if (value==null) return "null";
 		return value.toString();
 	}
 	
+	@Nonnull
 	public String toString() {
 		if (value==null) return "null";
 		if (value instanceof String) {
 			return '\"'+(String)value+'\"';
 		}
 		return value.toString();
+	}
+	
+	@Override
+	public boolean equals(Object other) {
+		if (other==null) return false;
+		if (other instanceof JsonPrimitive) {
+			return Objects.equals(value, ((JsonPrimitive)other).value);
+		} else {
+			return false;
+		}
+	}
+	
+	@Override
+	public int hashCode() {
+		return value.hashCode();
+	}
+	
+	//IMPLEMENTATION for Cloneable
+	@Override
+	public JsonPrimitive clone() {
+		return this;
 	}
 }

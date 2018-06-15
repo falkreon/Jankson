@@ -25,12 +25,17 @@
 package blue.endless.jankson;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class JsonObject extends JsonElement {
+public class JsonObject extends JsonElement implements Map<String, JsonElement> {
 	private List<Entry> entries = new ArrayList<>();
 	
 	/**
@@ -51,26 +56,7 @@ public class JsonObject extends JsonElement {
 		return null;
 	}
 	
-	/**
-	 * Replaces a key-value mapping in this object if it exists, or adds the mapping to the end of the object if it
-	 * doesn't. Returns the old value mapped to this key if there was one.
-	 */
-	public JsonElement put(@Nonnull String key, @Nonnull JsonElement elem) {
-		for(Entry entry : entries) {
-			if (entry.key.equalsIgnoreCase(key)) {
-				JsonElement result = entry.value;
-				entry.value = elem;
-				return result;
-			}
-		}
-		
-		//If we reached here, there's no existing mapping, so make one.
-		Entry entry = new Entry();
-		entry.key = key;
-		entry.value = elem;
-		entries.add(entry);
-		return null;
-	}
+	
 	
 	/**
 	 * Replaces a key-value mapping in this object if it exists, or adds the mapping to the end of the object if it
@@ -192,13 +178,291 @@ public class JsonObject extends JsonElement {
 		return builder.toString();
 	}
 	
+	@Override
 	public String toString() {
 		return toJson(true, false, 0);
 	}
+	
+	@Override
+	public boolean equals(Object other) {
+		if (other==null || !(other instanceof JsonObject)) return false;
+		JsonObject otherObject = (JsonObject)other;
+		if (entries.size()!=otherObject.entries.size()) return false;
+		
+		//Lists are identical sizes, but if the contents, comments, or ordering are at all different, fail them
+		for(int i=0; i<entries.size(); i++) {
+			Entry a = entries.get(i);
+			Entry b = otherObject.entries.get(i);
+			
+			if (!a.equals(b)) return false;
+		}
+		
+		return true;
+	}
+	
+	@Override
+	public int hashCode() {
+		return entries.hashCode();
+	}
+	
+	/**
+	 * Gets a (potentially nested) element from this object if it exists.
+	 * @param clazz The expected class of the element
+	 * @param key   The keys of the nested elements, separated by periods, such as "foo.bar.baz"
+	 * @return The element at that location, if it exists and is of the proper type, otherwise null.
+	 */
+	@SuppressWarnings("unchecked")
+	@Nullable
+	public <E extends JsonElement> E recursiveGet(@Nonnull Class<E> clazz, @Nonnull String key) {
+		if (key.isEmpty()) throw new IllegalArgumentException("Cannot get from empty key");
+		String[] parts = key.split("\\.");
+		JsonObject cur = this;
+		for(int i=0; i<parts.length; i++) {
+			String s = parts[i];
+			if (s.isEmpty()) throw new IllegalArgumentException("Cannot get from broken key '"+key+"'");
+			JsonElement elem = cur.get(s);
+			if (i<parts.length-1) {
+				//elem must be a JsonObject or we're sunk
+				if (elem instanceof JsonObject) {
+					cur = (JsonObject) elem;
+					continue;
+				} else {
+					return null;
+				}
+			} else {
+				if (clazz.isAssignableFrom(elem.getClass())) {
+					return (E) elem;
+				} else {
+					return null;
+				}
+			}
+		}
+		throw new IllegalArgumentException("Cannot get from broken key '"+key+"'");
+	}
+	
+	/**
+	 * Gets a (potentially nested) element from this object if it exists, or creates it and any intermediate objects
+	 * needed to put it at the indicated location in the hierarchy.
+	 * @param clazz The expected class of the element
+	 * @param key   The keys of the nested elements, separated by periods, such as "foo.bar.baz"
+	 * @return The element at that location if it exists, or the newly-created element if it did not previously exist.
+	 */
+	@SuppressWarnings("unchecked")
+	public <E extends JsonElement> E recursiveGetOrCreate(@Nonnull Class<E> clazz, @Nonnull String key, @Nonnull E fallback, @Nullable String comment) {
+		if (key.isEmpty()) throw new IllegalArgumentException("Cannot get from empty key");
+		String[] parts = key.split("\\.");
+		JsonObject cur = this;
+		for(int i=0; i<parts.length; i++) {
+			String s = parts[i];
+			if (s.isEmpty()) throw new IllegalArgumentException("Cannot get from broken key '"+key+"'");
+			JsonElement elem = cur.get(s);
+			if (i<parts.length-1) {
+				//elem must be a JsonObject or we're sunk
+				if (elem instanceof JsonObject) {
+					cur = (JsonObject) elem;
+					continue;
+				} else {
+					JsonObject replacement = new JsonObject();
+					cur.put(s, replacement);
+					cur = replacement;
+					continue;
+				}
+			} else {
+				if (clazz.isAssignableFrom(elem.getClass())) {
+					return (E) elem;
+				} else {
+					E result = (E) fallback.clone();
+					cur.put(key, result, comment);
+					return result;
+				}
+			}
+		}
+		
+		throw new IllegalArgumentException("Cannot get from broken key '"+key+"'");
+	}
+	
 	
 	private static final class Entry {
 		protected String comment;
 		protected String key;
 		protected JsonElement value;
+		
+		@Override
+		public boolean equals(Object other) {
+			if (other==null || !(other instanceof Entry)) return false;
+			Entry o = (Entry)other;
+			if (!comment.equals(o.comment)) return false;
+			if (!key.equals(o.key)) return false;
+			if (!value.equals(o.value)) return false;
+			
+			return true;
+		}
+		
+		@Override
+		public int hashCode() {
+			return Objects.hash(comment, key, value);
+		}
+	}
+
+	//IMPLEMENTATION for Cloneable
+	
+	@Override
+	public JsonObject clone() {
+		JsonObject result = new JsonObject();
+		for(Entry entry : entries) {
+			result.put(entry.key, entry.value.clone(), entry.comment);
+		}
+		return result;
+	}
+	
+	//IMPLEMENTATION for Map<JsonElement>
+	
+	/**
+	 * Replaces a key-value mapping in this object if it exists, or adds the mapping to the end of the object if it
+	 * doesn't. Returns the old value mapped to this key if there was one.
+	 */
+	@Override
+	@Nullable
+	public JsonElement put(@Nonnull String key, @Nonnull JsonElement elem) {
+		for(Entry entry : entries) {
+			if (entry.key.equalsIgnoreCase(key)) {
+				JsonElement result = entry.value;
+				entry.value = elem;
+				return result;
+			}
+		}
+		
+		//If we reached here, there's no existing mapping, so make one.
+		Entry entry = new Entry();
+		entry.key = key;
+		entry.value = elem;
+		entries.add(entry);
+		return null;
+	}
+	
+	@Override
+	public void clear() {
+		entries.clear();
+	}
+
+	@Override
+	public boolean containsKey(@Nullable Object key) {
+		if (key==null) return false;
+		if (!(key instanceof String)) return false;
+		
+		for(Entry entry : entries) {
+			if (entry.key.equalsIgnoreCase((String)key)) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
+
+	@Override
+	public boolean containsValue(@Nullable Object val) {
+		if (val==null) return false;
+		if (!(val instanceof JsonElement)) return false;
+		
+		for(Entry entry : entries) {
+			if (entry.value.equals(val)) return true;
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * Creates a semi-live shallow copy instead of a live view
+	 */
+	@Override
+	public Set<Map.Entry<String, JsonElement>> entrySet() {
+		Set<Map.Entry<String, JsonElement>> result = new HashSet<>();
+		for(Entry entry : entries) {
+			result.add(new Map.Entry<String, JsonElement>(){
+				@Override
+				public String getKey() {
+					return entry.key;
+				}
+
+				@Override
+				public JsonElement getValue() {
+					return entry.value;
+				}
+
+				@Override
+				public JsonElement setValue(JsonElement value) {
+					JsonElement oldValue = entry.value;
+					entry.value = value;
+					return oldValue;
+				}
+				
+			});
+		}
+		
+		return result;
+	}
+
+	@Override
+	@Nullable
+	public JsonElement get(@Nullable Object key) {
+		if (key==null || !(key instanceof String)) return null;
+		
+		for(Entry entry : entries) {
+			if (entry.key.equalsIgnoreCase((String)key)) {
+				return entry.value;
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public boolean isEmpty() {
+		return entries.isEmpty();
+	}
+
+	/** Returns a defensive copy instead of a live view */
+	@Override
+	@Nonnull
+	public Set<String> keySet() {
+		Set<String> keys = new HashSet<>();
+		for(Entry entry : entries) {
+			keys.add(entry.key);
+		}
+		return keys;
+	}
+
+	@Override
+	public void putAll(Map<? extends String, ? extends JsonElement> map) {
+		for(Map.Entry<? extends String, ? extends JsonElement> entry : map.entrySet()) {
+			put(entry.getKey(), entry.getValue());
+		}
+	}
+
+	@Override
+	@Nullable
+	public JsonElement remove(@Nullable Object key) {
+		if (key==null || !(key instanceof String)) return null;
+		
+		for(int i=0; i<entries.size(); i++) {
+			Entry entry = entries.get(i);
+			if (entry.key.equalsIgnoreCase((String)key)) {
+				return entries.remove(i).value;
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public int size() {
+		return entries.size();
+	}
+
+	@Override
+	public Collection<JsonElement> values() {
+		List<JsonElement> values = new ArrayList<>();
+		for(Entry entry : entries) {
+			values.add(entry.value);
+		}
+		return values;
 	}
 }
