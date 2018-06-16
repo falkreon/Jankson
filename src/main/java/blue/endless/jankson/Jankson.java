@@ -24,10 +24,12 @@
 
 package blue.endless.jankson;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.function.Consumer;
@@ -48,6 +50,15 @@ public class Jankson {
 	private SyntaxError delayedError = null;
 	
 	private Jankson(Builder builder) {}
+	
+	public JsonObject load(String s) throws SyntaxError {
+		ByteArrayInputStream in = new ByteArrayInputStream(s.getBytes(Charset.forName("UTF-8")));
+		try {
+			return load(in);
+		} catch (IOException ex) {
+			throw new RuntimeException(ex); //ByteArrayInputStream never throws
+		}
+	}
 	
 	public JsonObject load(File f) throws IOException, SyntaxError {
 		try(InputStream in = new FileInputStream(f)) {

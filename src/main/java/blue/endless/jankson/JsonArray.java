@@ -121,6 +121,25 @@ public class JsonArray extends JsonElement implements Collection<JsonElement>, I
 		return true;
 	}
 	
+	@Override
+	public boolean equals(Object other) {
+		if (other==null || !(other instanceof JsonArray)) return false;
+		
+		List<Entry> a = this.entries;
+		List<Entry> b = ((JsonArray)other).entries;
+		if (a.size()!=b.size()) return false;
+		
+		for(int i=0; i<a.size(); i++) {
+			Entry ae = a.get(i);
+			Entry be = b.get(i);
+			if (!ae.value.equals(be.value)) return false;
+			if (!ae.comment.equals(be.comment)) return false;
+		}
+		
+		return true;
+	}
+	
+	
 	//IMPLEMENTATION for Cloneable
 	@Override
 	public JsonArray clone() {

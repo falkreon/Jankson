@@ -73,6 +73,7 @@ public class CommentParserContext implements ParserContext<String> {
 		//We're past the first two characters
 		if (multiLine) {
 			if (codePoint=='/' && prevChar=='*') {
+				result.deleteCharAt(result.length()-1); //Get rid of the *
 				done = true;
 				return true;
 			} else {
@@ -104,7 +105,7 @@ public class CommentParserContext implements ParserContext<String> {
 
 	@Override
 	public String getResult() throws SyntaxError {
-		return result.toString();
+		return result.toString().trim();
 	}
 
 }
