@@ -67,6 +67,7 @@ public class Jankson {
 	}
 	
 	public JsonObject load(InputStream in) throws IOException, SyntaxError {
+		root = null;
 		
 		push(new ObjectParserContext(), (it)->{
 			root = it;

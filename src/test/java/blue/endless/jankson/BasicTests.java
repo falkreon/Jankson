@@ -114,4 +114,82 @@ public class BasicTests {
 			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 	}
+	
+	@Test
+	public void testDeepNesting() {
+		String subject = "{ a: { a: { a: { a: { a: { a: { a: { a: 'Hello' } } } } } } } }";
+		try {
+			JsonObject parsed = jankson.load(subject);
+			JsonPrimitive prim = parsed.recursiveGet(JsonPrimitive.class, "a.a.a.a.a.a.a.a");
+			
+			Assert.assertEquals(new JsonPrimitive("Hello"), prim);
+			
+			JsonPrimitive notPrim = parsed.recursiveGet(JsonPrimitive.class, "a.a.a.a.a.a.a.a.a");
+			Assert.assertNull(notPrim);
+			
+			notPrim = parsed.recursiveGet(JsonPrimitive.class, "a.a.a.a.a.a.a");
+			Assert.assertNull(notPrim);
+			
+		} catch (SyntaxError ex) {
+			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+		}
+	}
+	
+	@Test
+	public void testMarshaller() {
+		try {
+			String subject = "{ a: { a: { a: 'Hello' } } }";
+			String stringResult = jankson.load(subject).recursiveGet(String.class, "a.a.a");
+			Assert.assertEquals("Should get the String 'Hello' back", "Hello", stringResult);
+			
+			subject = "{ a: { a: { a: 42 } } }";
+			Integer intResult = jankson.load(subject).recursiveGet(Integer.class, "a.a.a");
+			Assert.assertEquals("Should get the Integer 42 back", Integer.valueOf(42), intResult);
+			
+			Assert.assertEquals("Should get the Double 42 back", Double.valueOf(42), 
+					jankson.load(subject).recursiveGet(Double.class, "a.a.a"));
+			
+			
+			
+		} catch (SyntaxError ex) {
+			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+		}
+	}
+	
+	@Test
+	public void testForReuseLeaks() {
+		try {
+			String subjectOne = "{ a: 42 }";
+			JsonObject parsedOne = jankson.load(subjectOne);
+			
+			String subjectTwo = "{ b: 12 }";
+			JsonObject parsedTwo = jankson.load(subjectTwo);
+			
+			Assert.assertNull(parsedTwo.get("a"));
+		} catch (SyntaxError ex) {
+			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+		}
+	}
+	
+	@Test
+	public void testComplexQuirks() {
+		try {
+			String subject = "{ mods: [{name: 'alf' version:'1.12.2_v143.6'} {name:'bux', version:false}]}";
+			JsonObject parsed = jankson.load(subject);
+			
+			Assert.assertNotNull(parsed);
+			Assert.assertNotNull(parsed.get("mods"));
+			
+			Assert.assertEquals(JsonArray.class, parsed.get("mods").getClass());
+			
+			JsonArray mods = parsed.recursiveGet(JsonArray.class, "mods");
+			Assert.assertEquals(2, mods.size());
+			
+			//TODO: Add more marshalling logic to arrays
+			//JsonElement alfMod = mods.get(0);
+			
+		} catch (SyntaxError ex) {
+			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+		}
+	}
 }

@@ -51,6 +51,11 @@ public class JsonPrimitive extends JsonElement {
 		return value.toString();
 	}
 	
+	@Nonnull
+	public Object getValue() {
+		return value;
+	}
+	
 	@Override
 	public boolean equals(Object other) {
 		if (other==null) return false;

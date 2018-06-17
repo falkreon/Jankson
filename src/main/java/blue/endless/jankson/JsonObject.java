@@ -35,6 +35,8 @@ import java.util.Set;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import blue.endless.jankson.impl.Marshaller;
+
 public class JsonObject extends JsonElement implements Map<String, JsonElement> {
 	private List<Entry> entries = new ArrayList<>();
 	
@@ -211,9 +213,8 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 	 * @param key   The keys of the nested elements, separated by periods, such as "foo.bar.baz"
 	 * @return The element at that location, if it exists and is of the proper type, otherwise null.
 	 */
-	@SuppressWarnings("unchecked")
 	@Nullable
-	public <E extends JsonElement> E recursiveGet(@Nonnull Class<E> clazz, @Nonnull String key) {
+	public <E> E recursiveGet(@Nonnull Class<E> clazz, @Nonnull String key) {
 		if (key.isEmpty()) throw new IllegalArgumentException("Cannot get from empty key");
 		String[] parts = key.split("\\.");
 		JsonObject cur = this;
@@ -230,11 +231,14 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 					return null;
 				}
 			} else {
+				return Marshaller.marshall(clazz, elem);
+				
+				/*
 				if (clazz.isAssignableFrom(elem.getClass())) {
 					return (E) elem;
 				} else {
 					return null;
-				}
+				}*/
 			}
 		}
 		throw new IllegalArgumentException("Cannot get from broken key '"+key+"'");
@@ -291,7 +295,7 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 		public boolean equals(Object other) {
 			if (other==null || !(other instanceof Entry)) return false;
 			Entry o = (Entry)other;
-			if (!comment.equals(o.comment)) return false;
+			if (!Objects.equals(comment, o.comment)) return false;
 			if (!key.equals(o.key)) return false;
 			if (!value.equals(o.value)) return false;
 			
