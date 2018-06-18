@@ -38,6 +38,7 @@ import javax.annotation.Nullable;
 import blue.endless.jankson.impl.Marshaller;
 
 public class JsonObject extends JsonElement implements Map<String, JsonElement> {
+	protected Marshaller marshaller = Marshaller.getFallback();
 	private List<Entry> entries = new ArrayList<>();
 	
 	/**
@@ -58,8 +59,6 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 		return null;
 	}
 	
-	
-	
 	/**
 	 * Replaces a key-value mapping in this object if it exists, or adds the mapping to the end of the object if it
 	 * doesn't. Returns the old value mapped to this key if there was one.
@@ -76,6 +75,8 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 		
 		//If we reached here, there's no existing mapping, so make one.
 		Entry entry = new Entry();
+		if (elem instanceof JsonObject) ((JsonObject)elem).marshaller = marshaller;
+		if (elem instanceof JsonArray) ((JsonArray)elem).marshaller = marshaller;
 		entry.key = key;
 		entry.value = elem;
 		entry.comment = comment;
@@ -207,6 +208,18 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 		return entries.hashCode();
 	}
 	
+	public void setMarshaller(Marshaller marshaller) {
+		this.marshaller = marshaller;
+	}
+	
+	@Nullable
+	public <E> E get(@Nonnull Class<E> clazz, @Nonnull String key) {
+		if (key.isEmpty()) throw new IllegalArgumentException("Cannot get from empty key");
+		
+		JsonElement elem = get(key);
+		return marshaller.marshall(clazz, elem);
+	}
+	
 	/**
 	 * Gets a (potentially nested) element from this object if it exists.
 	 * @param clazz The expected class of the element
@@ -231,7 +244,7 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 					return null;
 				}
 			} else {
-				return Marshaller.marshall(clazz, elem);
+				return marshaller.marshall(clazz, elem);
 				
 				/*
 				if (clazz.isAssignableFrom(elem.getClass())) {

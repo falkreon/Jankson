@@ -160,6 +160,7 @@ public class BasicTests {
 	public void testForReuseLeaks() {
 		try {
 			String subjectOne = "{ a: 42 }";
+			@SuppressWarnings("unused")
 			JsonObject parsedOne = jankson.load(subjectOne);
 			
 			String subjectTwo = "{ b: 12 }";
@@ -192,4 +193,46 @@ public class BasicTests {
 			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 	}
+	
+	public static class TestObject {
+		private int x = 1;
+		private String y = "Hello";
+	}
+	
+	/*
+	@Test
+	public void testBaseDeserialization() {
+		try {
+			JsonObject parsed = jankson.load("{x: 4, y: 4}");
+			
+			TestObject des = jankson.fromJson(parsed, TestObject.class);
+			
+			Assert.assertEquals(4, des.x);
+			Assert.assertEquals("4", des.y);
+			
+		} catch (SyntaxError ex) {
+			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+		}
+	}
+	
+	public static class TestContainer {
+		TestObject object = new TestObject();
+		private String foo = null;
+	}
+	
+	@Test
+	public void testNestedDeserialization() {
+		try {
+			JsonObject parsed = jankson.load("{object:{x: 4, y: 4}, foo:'bar'}");
+			
+			TestContainer des = jankson.fromJson(parsed, TestContainer.class);
+			
+			Assert.assertEquals(4, des.object.x);
+			Assert.assertEquals("4", des.object.y);
+			Assert.assertEquals("bar", des.foo);
+			
+		} catch (SyntaxError ex) {
+			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+		}
+	}*/
 }

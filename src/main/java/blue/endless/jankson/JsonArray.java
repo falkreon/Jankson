@@ -30,14 +30,13 @@ import java.util.Iterator;
 import java.util.List;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import blue.endless.jankson.impl.Marshaller;
 
 public class JsonArray extends JsonElement implements Collection<JsonElement>, Iterable<JsonElement> {
 	private List<Entry> entries = new ArrayList<>();
-	
-	
-	public int size() {
-		return entries.size();
-	}
+	protected Marshaller marshaller = Marshaller.getFallback();
 	
 	public JsonElement get(int i) {
 		return entries.get(i).value;
@@ -139,11 +138,21 @@ public class JsonArray extends JsonElement implements Collection<JsonElement>, I
 		return true;
 	}
 	
+	@Nullable
+	public <E> E get(@Nonnull Class<E> clazz, int index) {
+		JsonElement elem = get(index);
+		return marshaller.marshall(clazz, elem);
+	}
+	
+	public void setMarshaller(Marshaller marshaller) {
+		this.marshaller = marshaller;
+	}
 	
 	//IMPLEMENTATION for Cloneable
 	@Override
 	public JsonArray clone() {
 		JsonArray result = new JsonArray();
+		result.marshaller = marshaller;
 		for(Entry entry : entries) {
 			result.add(entry.value.clone(), entry.comment);
 		}
@@ -151,6 +160,11 @@ public class JsonArray extends JsonElement implements Collection<JsonElement>, I
 	}
 	
 	//IMPLEMENTATION for Collection<JsonElement>
+	
+	@Override
+	public int size() {
+		return entries.size();
+	}
 	
 	@Override
 	public boolean add(@Nonnull JsonElement e) {

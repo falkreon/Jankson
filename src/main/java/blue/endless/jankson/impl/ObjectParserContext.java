@@ -45,6 +45,7 @@ public class ObjectParserContext implements ParserContext<JsonObject> {
 	
 	@Override
 	public boolean consume(int codePoint, Jankson loader) throws SyntaxError {
+		result.setMarshaller(loader.getMarshaller());
 		if (!openBraceFound) {
 			if (Character.isWhitespace(codePoint)) return true; //We're fine, this is just whitespace
 			if (codePoint=='{') { //We're good. We can start parsing the object now

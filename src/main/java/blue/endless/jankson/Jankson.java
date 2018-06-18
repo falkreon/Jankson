@@ -33,7 +33,9 @@ import java.nio.charset.Charset;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
+import blue.endless.jankson.impl.Marshaller;
 import blue.endless.jankson.impl.ObjectParserContext;
 import blue.endless.jankson.impl.ParserContext;
 import blue.endless.jankson.impl.SyntaxError;
@@ -45,6 +47,7 @@ public class Jankson {
 	private int line = 0;
 	private int column = 0;
 	private int withheldCodePoint = -1;
+	private Marshaller marshaller = new Marshaller();
 	
 	private int retries = 0;
 	private SyntaxError delayedError = null;
@@ -106,6 +109,17 @@ public class Jankson {
 		return root;
 	}
 	
+	/** For now, this will only work if you've defined a type adapter for the indicated class! */
+	public <T> T fromJson(JsonObject obj, Class<T> clazz) {
+		return marshaller.marshall(clazz, obj);
+	}
+	
+	/** For now, this will only work if you've defined a type adapter for the indicated class! */
+	public <T> T fromJson(String json, Class<T> clazz) throws SyntaxError {
+		JsonObject obj = load(json);
+		return fromJson(obj, clazz);
+	}
+	
 	private void processCodePoint(int codePoint) throws SyntaxError {
 		ParserFrame<?> frame = contextStack.peek();
 		if (frame==null) throw new IllegalStateException("Parser problem! The ParserContext stack underflowed! (line "+line+", col "+column+")");
@@ -145,15 +159,46 @@ public class Jankson {
 		contextStack.push(frame);
 	}
 	
-	
+	public Marshaller getMarshaller() {
+		return marshaller;
+	}
 	
 	public static Builder builder() {
 		return new Builder();
 	}
 	
 	public static class Builder {
+		Marshaller marshaller = new Marshaller();
+		
+		/**
+		 * Registers a deserializer that can transform a JsonObject into an instance of the specified class. Please note
+		 * that these type adapters are unsuitable for generic types, as these types are erased during jvm execution.
+		 * @param clazz    The class to register deserialization for
+		 * @param adapter  A function which can produce an object representing the supplied JsonObject
+		 * @return This Builder for further modification.
+		 */
+		public <T> Builder registerTypeAdapter(Class<T> clazz, Function<JsonObject, T> adapter) {
+			marshaller.registerTypeAdapter(clazz, adapter);
+			return this;
+		}
+		
+		/**
+		 * Registers a marshaller for primitive types. Most built-in json and java types are already supported, but this
+		 * allows one to change the deserialization behavior of Json primitives. Please note that these adapters are not
+		 * suitable for generic types, as these types are erased during jvm execution.
+		 * @param clazz
+		 * @param adapter
+		 * @return
+		 */
+		public <T> Builder registerPrimitiveTypeAdapter(Class<T> clazz, Function<Object, T> adapter) {
+			marshaller.register(clazz, adapter);
+			return this;
+		}
+		
 		public Jankson build() {
-			return new Jankson(this);
+			Jankson result = new Jankson(this);
+			result.marshaller = marshaller;
+			return result;
 		}
 	}
 	
