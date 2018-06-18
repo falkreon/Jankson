@@ -73,6 +73,7 @@ public class ArrayParserContext implements ParserContext<JsonArray> {
 			foundClosingBrace = true;
 			return true;
 		case '/':
+		case '#':
 			loader.push(new CommentParserContext(codePoint), (it)->{
 				comment = it;
 			});

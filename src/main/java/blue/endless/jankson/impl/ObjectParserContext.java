@@ -72,6 +72,7 @@ public class ObjectParserContext implements ParserContext<JsonObject> {
 					loader.push(new StringParserContext(codePoint), (it)->key=it.asString());
 					return true;
 				case '/':
+				case '#':
 					loader.push(new CommentParserContext(codePoint), (it)->comment=it);
 					return true;
 				default:

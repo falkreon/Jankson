@@ -46,14 +46,15 @@ public class CommentParserContext implements ParserContext<String> {
 		if (done) return false;
 		
 		if (firstChar==-1) {
-			if (codePoint!='/') {
+			if (codePoint!='/' && codePoint!='#') {
 				throw new SyntaxError("Was expecting the start of a comment, but found '"+(char)codePoint+"' instead.");
 			}
 			firstChar = codePoint;
+			if (firstChar=='#') multiLine = false;
 			return true;
 		}
 		
-		if (secondChar==-1) {
+		if (secondChar==-1 && firstChar!='#') {
 			secondChar = codePoint;
 			if (codePoint=='*') {
 				multiLine = true;
@@ -70,7 +71,7 @@ public class CommentParserContext implements ParserContext<String> {
 			}
 		}
 		
-		//We're past the first two characters
+		//We're past the initiating character(s)
 		if (multiLine) {
 			if (codePoint=='/' && prevChar=='*') {
 				result.deleteCharAt(result.length()-1); //Get rid of the *
