@@ -48,6 +48,11 @@ public class ObjectParserContext implements ParserContext<JsonObject> {
 		result.setMarshaller(loader.getMarshaller());
 		if (!openBraceFound) {
 			if (Character.isWhitespace(codePoint)) return true; //We're fine, this is just whitespace
+			if (codePoint=='/' || codePoint=='#') {
+				loader.push(new CommentParserContext(codePoint), (it)->comment=it);
+				return true;
+			}
+			
 			if (codePoint=='{') { //We're good. We can start parsing the object now
 				openBraceFound = true;
 				return true;
