@@ -114,6 +114,16 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 		return null;
 	}
 	
+	public void setComment(@Nonnull String name, @Nullable String comment) {
+		for(Entry entry : entries) {
+			if (entry.key.equalsIgnoreCase(name)) {
+				entry.comment = comment;
+				return;
+			}
+		}
+	}
+	
+	@Override
 	public String toJson(boolean comments, boolean newlines) {
 		return toJson(comments, newlines, 0);
 	}

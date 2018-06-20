@@ -24,12 +24,17 @@
 
 package blue.endless.jankson.impl;
 
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
 import javax.annotation.Nullable;
 
+import blue.endless.jankson.Comment;
 import blue.endless.jankson.JsonArray;
 import blue.endless.jankson.JsonElement;
 import blue.endless.jankson.JsonNull;
@@ -44,12 +49,19 @@ public class Marshaller {
 	private Map<Class<?>, Function<Object,?>> primitiveMarshallers = new HashMap<>();
 	private Map<Class<?>, Function<JsonObject,?>> typeAdapters = new HashMap<>();
 	
+	private Map<Class<?>, Function<Object,JsonElement>> serializers = new HashMap<>();
+	
 	public <T> void register(Class<T> clazz, Function<Object, T> marshaller) {
 		primitiveMarshallers.put(clazz, marshaller);
 	}
 	
 	public <T> void registerTypeAdapter(Class<T> clazz, Function<JsonObject, T> adapter) {
 		typeAdapters.put(clazz, adapter);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public <T> void registerSerializer(Class<T> clazz, Function<T, JsonElement> serializer) {
+		serializers.put(clazz, (Function<Object, JsonElement>) serializer);
 	}
 	
 	public Marshaller() {
@@ -65,6 +77,7 @@ public class Marshaller {
 		register(Double.class, (it)->(it instanceof Number) ? ((Number)it).doubleValue() : null);
 		register(Boolean.class, (it)->(it instanceof Boolean) ? (Boolean)it : null);
 		
+		register(Void.TYPE, (it)->null);
 		register(Byte.TYPE, (it)->(it instanceof Number) ? ((Number)it).byteValue() : null);
 		register(Short.TYPE, (it)->(it instanceof Number) ? ((Number)it).shortValue() : null);
 		register(Integer.TYPE, (it)->(it instanceof Number) ? ((Number)it).intValue() : null);
@@ -72,6 +85,26 @@ public class Marshaller {
 		register(Float.TYPE, (it)->(it instanceof Number) ? ((Number)it).floatValue() : null);
 		register(Double.TYPE, (it)->(it instanceof Number) ? ((Number)it).doubleValue() : null);
 		register(Boolean.TYPE, (it)->(it instanceof Boolean) ? (Boolean)it : null);
+		
+		
+		registerSerializer(Void.class, (it)->JsonNull.INSTANCE);
+		registerSerializer(String.class, JsonPrimitive::new);
+		registerSerializer(Byte.class, (it)->new JsonPrimitive(Long.valueOf(it)));
+		registerSerializer(Short.class, (it)->new JsonPrimitive(Long.valueOf(it)));
+		registerSerializer(Integer.class, (it)->new JsonPrimitive(Long.valueOf(it)));
+		registerSerializer(Long.class, JsonPrimitive::new);
+		registerSerializer(Float.class, (it)->new JsonPrimitive(Double.valueOf(it)));
+		registerSerializer(Double.class, JsonPrimitive::new);
+		registerSerializer(Boolean.class, JsonPrimitive::new);
+		
+		registerSerializer(Void.TYPE, (it)->JsonNull.INSTANCE);
+		registerSerializer(Byte.TYPE, (it)->new JsonPrimitive(Long.valueOf(it)));
+		registerSerializer(Short.TYPE, (it)->new JsonPrimitive(Long.valueOf(it)));
+		registerSerializer(Integer.TYPE, (it)->new JsonPrimitive(Long.valueOf(it)));
+		registerSerializer(Long.TYPE, JsonPrimitive::new);
+		registerSerializer(Float.TYPE, (it)->new JsonPrimitive(Double.valueOf(it)));
+		registerSerializer(Double.TYPE, JsonPrimitive::new);
+		registerSerializer(Boolean.TYPE, JsonPrimitive::new);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -110,6 +143,94 @@ public class Marshaller {
 		
 		return null;
 	}
+	
+	public JsonElement serialize(Object obj) {
+		if (obj==null) return JsonNull.INSTANCE;
+		
+		Function<Object, JsonElement> serializer = serializers.get(obj.getClass());
+		if (serializer!=null) return serializer.apply(obj);
+		
+		if (obj.getClass().isArray()) {
+			
+			JsonArray array = new JsonArray();
+			array.setMarshaller(this);
+			Class<?> component = obj.getClass().getComponentType();
+			for(int i=0; i<Array.getLength(obj); i++) {
+				Object elem = Array.get(obj, i);
+				JsonElement parsed = serialize(elem);
+				array.add(parsed);
+			}
+			return array;
+		}
+		
+		if (obj instanceof Collection) {
+			JsonArray array = new JsonArray();
+			array.setMarshaller(this);
+			for(Object elem : (Collection<?>)obj) {
+				JsonElement parsed = serialize(elem);
+				array.add(parsed);
+			}
+			return array;
+		}
+		
+		if (obj instanceof Map) {
+			JsonObject result = new JsonObject();
+			for(Map.Entry<?,?> entry : ((Map<?,?>)obj).entrySet()) {
+				String k = entry.getKey().toString();
+				Object v = entry.getValue();
+				result.put(k, serialize(v));
+			}
+			return result;
+		}
+		
+		JsonObject result = new JsonObject();
+		//Pull in public fields first
+		for(Field f : obj.getClass().getFields()) {
+			if (
+					Modifier.isStatic(f.getModifiers()) || // Not part of the object
+					Modifier.isTransient(f.getModifiers())) continue; //Never serialize
+			f.setAccessible(true);
+			
+			try {
+				Object child = f.get(obj);
+				String name = f.getName();
+				Comment comment = f.getAnnotation(Comment.class);
+				if (comment==null) {
+					result.put(name, serialize(child));
+				} else {
+					result.put(name, serialize(child), comment.value());
+				}
+			} catch (IllegalArgumentException | IllegalAccessException e) {}
+		}
+		
+		/*
+		 * TODO: Walk supers and add in private fields from most distant ancestor to least? Seems like a lot of
+		 *       extra computation, and would gain support for very few extra cases.
+		 */
+		
+		//Add in what private fields we can reach
+		for (Field f : obj.getClass().getDeclaredFields()) {
+			if (
+					Modifier.isPublic(f.getModifiers()) || // Already serialized
+					Modifier.isStatic(f.getModifiers()) || // Not part of the object
+					Modifier.isTransient(f.getModifiers())) continue; //Never serialize
+			f.setAccessible(true);
+			
+			try {
+				Object child = f.get(obj);
+				String name = f.getName();
+				Comment comment = f.getAnnotation(Comment.class);
+				if (comment==null) {
+					result.put(name, serialize(child));
+				} else {
+					result.put(name, serialize(child), comment.value());
+				}
+			} catch (IllegalArgumentException | IllegalAccessException e) {}
+		}
+		
+		return result;
+	}
+	
 	/*
 	private static void deserializeInto(JsonObject json, Object outer, Field field) {
 		field.setAccessible(true);

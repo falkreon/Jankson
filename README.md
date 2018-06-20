@@ -1,6 +1,56 @@
 # Jankson
 JSON / HJSON parser and preprocessor which preserves ordering and comments
 
+## Json Quirks
+
+The following hjson quirks are supported:
+
+```hjson
+{
+  # use #, // or /**/ comments,
+  // omit quotes for keys
+  key: 1,
+  // omit commas at the end of a line
+  cool: {
+    foo: 1
+    bar: 2
+  }
+  // allow trailing commas
+  list: [
+    1,
+    2,
+  ]
+}
+
+```
+
+The following hjson quirks are **NOT** supported:
+```hjson
+{
+	// omit quotes for strings - these will never be supported by jankson
+	// this is because other quirks require parsing out unquoted line text
+	contains: everything on this line
+
+	// use multiline strings - support is planned but isn't complete yet.
+	realist:
+	    '''
+	    My half empty glass,
+	    I will fill your empty half.
+	    Now you are half full.
+	    '''
+}
+```
+
+The following non-hjson quirks are additionally supported:
+```hjson
+{
+	//Missing commas are fine anywhere
+	key: 1 key2: 2 key3: 3
+	items: [4 3 2 1 6 2 {foo: 'cool'} false]
+
+
+}
+```
 
 ## Compiling
 Just clone the repo and run a gradle build. The only dependency is jsr305 for nullity.

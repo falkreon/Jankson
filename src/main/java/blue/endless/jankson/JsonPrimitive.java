@@ -44,11 +44,7 @@ public class JsonPrimitive extends JsonElement {
 	
 	@Nonnull
 	public String toString() {
-		if (value==null) return "null";
-		if (value instanceof String) {
-			return '\"'+(String)value+'\"';
-		}
-		return value.toString();
+		return toJson();
 	}
 	
 	@Nonnull
@@ -69,6 +65,15 @@ public class JsonPrimitive extends JsonElement {
 	@Override
 	public int hashCode() {
 		return value.hashCode();
+	}
+	
+	@Override
+	public String toJson(boolean comments, boolean newlines) {
+		if (value==null) return "null";
+		if (value instanceof String) {
+			return '\"'+(String)value+'\"';
+		}
+		return value.toString();
 	}
 	
 	//IMPLEMENTATION for Cloneable

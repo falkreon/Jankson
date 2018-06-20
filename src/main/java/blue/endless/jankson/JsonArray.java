@@ -38,6 +38,22 @@ public class JsonArray extends JsonElement implements Collection<JsonElement>, I
 	private List<Entry> entries = new ArrayList<>();
 	protected Marshaller marshaller = Marshaller.getFallback();
 	
+	public JsonArray() {}
+	
+	public <T> JsonArray(T[] ts, Marshaller marshaller) {
+		this.marshaller = marshaller;
+		for(T t : ts) {
+			this.add(marshaller.serialize(t));
+		}
+	}
+	
+	public JsonArray(Collection<?> ts, Marshaller marshaller) {
+		this.marshaller = marshaller;
+		for(Object t : ts) {
+			this.add(marshaller.serialize(t));
+		}
+	}
+	
 	public JsonElement get(int i) {
 		return entries.get(i).value;
 	}
@@ -46,6 +62,7 @@ public class JsonArray extends JsonElement implements Collection<JsonElement>, I
 		return entries.get(i).comment;
 	}
 	
+	@Override
 	public String toJson(boolean comments, boolean newlines) {
 		return toJson(comments, newlines, 0);
 	}
@@ -168,8 +185,6 @@ public class JsonArray extends JsonElement implements Collection<JsonElement>, I
 	
 	@Override
 	public boolean add(@Nonnull JsonElement e) {
-		if (contains(e)) return false;
-		
 		Entry entry = new Entry();
 		entry.value = e;
 		entries.add(entry);

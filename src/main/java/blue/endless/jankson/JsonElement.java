@@ -27,4 +27,8 @@ package blue.endless.jankson;
 /** Tagging class for Json objects, arrays, and primitives */
 public abstract class JsonElement implements Cloneable {
 	public abstract JsonElement clone();
+	public String toJson() {
+		return toJson(false, false);
+	}
+	public abstract String toJson(boolean comments, boolean newlines);
 }

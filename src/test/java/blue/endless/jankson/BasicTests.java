@@ -24,10 +24,15 @@
 
 package blue.endless.jankson;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import blue.endless.jankson.impl.Marshaller;
 import blue.endless.jankson.impl.SyntaxError;
 
 public class BasicTests {
@@ -221,6 +226,48 @@ public class BasicTests {
 	public static class TestObject {
 		private int x = 1;
 		private String y = "Hello";
+	}
+	
+	@Test
+	public void testArraySerialization() {
+		int[] intArray = new int[] {3, 2, 1};
+		String serializedIntArray = Marshaller.getFallback().serialize(intArray).toString();
+		Assert.assertEquals("[ 3, 2, 1 ]", serializedIntArray);
+		
+		Void[] voidArray = new Void[] {null, null}; //Yes, I realize this is black magic. We *must not* simply break at the first sign of black magic.
+		String serializedVoidArray = Marshaller.getFallback().serialize(voidArray).toString();
+		Assert.assertEquals("[ null, null ]", serializedVoidArray);
+		
+		List<Double[]> doubleArrayList = new ArrayList<Double[]>();
+		doubleArrayList.add(new Double[] {1.0, 2.0, 3.0});
+		doubleArrayList.add(new Double[] {4.0, 5.0});
+		String serializedDoubleArrayList = Marshaller.getFallback().serialize(doubleArrayList).toString();
+		Assert.assertEquals("[ [ 1.0, 2.0, 3.0 ], [ 4.0, 5.0 ] ]", serializedDoubleArrayList);
+	}
+	
+	@Test
+	public void testMapSerialization() {
+		HashMap<String, Integer> intHashMap = new HashMap<>();
+		intHashMap.put("foo", 1);
+		intHashMap.put("bar", 2);
+		JsonElement serialized = Marshaller.getFallback().serialize(intHashMap);
+		Assert.assertTrue(serialized instanceof JsonObject);
+		JsonObject obj = (JsonObject)serialized;
+		Assert.assertEquals(new JsonPrimitive(1L), obj.get("foo"));
+		Assert.assertEquals(new JsonPrimitive(2L), obj.get("bar"));
+	}
+	
+	private static class CommentedClass {
+		@Comment("This is a comment.")
+		private String foo = "what?";
+	}
+	
+	@Test
+	public void testSerializedComments() {
+		CommentedClass commented = new CommentedClass();
+		String serialized = Marshaller.getFallback().serialize(commented).toJson(true, false);
+		Assert.assertEquals("{ /* This is a comment. */ \"foo\": \"what?\" }", serialized);
+		
 	}
 	
 	/*

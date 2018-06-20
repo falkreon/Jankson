@@ -42,6 +42,11 @@ public class JsonNull extends JsonElement {
 		return 0;
 	}
 	
+	@Override
+	public String toJson(boolean comments, boolean newlines) {
+		return "null";
+	}
+	
 	//IMPLEMENTATION for Cloneable
 	@Override
 	public JsonNull clone() {
