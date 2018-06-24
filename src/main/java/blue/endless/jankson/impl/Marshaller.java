@@ -113,6 +113,17 @@ public class Marshaller {
 		if (elem==null) return null;
 		if (clazz.isAssignableFrom(elem.getClass())) return (T)elem; //Already the correct type
 		
+		if (Enum.class.isAssignableFrom(clazz)) {
+			if (!(elem instanceof JsonPrimitive)) return null;
+			String name = ((JsonPrimitive)elem).getValue().toString();
+			
+			T[] constants = clazz.getEnumConstants();
+			if (constants==null) return null;
+			for(T t : constants) {
+				if (((Enum<?>)t).name().equals(name)) return t;
+			}
+		}
+		
 		if (clazz.equals(String.class)) {
 			//Almost everything has a String representation
 			if (elem instanceof JsonObject) return (T)((JsonObject)elem).toJson(false, false);
@@ -149,6 +160,10 @@ public class Marshaller {
 		
 		Function<Object, JsonElement> serializer = serializers.get(obj.getClass());
 		if (serializer!=null) return serializer.apply(obj);
+		
+		if (obj instanceof Enum) {
+			return new JsonPrimitive(((Enum<?>)obj).name());
+		}
 		
 		if (obj.getClass().isArray()) {
 			

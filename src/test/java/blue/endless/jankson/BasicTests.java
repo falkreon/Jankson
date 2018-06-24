@@ -267,7 +267,34 @@ public class BasicTests {
 		CommentedClass commented = new CommentedClass();
 		String serialized = Marshaller.getFallback().serialize(commented).toJson(true, false);
 		Assert.assertEquals("{ /* This is a comment. */ \"foo\": \"what?\" }", serialized);
+	}
+	
+	private enum ExampleEnum {
+		ANT,
+		BOX,
+		CAT,
+		DAY;
+	};
+	
+	@Test
+	public void testSerializeEnums() {
+		String serialized = Marshaller.getFallback().serialize(ExampleEnum.CAT).toJson();
 		
+		Assert.assertEquals("\"CAT\"", serialized);
+	}
+	
+	@Test
+	public void testDeserializeEnums() {
+		String serialized = "{ aProperty: 'DAY' }";
+		try {
+			JsonObject deserialized = jankson.load(serialized);
+			
+			ExampleEnum recovered = deserialized.get(ExampleEnum.class, "aProperty");
+			Assert.assertEquals(ExampleEnum.DAY, recovered);
+			
+		} catch (SyntaxError ex) {
+			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+		}
 	}
 	
 	/*
