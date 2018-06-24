@@ -73,7 +73,8 @@ public class JsonPrimitive extends JsonElement {
 		if (value instanceof Number) {
 			return value.toString();
 		}
-		return '\"'+(String)value+'\"';
+		if (value instanceof Boolean) return value.toString();
+		return '\"'+value.toString()+'\"';
 	}
 	
 	//IMPLEMENTATION for Cloneable

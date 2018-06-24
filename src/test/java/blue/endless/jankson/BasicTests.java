@@ -340,6 +340,20 @@ public class BasicTests {
 		}
 	}
 	
+	
+	@Test
+	public void preventMangledEmoji() {
+		try {
+			JsonObject subject = jankson.load("{ \"\uE120\": true }");
+			String serialized = subject.toJson(false, false);
+			
+			Assert.assertEquals("{ \"\uE120\": true }", serialized);
+		} catch (SyntaxError ex) {
+			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+		}
+		
+		
+	}
 	/*
 	@Test
 	public void testBaseDeserialization() {

@@ -69,6 +69,70 @@ public class Jankson {
 		}
 	}
 	
+	private static boolean isLowSurrogate(int i) {
+		return (i & 0b1100_0000) == 0b1000_0000;
+	}
+	
+	private static final int BAD_CHARACTER = 0xFFFD;
+	public int getCodePoint(InputStream in) throws IOException {
+		int i = in.read();
+		if (i==-1) return -1;
+		if ((i & 0b10000000)==0) return i; // \u0000..\u00FF is easy
+		
+		if ((i & 0b1111_1000) == 0b1111_0000) { //Character is 4 UTF-8 code points
+			int codePoint = i & 0b111;
+			
+			i = in.read();
+			if (i==-1) return -1;
+			if (!isLowSurrogate(i)) return BAD_CHARACTER;
+			codePoint <<= 6;
+			codePoint |= (i & 0b0011_1111);
+			
+			i = in.read();
+			if (i==-1) return -1;
+			if (!isLowSurrogate(i)) return BAD_CHARACTER;
+			codePoint <<= 6;
+			codePoint |= (i & 0b0011_1111);
+			
+			i = in.read();
+			if (i==-1) return -1;
+			if (!isLowSurrogate(i)) return BAD_CHARACTER;
+			codePoint <<= 6;
+			codePoint |= (i & 0b0011_1111);
+			
+			return codePoint;
+		} else if ((i & 0b1111_0000) == 0b1110_0000) { //Character is 4 UTF-8 code points
+			int codePoint = i & 0b1111;
+			
+			i = in.read();
+			if (i==-1) return -1;
+			if (!isLowSurrogate(i)) return BAD_CHARACTER;
+			codePoint <<= 6;
+			codePoint |= (i & 0b0011_1111);
+			
+			i = in.read();
+			if (i==-1) return -1;
+			if (!isLowSurrogate(i)) return BAD_CHARACTER;
+			codePoint <<= 6;
+			codePoint |= (i & 0b0011_1111);
+			
+			return codePoint;
+		} else if ((i & 0b1110_0000) == 0b1100_0000) { //Character is 4 UTF-8 code points
+			int codePoint = i & 0b1111;
+			
+			i = in.read();
+			if (i==-1) return -1;
+			if (!isLowSurrogate(i)) return BAD_CHARACTER;
+			codePoint <<= 6;
+			codePoint |= (i & 0b0011_1111);
+			
+			return codePoint;
+		}
+		
+		//we know it's 0b10xx_xxxx down here, so it's an orphaned low surrogate.
+		return BAD_CHARACTER;
+	}
+	
 	public JsonObject load(InputStream in) throws IOException, SyntaxError {
 		root = null;
 		
@@ -76,6 +140,7 @@ public class Jankson {
 			root = it;
 		});
 		
+		//int codePoint = 0;
 		while (root==null) {
 			if (delayedError!=null) {
 				throw delayedError;
@@ -86,8 +151,16 @@ public class Jankson {
 				if (retries>25) throw new IOException("Parser got stuck near line "+line+" column "+column);
 				processCodePoint(withheldCodePoint);
 			} else {
-				int codePoint = in.read();
-				if (codePoint==-1) {
+				int inByte = getCodePoint(in);
+				if (inByte==-1) {
+					if ((inByte & 0b1111_0000) == 0b1111_0000) {
+						int codePoint = inByte & 0b111;
+						codePoint <<= 3;
+						inByte = in.read();
+					}
+					
+					
+					
 					//Walk up the stack sending EOF to things until either an error occurs or the stack completes
 					while(!contextStack.isEmpty()) {
 						ParserFrame<?> frame = contextStack.pop();
@@ -102,7 +175,7 @@ public class Jankson {
 					if (root==null) root = new JsonObject();
 					return root;
 				}
-				processCodePoint(codePoint);
+				processCodePoint(inByte);
 			}
 		}
 		
