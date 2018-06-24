@@ -343,7 +343,6 @@ public class BasicTests {
 	
 	@Test
 	public void preventMangledEmoji() {
-		/*
 		String[] elements = {
 			"\uD83C\uDF29", //lightningbolt
 			"\uD83D\uDD25", //:fire:
@@ -354,30 +353,27 @@ public class BasicTests {
 			"\u2BEF️", //fall
 			"\uD83D\uDCA8", //flyIntoWall
 			"\u2734", //*
-			"\uD83D\uDC7B", //👻
+			"\uD83D\uDC7B", //???
 			"✨ ⚚", //magic
-	        "indirectMagic" to "✨ ⚚",
-	        "wither" to "\uD83D\uDD71", //🕱
-	        "anvil" to "",
-	        "fallingBlock" to "",
-	        "dragonBreath" to "\uD83D\uDC32", //🐲
-	        "fireworks" to "\uD83C\uDF86", //🎆
+	        "\uD83D\uDD71", //wither
+	        "\uD83D\uDC32", //dragonBreath
+	        "\uD83C\uDF86", //fireworks
 	
-	        "mob" to "\uD83D\uDC80", //💀
-	        "player" to "\uD83D\uDDE1", //🗡
-	        "arrow" to "\uD83C\uDFF9", //🏹
-	        "thrown" to "彡°",
-	        "thorns" to "\uD83C\uDF39", //🌹
-	        "explosion" to "\uD83D\uDCA3 \uD83D\uDCA5", //💣 💥
-	        "explosion.player" to "\uD83D\uDCA3 \uD83D\uDCA5" //💣 💥
-		}*/
-		
+	        "\uD83D\uDC80", //mob
+	        "\uD83D\uDDE1", //player
+	        "\uD83C\uDFF9", //arrow
+	        "彡°", //thrown
+	        "\uD83C\uDF39", //thorns
+	        "\uD83D\uDCA3 \uD83D\uDCA5", //explosion
+	        "\uE120" //burger
+		};
 		
 		try {
-			JsonObject subject = jankson.load("{ \"\uE120\": true }");
-			String serialized = subject.toJson(false, false);
+			JsonObject subject = new JsonObject();
+			String serialized = subject.toJson();
+			JsonObject result = jankson.load(serialized);
 			
-			Assert.assertEquals("{ \"\uE120\": true }", serialized);
+			Assert.assertEquals(subject, result);
 		} catch (SyntaxError ex) {
 			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}

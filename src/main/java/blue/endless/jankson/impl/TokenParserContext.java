@@ -40,8 +40,23 @@ public class TokenParserContext implements ParserContext<JsonPrimitive> {
 		if (complete) return false;
 		
 		if (Character.isUnicodeIdentifierPart(codePoint)) {
-			token+=(char)codePoint;
-			return true;
+			
+			if (codePoint<0xFFFF) {
+				token+=((char)codePoint);
+				return true;
+			} else {
+				//Construct a high and low surrogate pair for this code point
+				//TODO: Finish implementing
+				int temp = codePoint - 0x10000;
+				int highSurrogate = (temp >>> 10) + 0xD800;
+				int lowSurrogate = (temp & 0b11_1111_1111) + 0xDC00;
+				
+				token += (char)highSurrogate;
+				token += (char)lowSurrogate;
+				
+				return true;
+			}
+			
 		} else {
 			complete = true;
 			return false;

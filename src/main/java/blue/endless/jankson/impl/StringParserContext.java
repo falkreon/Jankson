@@ -43,28 +43,33 @@ public class StringParserContext implements ParserContext<JsonPrimitive> {
 			//TODO: Support additional escapes like \t and \n
 			builder.append((char)codePoint);
 			escape = false;
+			
+			return true;
 		} else {
 			if (codePoint==quote) {
 				complete = true;
 				return true;
 			}
 			
-			if (codePoint>0xD800) {
+			if (codePoint<0xFFFF) {
 				builder.append((char)codePoint);
+				if (codePoint=='\\') escape=true;
+				
+				return true;
+			
 			} else {
 				//Construct a high and low surrogate pair for this code point
 				//TODO: Finish implementing
-				int highSurrogate = codePoint - 0x10000;
+				int temp = codePoint - 0x10000;
+				int highSurrogate = (temp >>> 10) + 0xD800;
+				int lowSurrogate = (temp & 0b11_1111_1111) + 0xDC00;
 				
-				builder.append((char)codePoint);
+				builder.append((char)highSurrogate);
+				builder.append((char)lowSurrogate);
+				
+				return true;
 			}
-			
-			
-			if (codePoint=='\\') escape=true;
-			
 		}
-		
-		return true;
 	}
 
 	@Override
