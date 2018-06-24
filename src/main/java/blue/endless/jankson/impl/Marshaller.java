@@ -70,6 +70,7 @@ public class Marshaller {
 		register(String.class, (it)->(it instanceof String) ? (String)it : it.toString());
 		
 		register(Byte.class, (it)->(it instanceof Number) ? ((Number)it).byteValue() : null);
+		register(Character.class, (it)->(it instanceof Number) ? (char)((Number)it).shortValue() : it.toString().charAt(0));
 		register(Short.class, (it)->(it instanceof Number) ? ((Number)it).shortValue() : null);
 		register(Integer.class, (it)->(it instanceof Number) ? ((Number)it).intValue() : null);
 		register(Long.class, (it)->(it instanceof Number) ? ((Number)it).longValue() : null);
@@ -79,6 +80,7 @@ public class Marshaller {
 		
 		register(Void.TYPE, (it)->null);
 		register(Byte.TYPE, (it)->(it instanceof Number) ? ((Number)it).byteValue() : null);
+		register(Character.TYPE, (it)->(it instanceof Number) ? (char)((Number)it).shortValue() : it.toString().charAt(0));
 		register(Short.TYPE, (it)->(it instanceof Number) ? ((Number)it).shortValue() : null);
 		register(Integer.TYPE, (it)->(it instanceof Number) ? ((Number)it).intValue() : null);
 		register(Long.TYPE, (it)->(it instanceof Number) ? ((Number)it).longValue() : null);

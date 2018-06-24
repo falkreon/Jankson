@@ -101,12 +101,19 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 		return elem;
 	}
 	
+	/** May return null if the existing object can't be marshalled to elem's class */
 	@SuppressWarnings("unchecked")
-	@Nonnull
+	@Nullable
 	public <T> T putDefault(@Nonnull String key, @Nonnull T elem, @Nullable String comment) {
+		return (T) putDefault(key, elem, elem.getClass(), comment);
+	}
+	
+	/** May return null if the existing object can't be marshalled to the target class */
+	@Nullable
+	public <T> T putDefault(@Nonnull String key, @Nonnull T elem, Class<? extends T> clazz, @Nullable String comment) {
 		for(Entry entry : entries) {
 			if (entry.key.equalsIgnoreCase(key)) {
-				return (T) marshaller.marshall(elem.getClass(), entry.value);
+				return (T) marshaller.marshall(clazz, entry.value);
 			}
 		}
 		
