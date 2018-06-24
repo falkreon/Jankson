@@ -49,7 +49,17 @@ public class StringParserContext implements ParserContext<JsonPrimitive> {
 				return true;
 			}
 			
-			builder.append((char)codePoint);
+			if (codePoint>0xD800) {
+				builder.append((char)codePoint);
+			} else {
+				//Construct a high and low surrogate pair for this code point
+				//TODO: Finish implementing
+				int highSurrogate = codePoint - 0x10000;
+				
+				builder.append((char)codePoint);
+			}
+			
+			
 			if (codePoint=='\\') escape=true;
 			
 		}

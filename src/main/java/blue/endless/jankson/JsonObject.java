@@ -84,10 +84,10 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 		return null;
 	}
 	
-	public void putDefault(@Nonnull String key, @Nonnull JsonElement elem, String comment) {
+	public JsonElement putDefault(@Nonnull String key, @Nonnull JsonElement elem, String comment) {
 		for(Entry entry : entries) {
 			if (entry.key.equalsIgnoreCase(key)) {
-				return;
+				return entry.value;
 			}
 		}
 		
@@ -97,12 +97,14 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 		entry.value = elem;
 		entry.comment = comment;
 		entries.add(entry);
+		return elem;
 	}
 	
-	public void putDefault(@Nonnull String key, @Nonnull Object elem, String comment) {
+	@SuppressWarnings("unchecked")
+	public <T> T putDefault(@Nonnull String key, @Nonnull T elem, @Nullable String comment) {
 		for(Entry entry : entries) {
 			if (entry.key.equalsIgnoreCase(key)) {
-				return;
+				return (T) marshaller.marshall(elem.getClass(), entry.value);
 			}
 		}
 		
@@ -113,6 +115,7 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 		if (entry.value==null) entry.value = JsonNull.INSTANCE;
 		entry.comment = comment;
 		entries.add(entry);
+		return elem;
 	}
 	
 	/**

@@ -343,6 +343,36 @@ public class BasicTests {
 	
 	@Test
 	public void preventMangledEmoji() {
+		/*
+		String[] elements = {
+			"\uD83C\uDF29", //lightningbolt
+			"\uD83D\uDD25", //:fire:
+			"\u2668",       //:hotsprings:
+			"\uD83C\uDF0A", // :wave:
+			"\uD83D\uDC80", //starve
+			"\uD83C\uDF35", //cactus
+			"\u2BEF️", //fall
+			"\uD83D\uDCA8", //flyIntoWall
+			"\u2734", //*
+			"\uD83D\uDC7B", //👻
+			"✨ ⚚", //magic
+	        "indirectMagic" to "✨ ⚚",
+	        "wither" to "\uD83D\uDD71", //🕱
+	        "anvil" to "",
+	        "fallingBlock" to "",
+	        "dragonBreath" to "\uD83D\uDC32", //🐲
+	        "fireworks" to "\uD83C\uDF86", //🎆
+	
+	        "mob" to "\uD83D\uDC80", //💀
+	        "player" to "\uD83D\uDDE1", //🗡
+	        "arrow" to "\uD83C\uDFF9", //🏹
+	        "thrown" to "彡°",
+	        "thorns" to "\uD83C\uDF39", //🌹
+	        "explosion" to "\uD83D\uDCA3 \uD83D\uDCA5", //💣 💥
+	        "explosion.player" to "\uD83D\uDCA3 \uD83D\uDCA5" //💣 💥
+		}*/
+		
+		
 		try {
 			JsonObject subject = jankson.load("{ \"\uE120\": true }");
 			String serialized = subject.toJson(false, false);

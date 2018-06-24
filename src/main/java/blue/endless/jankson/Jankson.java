@@ -134,6 +134,7 @@ public class Jankson {
 	}
 	
 	public JsonObject load(InputStream in) throws IOException, SyntaxError {
+		withheldCodePoint = -1;
 		root = null;
 		
 		push(new ObjectParserContext(), (it)->{
@@ -153,14 +154,6 @@ public class Jankson {
 			} else {
 				int inByte = getCodePoint(in);
 				if (inByte==-1) {
-					if ((inByte & 0b1111_0000) == 0b1111_0000) {
-						int codePoint = inByte & 0b111;
-						codePoint <<= 3;
-						inByte = in.read();
-					}
-					
-					
-					
 					//Walk up the stack sending EOF to things until either an error occurs or the stack completes
 					while(!contextStack.isEmpty()) {
 						ParserFrame<?> frame = contextStack.pop();
