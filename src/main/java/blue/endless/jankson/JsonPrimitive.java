@@ -70,10 +70,10 @@ public class JsonPrimitive extends JsonElement {
 	@Override
 	public String toJson(boolean comments, boolean newlines) {
 		if (value==null) return "null";
-		if (value instanceof String) {
-			return '\"'+(String)value+'\"';
+		if (value instanceof Number) {
+			return value.toString();
 		}
-		return value.toString();
+		return '\"'+(String)value+'\"';
 	}
 	
 	//IMPLEMENTATION for Cloneable

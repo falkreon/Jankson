@@ -223,7 +223,8 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 			} else if (entry.value instanceof JsonArray) {
 				builder.append(((JsonArray)entry.value).toJson(comments, newlines, depth+1));
 			} else {
-				builder.append(entry.value.toString());
+				builder.append(entry.value.toJson(comments, newlines));
+				//builder.append(entry.value.toString());
 			}
 			
 			if (i<entries.size()-1) {
