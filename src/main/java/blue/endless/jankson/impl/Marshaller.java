@@ -149,7 +149,16 @@ public class Marshaller {
 			
 		} else if (elem instanceof JsonArray) {
 			if (clazz.isPrimitive()) return null;
-			
+			if (clazz.isArray()) {
+				Class<?> componentType = clazz.getComponentType();
+				JsonArray array = (JsonArray)elem;
+				
+				T result = (T) Array.newInstance(componentType, array.size());
+				for(int i=0; i<array.size(); i++) {
+					Array.set(result, i, marshall(componentType, array.get(i)));
+				}
+				return result;
+			}
 		}
 		
 		return null;

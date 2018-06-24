@@ -327,6 +327,19 @@ public class BasicTests {
 		}
 	}
 	
+	@Test
+	public void testArrayGet() {
+		try {
+			JsonObject subject = jankson.load("{ a: [1, 2, 3, 4] }");
+			int[] maybe = subject.get(int[].class, "a");
+			Assert.assertNotNull(maybe);
+			Assert.assertArrayEquals(new int[] {1,2,3,4}, maybe);
+			
+		} catch (SyntaxError ex) {
+			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+		}
+	}
+	
 	/*
 	@Test
 	public void testBaseDeserialization() {
