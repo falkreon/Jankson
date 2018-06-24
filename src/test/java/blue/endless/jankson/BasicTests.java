@@ -297,6 +297,36 @@ public class BasicTests {
 		}
 	}
 	
+	@Test
+	public void testDiffAgainstDefaults() {
+		try {
+			/*
+			 * A number of specific behaviors are verified here:
+			 *  - 'a' is present as a default but not present in the base object. This key is ignored.
+			 *  - 'b' is not customized in the base object. This key is ignored.
+			 *  - 'c' is customized in the base object. Delta records the customization.
+			 *  - 'd' is itself an object, so we do a deep comparison:
+			 *    - 'd.e' is not customized. This key is ignored.
+			 *    - 'd.f' is customized. This key is recorded, and since the resulting object isn't empty, we know the
+			 *            outer key was also customized, so we record all of this.
+			 *  - 'g' is a list, and identical to the default. This key is ignored.
+			 *  - 'h' is a list, but its value has been customized. Even though the lists share some elements, the
+			 *        entire list is represented in the output. This test is effectively a promise to shallow-diff lists
+			 *  - 'i' is an object, so it receives a deep comparison. However, it is found to be identical, and so its key is ignored.
+			 */
+			
+			JsonObject defaultObj = jankson.load("{ a: 'a', b: 'b', c: 'c', d: { e: 'e', f: 'f' }, g: [1, 2], h: [1, 2], i: { j: 'j' } }");
+			JsonObject baseObj = jankson.load("{ b: 'b', c: 'test', d: { e: 'e', f: 'test' }, g: [1, 2], h: [2, 3], i: { j: 'j' } }");
+			String expected = "{ \"c\": \"test\", \"d\": { \"f\": \"test\" }, \"h\": [ 2, 3 ] }";
+			
+			String actual = baseObj.getDelta(defaultObj).toJson();
+			Assert.assertEquals(expected, actual);
+			
+		} catch (SyntaxError ex) {
+			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+		}
+	}
+	
 	/*
 	@Test
 	public void testBaseDeserialization() {

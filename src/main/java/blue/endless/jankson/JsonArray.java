@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -149,7 +150,7 @@ public class JsonArray extends JsonElement implements Collection<JsonElement>, I
 			Entry ae = a.get(i);
 			Entry be = b.get(i);
 			if (!ae.value.equals(be.value)) return false;
-			if (!ae.comment.equals(be.comment)) return false;
+			if (!Objects.equals(ae.comment, be.comment)) return false;
 		}
 		
 		return true;

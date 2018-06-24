@@ -99,6 +99,66 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 		entries.add(entry);
 	}
 	
+	public void putDefault(@Nonnull String key, @Nonnull Object elem, String comment) {
+		for(Entry entry : entries) {
+			if (entry.key.equalsIgnoreCase(key)) {
+				return;
+			}
+		}
+		
+		//If we reached here, there's no existing mapping, so make one.
+		Entry entry = new Entry();
+		entry.key = key;
+		entry.value = marshaller.serialize(elem);
+		if (entry.value==null) entry.value = JsonNull.INSTANCE;
+		entry.comment = comment;
+		entries.add(entry);
+	}
+	
+	/**
+	 * Gets a minimal set of key-value-comment settings which, if added to the supplied JsonObject, would produce this
+	 * JsonObject. See {@link blue.endless.jankson.BasicTests#testDiffAgainstDefaults()} for more details on this comparison.
+	 * 
+	 * <ul>
+	 *   <li>If a key is present in the default and not in the object, it's skipped
+	 *   <li>If a key is an object, a deep (recursive) comparison occurs. Comments are ignored in this comparison.
+	 *   <li>All other types, including lists, receive a shallow comparison of its value. The comment is ignored in this comparison.
+	 *   <li>Whether deep or shallow, if the key is found to be identical in value to its default, it is skipped.
+	 *   <li>If the key is found to be different than its default, the key, value, and comment are represented in the
+	 *       output.
+	 * </ul>
+	 */
+	@Nonnull
+	public JsonObject getDelta(@Nonnull JsonObject defaults) {
+		JsonObject result = new JsonObject();
+		for(Entry entry : entries) {
+			String key = entry.key;
+			JsonElement defaultValue = defaults.get(key);
+			if (defaultValue==null) {
+				result.put(entry.key, entry.value, entry.comment);
+				continue;
+			}
+			
+			if (entry.value instanceof JsonObject) {
+				if (defaultValue instanceof JsonObject) {
+					JsonObject subDelta = ((JsonObject)entry.value).getDelta((JsonObject)defaultValue);
+					if (subDelta.isEmpty()) {
+						continue;
+					} else {
+						result.put(entry.key, subDelta, entry.comment);
+						continue;
+					}
+				}
+			}
+			
+			if (entry.value.equals(defaultValue)) continue;
+			
+			result.put(entry.key, entry.value, entry.comment);
+		}
+		
+		return result;
+	}
+	
 	/**
 	 * Returns the comment "attached to" a given key-value mapping, which is to say, the comment appearing immediately
 	 * before it or the single-line comment to the right of it.

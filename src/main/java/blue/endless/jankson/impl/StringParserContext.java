@@ -40,6 +40,7 @@ public class StringParserContext implements ParserContext<JsonPrimitive> {
 	@Override
 	public boolean consume(int codePoint, Jankson loader) {
 		if (escape) {
+			//TODO: Support additional escapes like \t and \n
 			builder.append((char)codePoint);
 			escape = false;
 		} else {
