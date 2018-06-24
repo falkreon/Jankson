@@ -88,6 +88,7 @@ public class Marshaller {
 		
 		
 		registerSerializer(Void.class, (it)->JsonNull.INSTANCE);
+		registerSerializer(Character.class, (it)->new JsonPrimitive(""+it));
 		registerSerializer(String.class, JsonPrimitive::new);
 		registerSerializer(Byte.class, (it)->new JsonPrimitive(Long.valueOf(it)));
 		registerSerializer(Short.class, (it)->new JsonPrimitive(Long.valueOf(it)));
@@ -98,6 +99,7 @@ public class Marshaller {
 		registerSerializer(Boolean.class, JsonPrimitive::new);
 		
 		registerSerializer(Void.TYPE, (it)->JsonNull.INSTANCE);
+		registerSerializer(Character.TYPE, (it)->new JsonPrimitive(""+it));
 		registerSerializer(Byte.TYPE, (it)->new JsonPrimitive(Long.valueOf(it)));
 		registerSerializer(Short.TYPE, (it)->new JsonPrimitive(Long.valueOf(it)));
 		registerSerializer(Integer.TYPE, (it)->new JsonPrimitive(Long.valueOf(it)));
