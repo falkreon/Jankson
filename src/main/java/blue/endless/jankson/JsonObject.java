@@ -84,7 +84,8 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 		return null;
 	}
 	
-	public JsonElement putDefault(@Nonnull String key, @Nonnull JsonElement elem, String comment) {
+	@Nonnull
+	public JsonElement putDefault(@Nonnull String key, @Nonnull JsonElement elem, @Nullable String comment) {
 		for(Entry entry : entries) {
 			if (entry.key.equalsIgnoreCase(key)) {
 				return entry.value;
@@ -101,6 +102,7 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 	}
 	
 	@SuppressWarnings("unchecked")
+	@Nonnull
 	public <T> T putDefault(@Nonnull String key, @Nonnull T elem, @Nullable String comment) {
 		for(Entry entry : entries) {
 			if (entry.key.equalsIgnoreCase(key)) {
