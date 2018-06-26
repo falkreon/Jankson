@@ -147,6 +147,9 @@ public class Marshaller {
 		} else if (elem instanceof JsonObject) {
 			if (clazz.isPrimitive()) return null;
 			
+			JsonObject obj = (JsonObject) elem;
+			obj.setMarshaller(this);
+
 			if (typeAdapters.containsKey(clazz)) {
 				return (T) typeAdapters.get(clazz).apply((JsonObject) elem);
 			}
