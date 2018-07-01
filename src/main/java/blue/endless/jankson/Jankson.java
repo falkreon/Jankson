@@ -32,6 +32,7 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -266,6 +267,11 @@ public class Jankson {
 		 */
 		public <T> Builder registerPrimitiveTypeAdapter(Class<T> clazz, Function<Object, T> adapter) {
 			marshaller.register(clazz, adapter);
+			return this;
+		}
+		
+		public <T> Builder registerSerializer(Class<T> clazz, BiFunction<T, Marshaller, JsonElement> serializer) {
+			marshaller.registerSerializer(clazz, serializer);
 			return this;
 		}
 		

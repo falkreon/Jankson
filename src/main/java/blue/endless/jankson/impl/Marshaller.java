@@ -30,6 +30,7 @@ import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import javax.annotation.Nullable;
@@ -49,7 +50,7 @@ public class Marshaller {
 	private Map<Class<?>, Function<Object,?>> primitiveMarshallers = new HashMap<>();
 	private Map<Class<?>, Function<JsonObject,?>> typeAdapters = new HashMap<>();
 	
-	private Map<Class<?>, Function<Object,JsonElement>> serializers = new HashMap<>();
+	private Map<Class<?>, BiFunction<Object, Marshaller, JsonElement>> serializers = new HashMap<>();
 	
 	public <T> void register(Class<T> clazz, Function<Object, T> marshaller) {
 		primitiveMarshallers.put(clazz, marshaller);
@@ -61,7 +62,12 @@ public class Marshaller {
 	
 	@SuppressWarnings("unchecked")
 	public <T> void registerSerializer(Class<T> clazz, Function<T, JsonElement> serializer) {
-		serializers.put(clazz, (Function<Object, JsonElement>) serializer);
+		serializers.put(clazz, (it, marshaller)->serializer.apply((T) it));
+	}
+	
+	@SuppressWarnings("unchecked")
+	public <T> void registerSerializer(Class<T> clazz, BiFunction<T, Marshaller, JsonElement> serializer) {
+		serializers.put(clazz, (BiFunction<Object, Marshaller, JsonElement>) serializer);
 	}
 	
 	public Marshaller() {
@@ -175,14 +181,20 @@ public class Marshaller {
 		if (obj==null) return JsonNull.INSTANCE;
 		
 		//Prefer exact match
-		Function<Object, JsonElement> serializer = serializers.get(obj.getClass());
+		BiFunction<Object, Marshaller, JsonElement> serializer = serializers.get(obj.getClass());
 		if (serializer!=null) {
-			return serializer.apply(obj);
+			JsonElement result = serializer.apply(obj, this);
+			if (result instanceof JsonObject) ((JsonObject)result).setMarshaller(this);
+			if (result instanceof JsonArray) ((JsonArray)result).setMarshaller(this);
+			return result;
 		} else {
 			//Detailed match
-			for(Map.Entry<Class<?>, Function<Object, JsonElement>> entry : serializers.entrySet()) {
+			for(Map.Entry<Class<?>, BiFunction<Object, Marshaller, JsonElement>> entry : serializers.entrySet()) {
 				if (entry.getKey().isAssignableFrom(obj.getClass())) {
-					return entry.getValue().apply(obj);
+					JsonElement result = entry.getValue().apply(obj, this);
+					if (result instanceof JsonObject) ((JsonObject)result).setMarshaller(this);
+					if (result instanceof JsonArray) ((JsonArray)result).setMarshaller(this);
+					return result;
 				}
 			}
 		}
