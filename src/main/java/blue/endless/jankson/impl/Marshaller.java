@@ -174,8 +174,18 @@ public class Marshaller {
 	public JsonElement serialize(Object obj) {
 		if (obj==null) return JsonNull.INSTANCE;
 		
+		//Prefer exact match
 		Function<Object, JsonElement> serializer = serializers.get(obj.getClass());
-		if (serializer!=null) return serializer.apply(obj);
+		if (serializer!=null) {
+			return serializer.apply(obj);
+		} else {
+			//Detailed match
+			for(Map.Entry<Class<?>, Function<Object, JsonElement>> entry : serializers.entrySet()) {
+				if (entry.getKey().isAssignableFrom(obj.getClass())) {
+					return entry.getValue().apply(obj);
+				}
+			}
+		}
 		
 		if (obj instanceof Enum) {
 			return new JsonPrimitive(((Enum<?>)obj).name());
@@ -185,7 +195,7 @@ public class Marshaller {
 			
 			JsonArray array = new JsonArray();
 			array.setMarshaller(this);
-			Class<?> component = obj.getClass().getComponentType();
+			//Class<?> component = obj.getClass().getComponentType();
 			for(int i=0; i<Array.getLength(obj); i++) {
 				Object elem = Array.get(obj, i);
 				JsonElement parsed = serialize(elem);
@@ -261,73 +271,4 @@ public class Marshaller {
 		
 		return result;
 	}
-	
-	/*
-	private static void deserializeInto(JsonObject json, Object outer, Field field) {
-		field.setAccessible(true);
-		
-		//Grab the object and try to initialize it if it doesn't exist
-		Object obj = null;
-		try {
-			obj = field.get(outer);
-			
-			if (obj==null) {
-				try {
-					obj =  field.getClass().newInstance();
-				} catch (InstantiationException | IllegalAccessException e) {}
-			}
-		} catch (IllegalArgumentException | IllegalAccessException ex) {}
-		if (obj==null) return; //Also nothing we can do.
-		
-		
-		for(String s : json.keySet()) {
-			Field found = null;
-			try {
-				found = field.get(obj).getClass().getDeclaredField(s);
-			} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException ex) {}
-			if (found==null) {
-				try {
-					found = obj.getClass().getField(s);
-				} catch (NoSuchFieldException | SecurityException e) {}
-			}
-			if (found!=null) {
-				found.setAccessible(true);
-				JsonElement elem = json.get(s);
-				if (elem instanceof JsonObject) {
-					if (found.getType().isPrimitive()) break; //Can't become the object we need it to be, so bail.
-					//Recurse!
-					try {
-						Object inner = found.get(obj);
-						if (inner==null) {
-							inner = found.getType().newInstance();
-							found.set(obj, inner);
-						}
-						deserializeInto((JsonObject)elem, inner, found);
-					} catch (IllegalArgumentException | IllegalAccessException | InstantiationException e) {}
-				} else if (elem instanceof JsonArray) {
-					if (found.getType().isPrimitive()) break; //Can't become the object we need it to be, so bail.
-					try {
-						Object inner = found.get(obj);
-						if (inner==null) {
-							inner = found.getType().newInstance();
-							found.set(obj, inner);
-						}
-						deserializeArray((JsonArray)elem, found, obj, inner);
-					
-					} catch (IllegalArgumentException | IllegalAccessException | InstantiationException e) {}
-				} else {
-					try {
-						found.set(obj, Marshaller.marshall(found.getType(), elem));
-					} catch (Throwable t) {}
-				}
-			}
-		}
-	}
-	
-	private static <T> void deserializeArray(JsonArray json, Field field, Object outer, T obj) {
-		if (obj.getClass().isArray()) {
-			Class<?> elemType = obj.getClass().getComponentType();
-			int len = Array.getLength(obj);
-		}
-	}*/
 }

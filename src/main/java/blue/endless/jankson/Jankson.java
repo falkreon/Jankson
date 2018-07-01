@@ -186,6 +186,14 @@ public class Jankson {
 		return fromJson(obj, clazz);
 	}
 	
+	public <T> JsonElement toJson(T t) {
+		return marshaller.serialize(t);
+	}
+	
+	public <T> JsonElement toJson(T t, Marshaller alternateMarshaller) {
+		return alternateMarshaller.serialize(t);
+	}
+	
 	private void processCodePoint(int codePoint) throws SyntaxError {
 		ParserFrame<?> frame = contextStack.peek();
 		if (frame==null) throw new IllegalStateException("Parser problem! The ParserContext stack underflowed! (line "+line+", col "+column+")");
