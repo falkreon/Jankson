@@ -166,6 +166,10 @@ public class JsonArray extends JsonElement implements Collection<JsonElement>, I
 		this.marshaller = marshaller;
 	}
 	
+	public Marshaller getMarshaller() {
+		return this.marshaller;
+	}
+	
 	//IMPLEMENTATION for Cloneable
 	@Override
 	public JsonArray clone() {

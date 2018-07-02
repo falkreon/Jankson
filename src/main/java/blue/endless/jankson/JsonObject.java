@@ -295,6 +295,10 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 		this.marshaller = marshaller;
 	}
 	
+	public Marshaller getMarshaller() {
+		return this.marshaller;
+	}
+	
 	@Nullable
 	public <E> E get(@Nonnull Class<E> clazz, @Nonnull String key) {
 		if (key.isEmpty()) throw new IllegalArgumentException("Cannot get from empty key");
