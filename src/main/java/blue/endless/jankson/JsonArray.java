@@ -156,6 +156,11 @@ public class JsonArray extends JsonElement implements Collection<JsonElement>, I
 		return true;
 	}
 	
+	@Override
+	public int hashCode() {
+		return entries.hashCode();
+	}
+	
 	@Nullable
 	public <E> E get(@Nonnull Class<E> clazz, int index) {
 		JsonElement elem = get(index);
@@ -314,5 +319,18 @@ public class JsonArray extends JsonElement implements Collection<JsonElement>, I
 	private static class Entry {
 		String comment;
 		JsonElement value;
+		
+		@Override
+		public boolean equals(Object other) {
+			if (!(other instanceof Entry)) return false;
+			Entry o = (Entry)other;
+			return Objects.equals(comment, o.comment) &&
+					Objects.equals(value, o.value);
+		}
+		
+		@Override
+		public int hashCode() {
+			return Objects.hash(comment, value);
+		}
 	}
 }

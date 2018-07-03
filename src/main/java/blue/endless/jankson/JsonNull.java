@@ -25,7 +25,7 @@
 package blue.endless.jankson;
 
 public class JsonNull extends JsonElement {
-	public static JsonNull INSTANCE = new JsonNull();
+	public static final JsonNull INSTANCE = new JsonNull();
 	private JsonNull() {}
 	
 	public String toString() {
