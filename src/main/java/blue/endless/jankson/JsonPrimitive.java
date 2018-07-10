@@ -67,6 +67,19 @@ public class JsonPrimitive extends JsonElement {
 		return value.hashCode();
 	}
 	
+	public static String escape(String s) {
+		String result = s;
+		result = result.replaceAll("\u0008", "\\b");
+		result = result.replaceAll("\\f", "\\f");
+		result = result.replaceAll("\\n", "\\n");
+		result = result.replaceAll("\\r", "\\r");
+		result = result.replaceAll("\\t", "\\t");
+		result = result.replaceAll("\\\"", "\\\"");
+		result = result.replaceAll("\\\\", "\\\\");
+		
+		return result;
+	}
+	
 	@Override
 	public String toJson(boolean comments, boolean newlines) {
 		if (value==null) return "null";
@@ -74,7 +87,8 @@ public class JsonPrimitive extends JsonElement {
 			return value.toString();
 		}
 		if (value instanceof Boolean) return value.toString();
-		return '\"'+value.toString()+'\"';
+		
+		return '\"'+escape(value.toString())+'\"';
 	}
 	
 	//IMPLEMENTATION for Cloneable
