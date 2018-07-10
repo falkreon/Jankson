@@ -39,27 +39,61 @@ public class StringParserContext implements ParserContext<JsonPrimitive> {
 
 	@Override
 	public boolean consume(int codePoint, Jankson loader) {
+		if (codePoint=='\n') { //At any point, if we've reached the end of the line without an end-quote, terminate to limit the damage.
+			complete = true;
+			return false;
+		}
+		
 		if (escape) {
-			//TODO: Support additional escapes like \t and \n
-			builder.append((char)codePoint);
 			escape = false;
+			switch(codePoint) {
 			
-			return true;
+			
+			case 'b':
+				builder.append('\b');
+				return true;
+			case 'f':
+				builder.append('\f');
+				return true;
+			case 'n':
+				builder.append('\n');
+				return true;
+			case 'r':
+				builder.append('\r');
+				return true;
+			case 't':
+				builder.append('\t');
+				return true;
+			case '"':
+				builder.append('"');
+				return true;
+			case '\'':
+				builder.append('\'');
+				return true;
+			case '\\':
+				builder.append('\\');
+				return true;
+			default:
+				builder.append((char)codePoint);
+				return true;
+			}
 		} else {
 			if (codePoint==quote) {
 				complete = true;
 				return true;
 			}
 			
+			if (codePoint=='\\') {
+				escape=true;
+				return true;
+			}
+			
 			if (codePoint<0xFFFF) {
 				builder.append((char)codePoint);
-				if (codePoint=='\\') escape=true;
-				
 				return true;
-			
 			} else {
 				//Construct a high and low surrogate pair for this code point
-				//TODO: Finish implementing
+				
 				int temp = codePoint - 0x10000;
 				int highSurrogate = (temp >>> 10) + 0xD800;
 				int lowSurrogate = (temp & 0b11_1111_1111) + 0xDC00;

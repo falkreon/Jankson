@@ -377,8 +377,18 @@ public class BasicTests {
 		} catch (SyntaxError ex) {
 			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
-		
-		
+	}
+	
+	@Test
+	public void recognizeStringEscapes() {
+		String subject = "{ foo: 'a\\tb\\nc\\\\'}";
+		String expected = "a\tb\nc\\";
+		try {
+			JsonObject unpacked = jankson.load(subject);
+			Assert.assertEquals(expected, unpacked.get(String.class, "foo"));
+		} catch (SyntaxError ex) {
+			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+		}
 	}
 	/*
 	@Test
