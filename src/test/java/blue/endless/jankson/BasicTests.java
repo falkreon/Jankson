@@ -27,6 +27,7 @@ package blue.endless.jankson;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.regex.Matcher;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -389,6 +390,19 @@ public class BasicTests {
 		} catch (SyntaxError ex) {
 			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
+	}
+	
+	@Test
+	public void properlyEscapeStrings() {
+		System.out.println("+"+Matcher.quoteReplacement("\n")+"+");
+		
+		String inputString = "The\nquick\tbrown\ffox\bjumps\"over\\the\rlazy dog.";
+		String expected = "{ \"foo\": \"The\\nquick\\tbrown\\ffox\\bjumps\\\"over\\\\the\\rlazy dog.\" }";
+		JsonObject subject = new JsonObject();
+		subject.put("foo", new JsonPrimitive(inputString));
+		String actual = subject.toJson(false, false);
+		
+		Assert.assertEquals(expected, actual);
 	}
 	/*
 	@Test

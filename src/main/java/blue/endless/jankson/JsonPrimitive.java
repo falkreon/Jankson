@@ -25,6 +25,7 @@
 package blue.endless.jankson;
 
 import java.util.Objects;
+import java.util.regex.Matcher;
 
 import javax.annotation.Nonnull;
 
@@ -68,16 +69,38 @@ public class JsonPrimitive extends JsonElement {
 	}
 	
 	public static String escape(String s) {
-		String result = s;
-		result = result.replaceAll("\u0008", "\\b");
-		result = result.replaceAll("\\f", "\\f");
-		result = result.replaceAll("\\n", "\\n");
-		result = result.replaceAll("\\r", "\\r");
-		result = result.replaceAll("\\t", "\\t");
-		result = result.replaceAll("\\\"", "\\\"");
-		result = result.replaceAll("\\\\", "\\\\");
+		StringBuilder result = new StringBuilder();
+		for(int i=0; i<s.length(); i++) {
+			char ch = s.charAt(i);
+			
+			switch(ch) {
+			case '\u0008':
+				result.append("\\b");
+				break;
+			case '\f':
+				result.append("\\f");
+				break;
+			case '\n':
+				result.append("\\n");
+				break;
+			case '\r':
+				result.append("\\r");
+				break;
+			case '\t':
+				result.append("\\t");
+				break;
+			case '"':
+				result.append("\\\"");
+				break;
+			case '\\':
+				result.append("\\\\");
+				break;
+			default:
+				result.append(ch);
+			}
+		}
 		
-		return result;
+		return result.toString();
 	}
 	
 	@Override
