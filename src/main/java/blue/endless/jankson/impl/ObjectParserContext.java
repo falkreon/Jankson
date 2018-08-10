@@ -119,7 +119,7 @@ public class ObjectParserContext implements ParserContext<JsonObject> {
 					});
 					return true;
 				default:
-					if (Character.isDigit(codePoint)) {
+					if (Character.isDigit(codePoint) || codePoint=='-' || codePoint=='+') {
 						loader.push(new NumberParserContext(codePoint), (it)->{
 							result.put(key, it, comment);
 							key = null;

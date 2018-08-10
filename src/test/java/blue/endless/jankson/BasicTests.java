@@ -440,4 +440,21 @@ public class BasicTests {
 			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 	}*/
+	
+	@Test
+	public void testNegativeNumbers() {
+		String subject = "{ 'foo': -1, 'bar': [ -1, -3 ] }";
+		
+		try {
+			JsonObject parsed = jankson.load(subject);
+			
+			Assert.assertEquals(Integer.valueOf(-1), parsed.get(Integer.class, "foo"));
+			int[] array = parsed.get(int[].class, "bar");
+			Assert.assertArrayEquals(new int[] {-1, -3}, array);
+			
+		} catch (SyntaxError ex) {
+			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+		}
+		
+	}
 }

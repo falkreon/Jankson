@@ -79,7 +79,7 @@ public class ArrayParserContext implements ParserContext<JsonArray> {
 			});
 			return true;
 		default:
-			if (Character.isDigit(codePoint)) {
+			if (Character.isDigit(codePoint) || codePoint=='-' || codePoint=='+') {
 				loader.push(new NumberParserContext(codePoint), (it)->{
 					result.add(it, comment);
 					comment = null;
