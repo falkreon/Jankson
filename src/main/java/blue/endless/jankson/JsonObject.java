@@ -372,7 +372,7 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 					continue;
 				}
 			} else {
-				if (clazz.isAssignableFrom(elem.getClass())) {
+				if (elem != null && clazz.isAssignableFrom(elem.getClass())) {
 					return (E) elem;
 				} else {
 					E result = (E) fallback.clone();

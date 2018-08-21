@@ -394,8 +394,6 @@ public class BasicTests {
 	
 	@Test
 	public void properlyEscapeStrings() {
-		System.out.println("+"+Matcher.quoteReplacement("\n")+"+");
-		
 		String inputString = "The\nquick\tbrown\ffox\bjumps\"over\\the\rlazy dog.";
 		String expected = "{ \"foo\": \"The\\nquick\\tbrown\\ffox\\bjumps\\\"over\\\\the\\rlazy dog.\" }";
 		JsonObject subject = new JsonObject();
@@ -456,5 +454,13 @@ public class BasicTests {
 			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 		
+	}
+	
+	@Test
+	public void testAvoidRecursiveGetNPE() {
+		JsonObject subject = new JsonObject();
+		
+		subject.recursiveGetOrCreate(JsonArray.class, "some/random/path", new JsonArray(), "This is a test");
+		//Test failure is an NPE on the line above.
 	}
 }
