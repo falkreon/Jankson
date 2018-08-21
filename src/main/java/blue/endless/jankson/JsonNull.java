@@ -43,7 +43,7 @@ public class JsonNull extends JsonElement {
 	}
 	
 	@Override
-	public String toJson(boolean comments, boolean newlines) {
+	public String toJson(boolean comments, boolean newlines, int depth) {
 		return "null";
 	}
 	

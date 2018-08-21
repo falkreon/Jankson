@@ -64,10 +64,6 @@ public class JsonArray extends JsonElement implements Collection<JsonElement>, I
 	}
 	
 	@Override
-	public String toJson(boolean comments, boolean newlines) {
-		return toJson(comments, newlines, 0);
-	}
-	
 	public String toJson(boolean comments, boolean newlines, int depth) {
 		StringBuilder builder = new StringBuilder();
 		
@@ -96,7 +92,7 @@ public class JsonArray extends JsonElement implements Collection<JsonElement>, I
 				}
 			}
 			
-			builder.append(entry.value.toString());
+			builder.append(entry.value.toJson(comments, newlines, depth+1));
 			if (i<entries.size()-1) {
 				if (newlines) {
 					builder.append(",\n");

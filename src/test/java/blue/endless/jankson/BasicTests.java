@@ -266,7 +266,7 @@ public class BasicTests {
 	@Test
 	public void testSerializedComments() {
 		CommentedClass commented = new CommentedClass();
-		String serialized = Marshaller.getFallback().serialize(commented).toJson(true, false);
+		String serialized = Marshaller.getFallback().serialize(commented).toJson(true, false, 0);
 		Assert.assertEquals("{ /* This is a comment. */ \"foo\": \"what?\" }", serialized);
 	}
 	
@@ -461,6 +461,32 @@ public class BasicTests {
 		JsonObject subject = new JsonObject();
 		
 		subject.recursiveGetOrCreate(JsonArray.class, "some/random/path", new JsonArray(), "This is a test");
-		//Test failure is an NPE on the line above.
+		//Prior test failure is an NPE on the line above.
+	}
+	
+	@Test
+	public void testNoInlineArrays() {
+		JsonObject subject = new JsonObject();
+		JsonArray array = new JsonArray();
+		subject.put("array", array);
+		JsonObject nested = new JsonObject();
+		array.add(nested);
+		nested.put("foo", new JsonPrimitive("foo"), "pitiable");
+		nested.put("bar", new JsonPrimitive("bar"), "passable");
+		
+		String actual = subject.toJson(true, true, 0);
+		
+		String expected = "{ \n" + //This trailing space before the newline is dubious and may change without notice.
+				"	\"array\": [ \n" + 
+				"		{ \n" + 
+				"			/* pitiable */ \n" + 
+				"			\"foo\": \"foo\",\n" + 
+				"			/* passable */ \n" + 
+				"			\"bar\": \"bar\"\n" + 
+				"		}\n" + 
+				"	]\n" + 
+				"}";
+		
+		Assert.assertEquals(expected, actual);
 	}
 }

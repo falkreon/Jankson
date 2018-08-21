@@ -104,7 +104,7 @@ public class JsonPrimitive extends JsonElement {
 	}
 	
 	@Override
-	public String toJson(boolean comments, boolean newlines) {
+	public String toJson(boolean comments, boolean newlines, int depth) {
 		if (value==null) return "null";
 		if (value instanceof Number) {
 			return value.toString();

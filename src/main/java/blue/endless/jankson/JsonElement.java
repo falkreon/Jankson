@@ -28,7 +28,10 @@ package blue.endless.jankson;
 public abstract class JsonElement implements Cloneable {
 	public abstract JsonElement clone();
 	public String toJson() {
-		return toJson(false, false);
+		return toJson(false, false, 0);
 	}
-	public abstract String toJson(boolean comments, boolean newlines);
+	public String toJson(boolean comments, boolean newlines) {
+		return toJson(comments, newlines, 0);
+	}
+	public abstract String toJson(boolean comments, boolean newlines, int depth);
 }

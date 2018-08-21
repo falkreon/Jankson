@@ -196,10 +196,6 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 	}
 	
 	@Override
-	public String toJson(boolean comments, boolean newlines) {
-		return toJson(comments, newlines, 0);
-	}
-	
 	public String toJson(boolean comments, boolean newlines, int depth) {
 		StringBuilder builder = new StringBuilder();
 		builder.append("{ ");
@@ -235,8 +231,7 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 			} else if (entry.value instanceof JsonArray) {
 				builder.append(((JsonArray)entry.value).toJson(comments, newlines, depth+1));
 			} else {
-				builder.append(entry.value.toJson(comments, newlines));
-				//builder.append(entry.value.toString());
+				builder.append(entry.value.toJson(comments, newlines, depth+1));
 			}
 			
 			if (i<entries.size()-1) {
