@@ -30,3 +30,6 @@ build/
 .project
 .settings
 bin/
+
+# gradle
+!gradle-wrapper.jar
