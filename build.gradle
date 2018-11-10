@@ -18,6 +18,7 @@ buildscript {
 apply plugin: "java";
 apply plugin: "net.minecrell.licenser";
 apply plugin: "eclipse";
+apply plugin: "maven-publish";
 
 group = "blue.endless.jankson";
 archivesBaseName = "Jankson";
@@ -30,7 +31,38 @@ repositories {
 	jcenter()
 	mavenCentral()
 }
- 
+
+def versionSuffix = '-SNAPSHOT'
+if (System.env.BUILD_NUMBER) {
+	versionSuffix = ''
+	version = version+'-'+System.env.BUILD_NUMBER
+}
+
+publishing {
+	publications {
+		mavenPrimary(MavenPublication) {
+			from components.java;
+
+			groupId project.group;
+			artifactId project.name;
+			version project.version+versionSuffix;
+			artifact sourcesJar;
+		}
+	}
+}
+
+if (file("private.gradle").exists()) {
+	apply from: "private.gradle";
+}
+
+defaultTasks "clean", "build", "sourcesJar";
+
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+	classifier = "sources"
+	from sourceSets.main.allSource
+}
+
 dependencies {
 	testCompile "junit:junit:4.12";
 	
