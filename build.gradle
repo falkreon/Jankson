@@ -43,8 +43,8 @@ publishing {
 			from components.java;
 
 			groupId project.group;
-			artifactId project.name;
-			version version+versionSuffix;
+			artifactId "jankson";
+			version project.version+versionSuffix;
 			artifact sourcesJar;
 		}
 	}
