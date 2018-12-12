@@ -20,7 +20,7 @@ apply plugin: "net.minecrell.licenser";
 apply plugin: "eclipse";
 apply plugin: "maven-publish";
 
-group = "blue.endless.jankson";
+group = "blue.endless";
 archivesBaseName = "Jankson";
 version = "1.0.0";
 
@@ -34,8 +34,7 @@ repositories {
 
 def versionSuffix = '-SNAPSHOT'
 if (System.env.BUILD_NUMBER) {
-	versionSuffix = ''
-	version = version+'-'+System.env.BUILD_NUMBER
+	versionSuffix = '-'+System.env.BUILD_NUMBER;
 }
 
 publishing {
@@ -45,7 +44,7 @@ publishing {
 
 			groupId project.group;
 			artifactId project.name;
-			version project.version+versionSuffix;
+			version version+versionSuffix;
 			artifact sourcesJar;
 		}
 	}
