@@ -22,7 +22,7 @@ apply plugin: "maven-publish";
 
 group = "blue.endless.jankson";
 archivesBaseName = "Jankson";
-version = "0.0.4";
+version = "1.0.0";
 
 sourceCompatibility = 1.8;
 targetCompatibility = 1.8;
