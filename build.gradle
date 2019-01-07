@@ -46,6 +46,15 @@ publishing {
 			artifactId "jankson";
 			version project.version+versionSuffix;
 			artifact sourcesJar;
+
+			pom.withXml { //exclude jsr305 from dependencies
+				Node node = asNode()
+				node.dependencies.'*'.findAll() {
+					it.artifactId.text() == 'jsr305'
+				}.each() {
+					it.parent().remove(it)
+				}
+			}
 		}
 	}
 }
