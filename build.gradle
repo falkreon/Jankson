@@ -32,6 +32,11 @@ repositories {
 	mavenCentral()
 }
 
+configurations { provided }
+sourceSets {
+	main { compileClasspath += configurations.provided }
+}
+
 def versionSuffix = '-SNAPSHOT'
 if (System.env.BUILD_NUMBER) {
 	versionSuffix = '-'+System.env.BUILD_NUMBER;
@@ -46,15 +51,6 @@ publishing {
 			artifactId "jankson";
 			version project.version+versionSuffix;
 			artifact sourcesJar;
-
-			pom.withXml { //exclude jsr305 from dependencies
-				Node node = asNode()
-				node.dependencies.'*'.findAll() {
-					it.artifactId.text() == 'jsr305'
-				}.each() {
-					it.parent().remove(it)
-				}
-			}
 		}
 	}
 }
@@ -74,5 +70,5 @@ task sourcesJar(type: Jar, dependsOn: classes) {
 dependencies {
 	testCompile "junit:junit:4.12";
 	
-	compile group: "com.google.code.findbugs", name: "jsr305", version: "3.0.2";
+	provided group: "com.google.code.findbugs", name: "jsr305", version: "3.0.2";
 }
