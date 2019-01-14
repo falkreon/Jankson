@@ -27,6 +27,7 @@ package blue.endless.jankson.impl;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -41,6 +42,7 @@ import blue.endless.jankson.JsonElement;
 import blue.endless.jankson.JsonNull;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
+import blue.endless.jankson.magic.TypeMagic;
 
 public class Marshaller {
 	private static Marshaller INSTANCE = new Marshaller();
@@ -116,6 +118,12 @@ public class Marshaller {
 		registerSerializer(Double.TYPE, JsonPrimitive::new);
 		registerSerializer(Boolean.TYPE, JsonPrimitive::new);
 	}
+	/*
+	public <T> T marshall(ParameterizedType type, JsonElement Elem) {
+		
+		
+		return null;
+	}*/
 	
 	@SuppressWarnings("unchecked")
 	@Nullable
@@ -152,12 +160,23 @@ public class Marshaller {
 			}
 		} else if (elem instanceof JsonObject) {
 			if (clazz.isPrimitive()) return null;
+			if (JsonPrimitive.class.isAssignableFrom(clazz)) {
+				return null;
+			}
 			
 			JsonObject obj = (JsonObject) elem;
 			obj.setMarshaller(this);
 
 			if (typeAdapters.containsKey(clazz)) {
 				return (T) typeAdapters.get(clazz).apply((JsonObject) elem);
+			}
+			
+			try {
+				T result = TypeMagic.createAndCast(clazz);
+				POJODeserializer.unpackObject(result, obj);
+				return result;
+			} catch (Throwable t) {
+				
 			}
 			
 		} else if (elem instanceof JsonArray) {

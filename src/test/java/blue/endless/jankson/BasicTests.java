@@ -24,17 +24,20 @@
 
 package blue.endless.jankson;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.regex.Matcher;
 
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import blue.endless.jankson.impl.DeserializationException;
 import blue.endless.jankson.impl.Marshaller;
+import blue.endless.jankson.impl.POJODeserializer;
 import blue.endless.jankson.impl.SyntaxError;
+import blue.endless.jankson.magic.TypeMagic;
 
 public class BasicTests {
 	Jankson jankson;
@@ -489,4 +492,40 @@ public class BasicTests {
 		
 		Assert.assertEquals(expected, actual);
 	}
+	
+	private static class TestClass {
+		ArrayList<String> strings = new ArrayList<>();
+	}
+	
+	/*//IN-PROGRESS TYPE MAGIC
+	@Test
+	public void testPOJO() {
+		try {
+			JsonObject subject = jankson.load("{ 'strings': ['a', 'b', 'c']}");
+			TestClass testObject = new TestClass();
+			try {
+				Type annotatedType = testObject.getClass().getDeclaredFields()[0].getGenericType();
+				System.out.println("Class?: "+TypeMagic.classForType(annotatedType));
+				ArrayList<String> newInstance = TypeMagic.createAndCast(annotatedType);
+				System.out.println(newInstance);
+				
+				TestClass testClass2 = jankson.fromJson(subject, TestClass.class);
+				System.out.println("TestClass2: "+jankson.toJson(testClass2));
+				
+				POJODeserializer.unpackObject(testObject, subject);
+				System.out.println("Result: "+jankson.toJson(testObject));
+				
+				
+			} catch (DeserializationException e) {
+				
+				e.printStackTrace();
+				Assert.fail();
+			}
+			
+			
+			
+		} catch (SyntaxError ex) {
+			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+		}
+	}*/
 }
