@@ -25,9 +25,12 @@
 package blue.endless.jankson;
 
 import java.lang.reflect.Type;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Queue;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -494,38 +497,22 @@ public class BasicTests {
 	}
 	
 	private static class TestClass {
-		ArrayList<String> strings = new ArrayList<>();
+		private ArrayList<String> strings;
+		private Map<String, Character.UnicodeScript> scripts = new HashMap<>();
+		private Queue<String> queue = new ArrayDeque<>();
 	}
 	
-	/*//IN-PROGRESS TYPE MAGIC
+	//IN-PROGRESS TYPE MAGIC
 	@Test
 	public void testPOJO() {
 		try {
-			JsonObject subject = jankson.load("{ 'strings': ['a', 'b', 'c']}");
-			TestClass testObject = new TestClass();
-			try {
-				Type annotatedType = testObject.getClass().getDeclaredFields()[0].getGenericType();
-				System.out.println("Class?: "+TypeMagic.classForType(annotatedType));
-				ArrayList<String> newInstance = TypeMagic.createAndCast(annotatedType);
-				System.out.println(newInstance);
-				
-				TestClass testClass2 = jankson.fromJson(subject, TestClass.class);
-				System.out.println("TestClass2: "+jankson.toJson(testClass2));
-				
-				POJODeserializer.unpackObject(testObject, subject);
-				System.out.println("Result: "+jankson.toJson(testObject));
-				
-				
-			} catch (DeserializationException e) {
-				
-				e.printStackTrace();
-				Assert.fail();
-			}
+			JsonObject subject = jankson.load("{ 'strings': ['a', 'b', 'c'], 'scripts': { 'arabic':'ARABIC'}, 'queue': ['FUN']}");
+			TestClass object = jankson.fromJson(subject, TestClass.class);
 			
-			
+			System.out.println("Roundtripped TestClass instance: "+jankson.toJson(object));
 			
 		} catch (SyntaxError ex) {
 			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
-	}*/
+	}
 }

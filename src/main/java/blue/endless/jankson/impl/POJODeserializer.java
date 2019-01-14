@@ -27,15 +27,18 @@ package blue.endless.jankson.impl;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
+import javax.annotation.Nullable;
+
 import blue.endless.jankson.JsonArray;
 import blue.endless.jankson.JsonElement;
 import blue.endless.jankson.JsonObject;
+import blue.endless.jankson.JsonPrimitive;
 import blue.endless.jankson.magic.TypeMagic;
 
 public class POJODeserializer {
@@ -48,7 +51,7 @@ public class POJODeserializer {
 		
 		//Fill public and private fields declared in the target object's immediate class
 		for(Field f : target.getClass().getDeclaredFields()) {
-			System.out.println("Unpacking "+f.getName());
+			//System.out.println("Unpacking "+f.getName());
 			unpackField(target, f, work);
 		}
 		
@@ -82,6 +85,49 @@ public class POJODeserializer {
 		}
 	}
 	
+	
+	/** NOT WORKING YET, HIGHLY EXPERIMENTAL */
+	@SuppressWarnings("unchecked")
+	@Nullable
+	public static Object Unpack(Type t, JsonElement elem, Marshaller marshaller) {
+		Class<?> rawClass = TypeMagic.classForType(t);
+		if (rawClass.isPrimitive()) return null; //We can't unpack a primitive into an object of primitive type. Maybe in the future we can return a boxed type?
+		
+		if (elem==null) return null;
+		/*
+		if (type instanceof Class) {
+			try {
+				return marshaller.marshall((Class<?>) type, elem);
+			} catch (ClassCastException t) {
+				return null;
+			}
+		}
+		
+		if (type instanceof ParameterizedType) {
+			try {
+				Class<?> clazz = (Class<?>) TypeMagic.classForType(type);
+				
+				if (List.class.isAssignableFrom(clazz)) {
+					Object result = TypeMagic.createAndCast(type);
+					
+					try {
+						unpackList((List<Object>) result, type, elem, marshaller);
+						return result;
+					} catch (DeserializationException e) {
+						e.printStackTrace();
+						return result;
+					}
+				}
+				
+				return null;
+			} catch (ClassCastException t) {
+				return null;
+			}
+		}*/
+		
+		return null;
+	}
+	
 	@SuppressWarnings("unchecked")
 	public static boolean unpackFieldData(Object parent, Field field, JsonElement elem, Marshaller marshaller) throws Throwable {
 		if (elem==null) return true;
@@ -100,43 +146,37 @@ public class POJODeserializer {
 				field.set(parent, fieldValue);
 			}
 		}
-		
+		/*
 		//Is List?
 		if (List.class.isAssignableFrom(fieldClass)) {
-			//System.out.println("C");
-			//System.out.println("Unpacking List - "+fieldClass);
-			//System.out.println("Existing/new field value: "+field.get(parent));
-			//System.out.println("Annotations: "+field.getAnnotations());
-			//System.out.println("Generic Type: "+field.getGenericType().getTypeName());
 			Type listElementType = ((ParameterizedType)field.getGenericType()).getActualTypeArguments()[0];
-			//Class<?> listElementClass = TypeMagic.classForType(listElementType);
 			
 			unpackList((List<Object>)field.get(parent), listElementType, elem, marshaller);
 			
 			return true;
-		}
-		System.out.println("D");
+		}*/
+		
 		//Is Map?
 		if (Map.class.isAssignableFrom(fieldClass)) {
-			System.out.println("Unpacking List - "+fieldClass);
+			Type[] parameters = ((ParameterizedType)field.getGenericType()).getActualTypeArguments();
+			
+			unpackMap((Map<Object, Object>) field.get(parent), parameters[0], parameters[1], elem, marshaller);
+			
 			return true;
 		}
 		
-		//Is Set?
-		if (Set.class.isAssignableFrom(fieldClass)) {
-			System.out.println("Unpacking Set - "+fieldClass);
-			return true;
-		}
-		
-		if (Queue.class.isAssignableFrom(fieldClass)) {
-			System.out.println("Unpacking Queue - "+fieldClass);
+		if (Collection.class.isAssignableFrom(fieldClass)) {
+			Type elementType = ((ParameterizedType)field.getGenericType()).getActualTypeArguments()[0];
+			
+			unpackCollection((Collection<Object>)field.get(parent), elementType, elem, marshaller);
+			
 			return true;
 		}
 		
 		return false;
 	}
 	
-	
+	/*
 	public static void unpackList(List<Object> list, Type elementType, JsonElement elem, Marshaller marshaller) throws DeserializationException {
 		if (!(elem instanceof JsonArray)) throw new DeserializationException("Cannot deserialize a "+elem.getClass().getSimpleName()+" into a List - expected a JsonArray!");
 		
@@ -147,6 +187,32 @@ public class POJODeserializer {
 			Object o = marshaller.marshall(elementClass, arrayElem);
 			if (o!=null) list.add(o);
 		}
+	}*/
+	
+	public static void unpackMap(Map<Object, Object> map, Type keyType, Type valueType, JsonElement elem, Marshaller marshaller) throws DeserializationException {
+		if (!(elem instanceof JsonObject)) throw new DeserializationException("Cannot deserialize a "+elem.getClass().getSimpleName()+" into a Map - expected a JsonObject!");
 		
+		Class<?> keyClass = TypeMagic.classForType(keyType);
+		Class<?> valueClass = TypeMagic.classForType(valueType);
+		JsonObject object = (JsonObject)elem;
+		for(Map.Entry<String, JsonElement> entry : object.entrySet()) {
+			try {
+				Object k = marshaller.marshall(keyClass, new JsonPrimitive(entry.getKey())); //TODO: Type marshall instead
+				Object v = marshaller.marshall(valueClass, entry.getValue());                //TODO: "" ""
+				if (k!=null && v!=null) map.put(k, v);
+			} catch (Throwable t) {}
+		}
+	}
+	
+	public static void unpackCollection(Collection<Object> collection, Type elementType, JsonElement elem, Marshaller marshaller) throws DeserializationException {
+		if (!(elem instanceof JsonArray)) throw new DeserializationException("Cannot deserialize a "+elem.getClass().getSimpleName()+" into a Set - expected a JsonArray!");
+		
+		Class<?> elementClass = TypeMagic.classForType(elementType); //TODO: Marshall to Type instead
+		
+		JsonArray array = (JsonArray)elem;
+		for(JsonElement arrayElem : array) {
+			Object o = marshaller.marshall(elementClass, arrayElem);
+			if (o!=null) collection.add(o);
+		}
 	}
 }

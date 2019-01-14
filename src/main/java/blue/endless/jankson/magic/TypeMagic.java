@@ -25,23 +25,63 @@
 package blue.endless.jankson.magic;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.WildcardType;
 
 import javax.annotation.Nullable;
 
 public class TypeMagic {
+	
+	/**
+	 * This is a surprisingly intractable problem in Java: "Type" pretty much represents all possible states of reified
+	 * and unreified type information, and each kind of Type has different, mutually exclusive, and often unintended
+	 * ways of uncovering its (un-reified) class.
+	 * 
+	 * <p>Generally it's much safer to use this for the type from a *field* than a blind type from an argument.
+	 */
 	@Nullable
 	public static Class<?> classForType(Type t) {
-		String className = t.getTypeName();
-		int typeParamStart = className.indexOf('<');
-		if (typeParamStart>=0) {
-			className = className.substring(0, typeParamStart);
+		if (t instanceof Class) return (Class<?>) t;
+		
+		if (t instanceof ParameterizedType) {
+			Type subtype = ((ParameterizedType)t).getRawType();
+			
+			/**
+			 * Testing for kind of a unicorn case here. Because getRawType returns a Type, there's always the nasty
+			 * possibility we get a recursively parameterized type. Now, that's not supposed to happen, but let's not
+			 * rely on "supposed to".
+			 */
+			if (subtype instanceof Class) {
+				return (Class<?>) subtype;
+			} else {
+				/**
+				 * We're here at the unicorn case, against all odds. Let's take a lexical approach: The typeName will
+				 * always start with the FQN of the class, followed by 
+				 */
+				
+				String className = t.getTypeName();
+				int typeParamStart = className.indexOf('<');
+				if (typeParamStart>=0) {
+					className = className.substring(0, typeParamStart);
+				}
+				
+				try {
+					return Class.forName(className);
+				} catch (ClassNotFoundException ex) {
+				}
+			}
 		}
 		
-		try {
-			return Class.forName(className);
-		} catch (ClassNotFoundException ex) {
+		if (t instanceof WildcardType) {
+			Type[] upperBounds = ((WildcardType)t).getUpperBounds();
+			if (upperBounds.length==0) return null; //"Object" isn't really useful here.
+			return classForType(upperBounds[0]); //Some upper bound is better than none - but then, probably don't use a wildcard type for your fields, okay?
 		}
+		
+		//TODO: GenericArrayType, TypeVariable<?> (probably fail)
+		
+		
 		return null;
 	}
 	

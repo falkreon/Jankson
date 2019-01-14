@@ -24,10 +24,13 @@
 
 package blue.endless.jankson.impl;
 
+import java.awt.List;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -118,12 +121,33 @@ public class Marshaller {
 		registerSerializer(Double.TYPE, JsonPrimitive::new);
 		registerSerializer(Boolean.TYPE, JsonPrimitive::new);
 	}
-	/*
-	public <T> T marshall(ParameterizedType type, JsonElement Elem) {
+	
+	/** EXPERIMENTAL. Marshalls elem into a very specific parameterized type, honoring generic type arguments. */
+	@SuppressWarnings("unchecked")
+	@Nullable
+	public <T> T marshall(Type type, JsonElement elem) {
+		if (elem==null) return null;
 		
+		if (type instanceof Class) {
+			try {
+				return marshall((Class<T>)type, elem);
+			} catch (ClassCastException t) {
+				return null;
+			}
+		}
+		
+		if (type instanceof ParameterizedType) {
+			try {
+				Class<T> clazz = (Class<T>) TypeMagic.classForType(type);
+				
+				return marshall(clazz, elem);
+			} catch (ClassCastException t) {
+				return null;
+			}
+		}
 		
 		return null;
-	}*/
+	}
 	
 	@SuppressWarnings("unchecked")
 	@Nullable
