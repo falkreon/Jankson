@@ -25,8 +25,10 @@
 package blue.endless.jankson.magic;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 
 import javax.annotation.Nullable;
@@ -75,12 +77,37 @@ public class TypeMagic {
 		
 		if (t instanceof WildcardType) {
 			Type[] upperBounds = ((WildcardType)t).getUpperBounds();
-			if (upperBounds.length==0) return null; //"Object" isn't really useful here.
-			return classForType(upperBounds[0]); //Some upper bound is better than none - but then, probably don't use a wildcard type for your fields, okay?
+			if (upperBounds.length==0) return Object.class; //Well, we know it's an Object class.....
+			return classForType(upperBounds[0]); //I'm skeptical about multiple bounds on this one, but so far it's been okay.
 		}
 		
-		//TODO: GenericArrayType, TypeVariable<?> (probably fail)
+		if (t instanceof TypeVariable) {
+			return Object.class;
+			/*//This gets us into all kinds of trouble with multiple bounds, it turns out
+			Type[] types = ((TypeVariable<?>)t).getBounds();
+			if (types.length==0) return Object.class;
+			return classForType(types[0]);*/
+		}
 		
+		if (t instanceof GenericArrayType) {
+			GenericArrayType arrayType = (GenericArrayType)t;
+			/* ComponentClass will in practice return a TypeVariable, which will resolve to Object.
+			 * This is actually okay, because *any time* you try and create a T[], you'll wind up making an Object[]
+			 * instead and stuffing it into the T[]. And then it'll work.
+			 * 
+			 * And if Java magically improves their reflection system and/or less-partially reifies generics down the line,
+			 * we can improve the TypeVariable case and wind up with more correctly-typed classes here.
+			 */
+			Class<?> componentClass = classForType(arrayType.getGenericComponentType());
+			try {
+				//We can always retrieve the class under a "dots" version of the binary name, as long as componentClass wound up resolving to a valid Object type
+				Class<?> arrayClass = Class.forName("[L"+componentClass.getCanonicalName()+";");
+				
+				return arrayClass;
+			} catch (ClassNotFoundException ex2) {
+				return Object[].class; //This is probably what we're serving up anyway, so we might as well give the known-at-compile-time one out as a last resort.
+			}
+		}
 		
 		return null;
 	}

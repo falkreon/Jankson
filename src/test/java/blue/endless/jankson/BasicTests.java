@@ -550,4 +550,34 @@ public class BasicTests {
 			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 	}*/
+	
+	private static class GenericArrayContainer<T> {
+		public T[] ts;
+		public int[] ints;
+		public <U extends T> U[] u() { return null; };
+	}
+	
+	/**
+	 * Stresses TypeMagic's array comprehension, and clarifies certain deserializer behaviors and limitations.
+	 * 
+	 * <li>If a generic array field is found, and an instance is not provided in the constructor or an initializer, it's initialized to Object[].
+	 * <li>If a primitive-typed array field is found, it's initialized to exactly its type. Primitive arrays are fully reified in Java.
+	 * <li>Wildcard types are tricky. In the tested case, "<U extends T> U[]", it doesn't matter that "U" has type bounds - it's a type variable.
+	 *     The variable will be treated as Object for the purposes of deserialization, and an Object[] will be created.
+	 */
+	@Test
+	public void testGenericArrayComprehension() {
+		GenericArrayContainer<String> container = new GenericArrayContainer<>();
+		Type genericArrayType = container.getClass().getFields()[0].getGenericType();
+		Class<?> genericArrayClass = TypeMagic.classForType(genericArrayType);
+		Assert.assertEquals("Recovered generic array type should be Object[].", Object[].class, genericArrayClass);
+		
+		Type intArrayType = container.getClass().getFields()[1].getGenericType();
+		Class<?> intArrayClass = TypeMagic.classForType(intArrayType);
+		Assert.assertEquals("Recovered array type should be int[].", int[].class, intArrayClass);
+		
+		Type wildcardType = container.getClass().getMethods()[0].getGenericReturnType();
+		Class<?> wildcardArrayClass = TypeMagic.classForType(wildcardType);
+		Assert.assertEquals("Recovered wildcard array type should be Object[].", Object[].class, wildcardArrayClass);
+	}
 }
