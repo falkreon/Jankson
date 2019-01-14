@@ -502,17 +502,52 @@ public class BasicTests {
 		private Queue<String> queue = new ArrayDeque<>();
 	}
 	
-	//IN-PROGRESS TYPE MAGIC
+	/**
+	 * This stresses several parts of the POJODeserializer logic. Among other things:
+	 * <li> fromJson should be able to call forth arbitrary objects which aren't public or have no public constructor. It
+	 *      must only have a no-arg constructor at *all* in order to qualify.
+	 * 
+	 * <li> private members must likewise pose no threat to the deserializer. [not tested here,] public inherited members
+	 *      should be deserialized-to as well.
+	 * 
+	 * <li> Any field descending from Map or Collection, at the top level, should [de]serialize properly and its type
+	 *      parameters should be recovered.
+	 * 
+	 * <li> When re-serializing, Maps MUST be serialized to JsonObject. Collections MUST be serialized to JsonArray.
+	 */
 	@Test
-	public void testPOJO() {
+	public void testDeserializeGenerics() {
 		try {
-			JsonObject subject = jankson.load("{ 'strings': ['a', 'b', 'c'], 'scripts': { 'arabic':'ARABIC'}, 'queue': ['FUN']}");
+			String serialized = "{ \"strings\": [ \"a\", \"b\", \"c\" ], \"scripts\": { \"arabic\": \"ARABIC\" }, \"queue\": [ \"FUN\" ] }";
+			JsonObject subject = jankson.load(serialized);
 			TestClass object = jankson.fromJson(subject, TestClass.class);
-			
-			System.out.println("Roundtripped TestClass instance: "+jankson.toJson(object));
-			
+			Assert.assertEquals("Reserialized form must match original serialized form.", serialized, jankson.toJson(object).toString());
 		} catch (SyntaxError ex) {
 			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 	}
+	
+	//private static class RecursiveGenericsTestClass {
+	//	ArrayList<ArrayList<String>> lists;
+	//}
+	
+	/**
+	 * This puts additional stress on the POJODeserializer to recover more type information when deserializing. At this
+	 * point, generics must be fully recovered, including constructions like {@code List<List<String>>}
+	 */
+	/*
+	@Test
+	public void testRecursiveGenerics() {
+		String serialized = "{ \"lists\": [ [ \"a\" ], [ ] ] }"; //Lists contains two lists, one contains "a", the other is empty.
+		try {
+			JsonObject subject = jankson.load(serialized);
+			RecursiveGenericsTestClass object = jankson.fromJson(subject, RecursiveGenericsTestClass.class);
+			
+			//Right now, this test fails, producing { "lists": [ ] } because the inner lists cannot be deserialized.
+			//This should be solved by completing Marshaller.marshall(Type, JsonElement) to recover type parameters from ParameterizedTypes instead of losing them in converting to rawtype Classes
+			Assert.assertEquals("Reserialized form must match original serialized form.", serialized, jankson.toJson(object).toString());
+		} catch (SyntaxError ex) {
+			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+		}
+	}*/
 }
