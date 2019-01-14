@@ -24,12 +24,8 @@
 
 package blue.endless.jankson.impl;
 
-import java.util.Locale;
-
 import blue.endless.jankson.Jankson;
-import blue.endless.jankson.JsonNull;
 import blue.endless.jankson.JsonObject;
-import blue.endless.jankson.JsonPrimitive;
 
 public class ObjectParserContext implements ParserContext<JsonObject> {
 	private JsonObject result = new JsonObject();
@@ -63,7 +59,7 @@ public class ObjectParserContext implements ParserContext<JsonObject> {
 			if (closeBraceFound) return false; //Shouldn't happen!
 			
 			if (key==null) {
-				if (Character.isWhitespace(codePoint)) return true;
+				if (Character.isWhitespace(codePoint) || codePoint==',') return true;
 				
 				//Expecting: Key or End
 				switch(codePoint) {
@@ -80,78 +76,36 @@ public class ObjectParserContext implements ParserContext<JsonObject> {
 				case '#':
 					loader.push(new CommentParserContext(codePoint), (it)->comment=it);
 					return true;
+					
+				//Let's capture some error cases!
+				case '{':
+					loader.throwDelayed(new SyntaxError("Found spurious '{' while parsing an object."));
+					return true;
+					
 				default:
 					loader.push(new TokenParserContext(codePoint), (it)->key=it.asString());
 					return true;
 				}
 				
 			} else if (colonFound) {
-				//Expecting: Value
-				
-				if (Character.isWhitespace(codePoint)) return true;
-				
-				switch(codePoint) {
-				case '}':
-					throw new SyntaxError("Found end of object ('}') when a value for key '"+key+"' was expected");
-				case '\'':
-				case '"':
-					loader.push(new StringParserContext(codePoint), (it)->{
-						result.put(key, it, comment);
-						key = null;
-						colonFound = false;
-						comment = null;
-					});
-					return true;
-				case '{':
-					loader.push(new ObjectParserContext(), (it)->{
-						result.put(key, it, comment);
-						key = null;
-						colonFound = false;
-						comment = null;
-					});
-					return false;
-				case '[':
-					loader.push(new ArrayParserContext(), (it)->{
-						result.put(key, it, comment);
-						key = null;
-						colonFound = false;
-						comment = null;
-					});
-					return true;
-				default:
-					if (Character.isDigit(codePoint) || codePoint=='-' || codePoint=='+') {
-						loader.push(new NumberParserContext(codePoint), (it)->{
-							result.put(key, it, comment);
-							key = null;
-							colonFound = false;
-							comment = null;
-						});
-						return true;
-					}
+				final String elemKey = key;
+				loader.push(new ElementParserContext(), (it)->{
 					
-					loader.push(new TokenParserContext(codePoint), (it)->{
-						if (it.asString().toLowerCase(Locale.ROOT).equals("null")) {
-							result.put(key, JsonNull.INSTANCE, comment);
-							key = null;
-							colonFound = false;
-							comment = null;
-						} else if (it.asString().toLowerCase(Locale.ROOT).equals("true")) {
-							result.put(key, new JsonPrimitive(Boolean.TRUE), comment);
-							key = null;
-							colonFound = false;
-							comment = null;
-						}  else if (it.asString().toLowerCase(Locale.ROOT).equals("false")) {
-							result.put(key, new JsonPrimitive(Boolean.FALSE), comment);
-							key = null;
-							colonFound = false;
-							comment = null;
-						} else {
-							loader.throwDelayed(new SyntaxError("Found unrecognized token '"+it.asString()+"' while parsing the value of key '"+key+"'"));
-						}
-					});
+					//Combine the two possible comment locations into a canonical form
+					String resolvedComment = "";
+					if (comment!=null) resolvedComment+=comment;
+					if (comment!=null && it.getComment()!=null) resolvedComment += '\n';
+					if (it.getComment()!=null) resolvedComment += it.getComment();
 					
-					return true;
-				}
+					//if (key==null) System.out.println("KEY WAS NULL! "+it.getElement()+" using saved key '"+elemKey+"'");
+					result.put(elemKey, it.getElement(), resolvedComment);
+					key = null;
+					colonFound = false;
+					comment = null;
+					
+				});
+				return false; //give the first non-colon character to the resulting element.
+				
 			} else {
 				if (Character.isWhitespace(codePoint)) return true; //Don't care about whitespace
 				if (codePoint==':') {

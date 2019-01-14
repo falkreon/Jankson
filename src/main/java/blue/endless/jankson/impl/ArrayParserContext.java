@@ -24,12 +24,8 @@
 
 package blue.endless.jankson.impl;
 
-import java.util.Locale;
-
 import blue.endless.jankson.JsonArray;
 import blue.endless.jankson.Jankson;
-import blue.endless.jankson.JsonNull;
-import blue.endless.jankson.JsonPrimitive;
 
 public class ArrayParserContext implements ParserContext<JsonArray> {
 	private JsonArray result = new JsonArray();
@@ -45,65 +41,17 @@ public class ArrayParserContext implements ParserContext<JsonArray> {
 	public boolean consume(int codePoint, Jankson loader) throws SyntaxError {
 		result.setMarshaller(loader.getMarshaller());
 		if (foundClosingBrace) return false;
-		if (Character.isWhitespace(codePoint)) return true;
+		if (Character.isWhitespace(codePoint) || codePoint==',') return true;
 		
-		switch(codePoint) {
-		case ',':
-			return true;
-		case '[':
-			loader.push(new ArrayParserContext(), (it)->{
-				result.add(it, comment);
-				comment = null;
-			});
-			return true; //Arrays assume we *have* consumed the opening bracket
-		case '{':
-			loader.push(new ObjectParserContext(), (it)->{
-				result.add(it, comment);
-				comment = null;
-			});
-			return false; //Objects assume we *haven't* consumed the opening brace
-		case '\"':
-		case '\'':
-			loader.push(new StringParserContext(codePoint), (it)->{
-				result.add(it, comment);
-				comment = null;
-			});
-			return true;
-		case ']':
+		if (codePoint==']') {
 			foundClosingBrace = true;
 			return true;
-		case '/':
-		case '#':
-			loader.push(new CommentParserContext(codePoint), (it)->{
-				comment = it;
-			});
-			return true;
-		default:
-			if (Character.isDigit(codePoint) || codePoint=='-' || codePoint=='+') {
-				loader.push(new NumberParserContext(codePoint), (it)->{
-					result.add(it, comment);
-					comment = null;
-				});
-				return true;
-			} else {
-				loader.push(new TokenParserContext(codePoint), (it)->{
-					if (it.asString().toLowerCase(Locale.ROOT).equals("null")) {
-						result.add(JsonNull.INSTANCE, comment);
-						comment = null;
-					} else if (it.asString().toLowerCase(Locale.ROOT).equals("true")) {
-						result.add(new JsonPrimitive(Boolean.TRUE), comment);
-						comment = null;
-					}  else if (it.asString().toLowerCase(Locale.ROOT).equals("false")) {
-						result.add(new JsonPrimitive(Boolean.FALSE), comment);
-						comment = null;
-					} else {
-						loader.throwDelayed(new SyntaxError("Found unrecognized token '"+it.asString()+"' while parsing array elements"));
-					}
-				});
-				
-				return true;
-			}
 		}
+		
+		loader.push(new ElementParserContext(), (it)->{
+			result.add(it.getElement(), comment);
+		});
+		return false;
 	}
 
 	@Override

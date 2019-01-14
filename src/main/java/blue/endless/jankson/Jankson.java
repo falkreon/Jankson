@@ -199,6 +199,19 @@ public class Jankson {
 		ParserFrame<?> frame = contextStack.peek();
 		if (frame==null) throw new IllegalStateException("Parser problem! The ParserContext stack underflowed! (line "+line+", col "+column+")");
 		
+		//Do a limited amount of tail call recursion
+		try {
+			if (frame.context().isComplete()) {
+				contextStack.pop();
+				frame.supply();
+				frame = contextStack.peek();
+			}
+		} catch (SyntaxError error) {
+			error.setStartParsing(frame.startLine, frame.startCol);
+			error.setEndParsing(line, column);
+			throw error;
+		}
+		
 		try {
 			boolean consumed = frame.context.consume(codePoint, this);
 			if (frame.context.isComplete()) {
