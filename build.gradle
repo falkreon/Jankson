@@ -19,6 +19,7 @@ apply plugin: "java";
 apply plugin: "net.minecrell.licenser";
 apply plugin: "eclipse";
 apply plugin: "maven-publish";
+apply plugin: "signing";
 
 group = "blue.endless";
 archivesBaseName = "Jankson";
@@ -66,4 +67,13 @@ dependencies {
 	testCompile "junit:junit:4.12";
 	
 	implementation group: "com.google.code.findbugs", name: "jsr305", version: "3.0.2";
+}
+
+signing {
+	if (project.hasProperty("signing.keyId")) {
+		println("Key credentials found. Enabling jar signing.");
+		sign configurations.archives;
+	} else {
+		println("Skipping jar signing - do you have a gradle.properties set up with credentials?");
+	}
 }
