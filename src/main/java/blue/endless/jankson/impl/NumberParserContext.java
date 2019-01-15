@@ -30,7 +30,7 @@ import blue.endless.jankson.JsonPrimitive;
 public class NumberParserContext implements ParserContext<JsonPrimitive> {
 	private String numberString = "";
 	private boolean complete = false;
-	private String acceptedChars = "0123456789.+-eE";
+	private String acceptedChars = "0123456789.+-eExabcdef";
 	
 	public NumberParserContext(int firstCodePoint) {
 		numberString += (char)firstCodePoint;
@@ -61,6 +61,28 @@ public class NumberParserContext implements ParserContext<JsonPrimitive> {
 
 	@Override
 	public JsonPrimitive getResult() throws SyntaxError {
+		if (numberString.startsWith(".")) numberString = '0'+numberString;
+		if (numberString.endsWith(".")) numberString = numberString+'0';
+		if (numberString.startsWith("0x")) {
+			numberString = numberString.substring(2);
+			try {
+				Long l = Long.parseUnsignedLong(numberString, 16);
+				return new JsonPrimitive(l);
+			} catch(NumberFormatException nfe) {
+				throw new SyntaxError("Tried to parse '"+numberString+"' as a hexadecimal number, but it appears to be invalid.");
+			}
+		}
+		if (numberString.startsWith("-0x")) {
+			numberString = numberString.substring(3);
+			try {
+				Long l = -Long.parseUnsignedLong(numberString, 16);
+				return new JsonPrimitive(l);
+			} catch(NumberFormatException nfe) {
+				throw new SyntaxError("Tried to parse '"+numberString+"' as a hexadecimal number, but it appears to be invalid.");
+			}
+		}
+		
+		
 		if (numberString.indexOf('.')!=-1) {
 			//Return as a Double
 			try {

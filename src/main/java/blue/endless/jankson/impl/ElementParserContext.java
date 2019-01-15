@@ -67,7 +67,7 @@ public class ElementParserContext implements ParserContext<AnnotatedElement> {
 			//loader.throwDelayed(new SyntaxError("Found '}' while parsing an element - this shouldn't happen!"));
 			return false;
 		default:
-			if (Character.isDigit(codePoint) || codePoint=='-' || codePoint=='+') {
+			if (Character.isDigit(codePoint) || codePoint=='-' || codePoint=='+' || codePoint=='.') {
 				loader.push(new NumberParserContext(codePoint), this::setResult);
 				childActive = true;
 				return true;

@@ -39,10 +39,10 @@ public class StringParserContext implements ParserContext<JsonPrimitive> {
 
 	@Override
 	public boolean consume(int codePoint, Jankson loader) {
-		if (codePoint=='\n') { //At any point, if we've reached the end of the line without an end-quote, terminate to limit the damage.
-			complete = true;
-			return false;
-		}
+		//if (codePoint=='\n') { //At any point, if we've reached the end of the line without an end-quote, terminate to limit the damage.
+		//	complete = true;
+		//	return false;
+		//}
 		
 		if (escape) {
 			escape = false;
@@ -55,8 +55,10 @@ public class StringParserContext implements ParserContext<JsonPrimitive> {
 			case 'f':
 				builder.append('\f');
 				return true;
-			case 'n':
+			case 'n':  // regular \n
 				builder.append('\n');
+				return true;
+			case '\n': // JSON5 multiline string
 				return true;
 			case 'r':
 				builder.append('\r');
@@ -86,6 +88,11 @@ public class StringParserContext implements ParserContext<JsonPrimitive> {
 			if (codePoint=='\\') {
 				escape=true;
 				return true;
+			}
+			
+			if (codePoint=='\n') { //non-escaped CR. Terminate the string to limit the damage.
+				complete = true;
+				return false;
 			}
 			
 			if (codePoint<0xFFFF) {

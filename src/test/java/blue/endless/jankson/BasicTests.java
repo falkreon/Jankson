@@ -580,4 +580,63 @@ public class BasicTests {
 		Class<?> wildcardArrayClass = TypeMagic.classForType(wildcardType);
 		Assert.assertEquals("Recovered wildcard array type should be Object[].", Object[].class, wildcardArrayClass);
 	}
+	
+	
+	@Test
+	public void testJson5EscapedReturn() {
+		String serialized = "{ \"a-multiline-string\": \"foo\\\nbar\" }";
+		try {
+			JsonObject subject = jankson.load(serialized);
+			JsonElement parsed = subject.get("a-multiline-string");
+			Assert.assertTrue("String element should be a JsonPrimitive.", parsed instanceof JsonPrimitive); //not the test
+			Assert.assertEquals("Multiline String should parse to well-known result.", "foobar", ((JsonPrimitive)parsed).getValue().toString());
+			
+		} catch (SyntaxError ex) {
+			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+		}
+	}
+	
+	/**
+	 * While this isn't really a *normative* example, it's a pretty good example of all the JSON5 quirks in one tidy
+	 * package. Jankson is and should remain fully compatible with JSON5 quirks.
+	 */
+	@Test
+	public void parseJson5InformativeExample() {
+		String serialized = "{\n" + 
+				"  // comments\n" + 
+				"  unquoted: 'and you can quote me on that',\n" + 
+				"  singleQuotes: 'I can use \"double quotes\" here',\n" + 
+				"  lineBreaks: \"Look, Mom! \\\n" + 
+				"No \\\\n's!\",\n" + 
+				"  hexadecimal: 0xdecaf,\n" + 
+				"  leadingDecimalPoint: .8675309, andTrailing: 8675309.,\n" + 
+				"  positiveSign: +1,\n" + 
+				"  trailingComma: 'in objects', andIn: ['arrays',],\n" + 
+				"  \"backwardsCompatible\": \"with JSON\",\n" + 
+				"}";
+		
+		try {
+			JsonObject subject = jankson.load(serialized);
+			Assert.assertEquals("\"and you can quote me on that\"", subject.get("unquoted").toString());
+			Assert.assertEquals("\"I can use \\\"double quotes\\\" here\"", subject.get("singleQuotes").toString());
+			Assert.assertEquals("\"Look, Mom! No \\\\n's!\"", subject.get("lineBreaks").toString());
+			Assert.assertEquals(Long.toString(0xdecaf), subject.get("hexadecimal").toString());
+			//Floating point gets a little hairy, so let's use floating point comparison for this
+			double leading = (Double) ((JsonPrimitive)subject.get("leadingDecimalPoint")).getValue();
+			double trailing = (Double) ((JsonPrimitive)subject.get("andTrailing")).getValue();
+			
+			Assert.assertEquals(0.8675309, leading, 0.00000001);
+			Assert.assertEquals(8675309.0, trailing, 0.00000001);
+			
+			long positiveSign = (Long) ((JsonPrimitive)subject.get("positiveSign")).getValue();
+			Assert.assertEquals(1L, positiveSign);
+			
+			Assert.assertEquals("\"in objects\"", subject.get("trailingComma").toString());
+			Assert.assertEquals("[ \"arrays\" ]", subject.get("andIn").toString());
+			
+			Assert.assertEquals("\"with JSON\"", subject.get("backwardsCompatible").toString());
+		} catch (SyntaxError ex) {
+			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+		}
+	}
 }
