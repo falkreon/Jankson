@@ -33,6 +33,16 @@ repositories {
 	mavenCentral()
 }
 
+task sourcesJar(type: Jar, dependsOn: classes) {
+	classifier = "sources"
+	from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+	classifier = "javadoc"
+	from javadoc.destinationDir
+}
+
 def versionSuffix = '-SNAPSHOT'
 if (System.env.BUILD_NUMBER) {
 	versionSuffix = '-'+System.env.BUILD_NUMBER;
@@ -47,6 +57,48 @@ publishing {
 			artifactId "jankson";
 			version project.version+versionSuffix;
 			artifact sourcesJar;
+			artifact javadocJar;
+			
+			pom {
+				name = "Jankson";
+				description = "JSON5 / HJSON parser and preprocessor which preserves ordering and comments";
+				url = "https://github.com/falkreon/Jankson";
+				
+				developers {
+					developer {
+						id = "falkreon"
+						name = "Isaac Ellingson"
+						email = "falkreon@gmail.com"
+					}
+				}
+				
+				licenses {
+					license {
+						name = "MIT License"
+						url = "https://opensource.org/licenses/MIT"
+						distribution = "repo"
+					}
+				}
+				
+				scm {
+					url = "https://github.com/falkreon/Jankson"
+					connection = "scm:git:git@github.com:falkreon/Jankson.git"
+					developerConnection = "scm:git:git@github.com:falkreon/Jankson.git"
+				}
+			}
+		}
+	}
+	
+	repositories {
+		maven {
+			def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+			def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
+			url = snapshotsRepoUrl; //version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+			
+			credentials {
+				username = ossrhUsername
+				password = ossrhPassword
+			}
 		}
 	}
 }
@@ -58,22 +110,20 @@ if (file("private.gradle").exists()) {
 defaultTasks "clean", "build", "sourcesJar";
 
 
-task sourcesJar(type: Jar, dependsOn: classes) {
-	classifier = "sources"
-	from sourceSets.main.allSource
-}
+
 
 dependencies {
 	testCompile "junit:junit:4.12";
 	
-	implementation group: "com.google.code.findbugs", name: "jsr305", version: "3.0.2";
+	compileOnly group: "com.google.code.findbugs", name: "jsr305", version: "3.0.2";
 }
 
 signing {
 	if (project.hasProperty("signing.keyId")) {
 		println("Key credentials found. Enabling jar signing.");
 		sign configurations.archives;
+		sign publishing.publications.mavenPrimary
 	} else {
-		println("Skipping jar signing - do you have a gradle.properties set up with credentials?");
+		println("Skipping jar signing");
 	}
 }
