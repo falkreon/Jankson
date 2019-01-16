@@ -3,6 +3,22 @@ JSON / HJSON parser and preprocessor which preserves ordering and comments
 
 ## Json Quirks
 
+The full set of JSON5 quirks are supported:
+```json5
+{
+  // comments
+  unquoted: 'and you can quote me on that',
+  singleQuotes: 'I can use "double quotes" here',
+  lineBreaks: "Look, Mom! \
+No \\n's!",
+  hexadecimal: 0xdecaf,
+  leadingDecimalPoint: .8675309, andTrailing: 8675309.,
+  positiveSign: +1,
+  trailingComma: 'in objects', andIn: ['arrays',],
+  "backwardsCompatible": "with JSON",
+}
+```
+
 The following hjson quirks are supported:
 
 ```hjson
@@ -41,8 +57,8 @@ The following hjson quirks are **NOT** supported:
 }
 ```
 
-The following non-hjson quirks are additionally supported:
-```hjson
+The following supported quirks are unique to jankson:
+```json5
 {
 	//Missing commas are fine anywhere
 	key: 1 key2: 2 key3: 3
