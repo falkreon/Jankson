@@ -30,10 +30,30 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 
 import javax.annotation.Nullable;
 
 public class TypeMagic {
+	private static Map<Class<?>, Class<?>> concreteClasses = new HashMap<>();
+	static {
+		concreteClasses.put(Map.class, HashMap.class);
+		concreteClasses.put(Set.class, HashSet.class);
+		concreteClasses.put(Collection.class, ArrayList.class);
+		concreteClasses.put(List.class, ArrayList.class);
+		concreteClasses.put(Queue.class, ArrayDeque.class);
+		concreteClasses.put(Deque.class, ArrayDeque.class);
+	}
+	
 	
 	/**
 	 * This is a surprisingly intractable problem in Java: "Type" pretty much represents all possible states of reified
@@ -137,8 +157,18 @@ public class TypeMagic {
 	 * @param t the source type. The object will be created as this type.
 	 * @return a new object of type U. If any part of this process fails, this method silently returns null instead.
 	 */
+	@SuppressWarnings("unchecked")
 	@Nullable
 	public static <U> U createAndCast(Class<U> t) {
+		if (t.isInterface()) {
+			Class<?> substitute = concreteClasses.get(t);
+			if (substitute!=null) try {
+				return (U) createAndCast(substitute);
+			} catch (Throwable ex) {
+				return null;
+			}
+		}
+		
 		try {
 			/* Using getConstructor instead of class::newInstance takes some errors we can't otherwise detect, and
 			 * instead wraps them in InvocationTargetExceptions which we *can* catch.

@@ -37,6 +37,7 @@ import javax.annotation.Nullable;
 
 import blue.endless.jankson.JsonArray;
 import blue.endless.jankson.JsonElement;
+import blue.endless.jankson.JsonNull;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
 import blue.endless.jankson.magic.TypeMagic;
@@ -136,6 +137,11 @@ public class POJODeserializer {
 		} catch (Throwable t) {
 			return false; //skip this field probably.
 		}
+		
+		if (elem==JsonNull.INSTANCE) {
+			field.set(parent, null);
+		}
+		
 		Class<?> fieldClass = field.getType();
 		if (field.get(parent)==null) {
 			Object fieldValue = TypeMagic.createAndCast(field.getGenericType());
