@@ -176,12 +176,10 @@ public class Jankson {
 		return root;
 	}
 	
-	/** For now, this will only work if you've defined a type adapter for the indicated class! */
 	public <T> T fromJson(JsonObject obj, Class<T> clazz) {
 		return marshaller.marshall(clazz, obj);
 	}
 	
-	/** For now, this will only work if you've defined a type adapter for the indicated class! */
 	public <T> T fromJson(String json, Class<T> clazz) throws SyntaxError {
 		JsonObject obj = load(json);
 		return fromJson(obj, clazz);
