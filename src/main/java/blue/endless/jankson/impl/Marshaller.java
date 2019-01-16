@@ -127,6 +127,7 @@ public class Marshaller {
 	@Nullable
 	public <T> T marshall(Type type, JsonElement elem) {
 		if (elem==null) return null;
+		if (elem==JsonNull.INSTANCE) return null;
 		
 		if (type instanceof Class) {
 			try {
@@ -153,6 +154,7 @@ public class Marshaller {
 	@Nullable
 	public <T> T marshall(Class<T> clazz, JsonElement elem) {
 		if (elem==null) return null;
+		if (elem==JsonNull.INSTANCE) return null;
 		if (clazz.isAssignableFrom(elem.getClass())) return (T)elem; //Already the correct type
 		
 		if (Enum.class.isAssignableFrom(clazz)) {

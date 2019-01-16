@@ -140,6 +140,7 @@ public class POJODeserializer {
 		
 		if (elem==JsonNull.INSTANCE) {
 			field.set(parent, null);
+			return true;
 		}
 		
 		Class<?> fieldClass = field.getType();

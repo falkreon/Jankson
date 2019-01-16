@@ -36,6 +36,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import blue.endless.jankson.annotation.NonnullByDefault;
+import blue.endless.jankson.annotation.Nullable;
 import blue.endless.jankson.impl.DeserializationException;
 import blue.endless.jankson.impl.Marshaller;
 import blue.endless.jankson.impl.POJODeserializer;
@@ -579,6 +581,29 @@ public class BasicTests {
 		Type wildcardType = container.getClass().getMethods()[0].getGenericReturnType();
 		Class<?> wildcardArrayClass = TypeMagic.classForType(wildcardType);
 		Assert.assertEquals("Recovered wildcard array type should be Object[].", Object[].class, wildcardArrayClass);
+	}
+	
+	@NonnullByDefault
+	private static class NullContainer {
+		@Nullable
+		public String nullable = "";
+		
+		public String nonnull = "";
+	}
+	
+	/** This test will fail as soon as a key is added for 'nonnull'. 1.2 should fix this. */
+	@Test
+	public void testDeserializeNulls() {
+		String serialized = "{ \"nullable\": null }";
+		try {
+			NullContainer subject = jankson.fromJson(serialized, NullContainer.class);
+			
+			Assert.assertNull(subject.nullable);
+			Assert.assertNotNull(subject.nonnull);
+		} catch (SyntaxError ex) {
+			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+		}
+		
 	}
 	
 	
