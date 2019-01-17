@@ -69,7 +69,16 @@ The following supported quirks are unique to jankson:
 ```
 
 ## Compiling
-Just clone the repo and run a gradle build. The only dependency is jsr305 for nullity.
+
+```groovy
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	"blue.endless:jankson:1.1.0"
+}
+```
 
 ## Using
 Jankson is, for the most part, a drop-in replacement for Gson or HJson, but can also be
