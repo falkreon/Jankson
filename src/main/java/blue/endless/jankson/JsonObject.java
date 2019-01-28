@@ -129,7 +129,7 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 	
 	/**
 	 * Gets a minimal set of key-value-comment settings which, if added to the supplied JsonObject, would produce this
-	 * JsonObject. See {@link blue.endless.jankson.BasicTests#testDiffAgainstDefaults()} for more details on this comparison.
+	 * JsonObject. See BasicTests::testDiffAgainstDefaults() for more details on this comparison.
 	 * 
 	 * <ul>
 	 *   <li>If a key is present in the default and not in the object, it's skipped
