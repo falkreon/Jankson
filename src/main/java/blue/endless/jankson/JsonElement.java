@@ -34,4 +34,8 @@ public abstract class JsonElement implements Cloneable {
 		return toJson(comments, newlines, 0);
 	}
 	public abstract String toJson(boolean comments, boolean newlines, int depth);
+	public abstract String toJson(JsonGrammar grammar, int depth);
+	public String toJson(JsonGrammar grammar) {
+		return toJson(grammar, 0);
+	}
 }

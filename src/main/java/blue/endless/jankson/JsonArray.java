@@ -120,6 +120,77 @@ public class JsonArray extends JsonElement implements Collection<JsonElement>, I
 		return builder.toString();
 	}
 	
+	@Override
+	public String toJson(JsonGrammar grammar, int depth) {
+		StringBuilder builder = new StringBuilder();
+		
+		builder.append("[ ");
+		
+		if (grammar.printWhitespace) {
+			builder.append('\n');
+			for(int j=0; j<depth+1; j++) {
+				builder.append("\t");
+			}
+		}
+		
+		for(int i=0; i<entries.size(); i++) {
+			Entry entry = entries.get(i);
+			
+			if (grammar.comments && entry.comment!=null) {
+				builder.append("/* ");
+				builder.append(entry.comment);
+				builder.append(" */ ");
+				
+				if (grammar.printWhitespace) {
+					builder.append('\n');
+					for(int j=0; j<depth+1; j++) {
+						builder.append("\t");
+					}
+				}
+			}
+			
+			builder.append(entry.value.toJson(grammar, depth+1));
+			
+			if (grammar.printCommas) { 
+				if (i<entries.size()-1 || grammar.printTrailingCommas) {
+					if (grammar.printWhitespace) {
+						builder.append(",\n");
+						for(int j=0; j<depth+1; j++) {
+							builder.append("\t");
+						}
+					} else {
+						builder.append(", ");
+					}
+				}
+			} else {
+				if (i<entries.size()-1) {
+					if (grammar.printWhitespace) {
+						builder.append("\n");
+						for(int j=0; j<depth+1; j++) {
+							builder.append("\t");
+						}
+					} else {
+						builder.append(" ");
+					}
+				}
+			}
+		}
+		if (entries.size()>0) {
+			if (grammar.printWhitespace) {
+				builder.append('\n');
+				for(int j=0; j<depth; j++) {
+					builder.append("\t");
+				}
+			} else {
+				builder.append(' ');
+			}
+		}
+		
+		builder.append(']');
+		
+		return builder.toString();
+	}
+	
 	public String toString() {
 		return toJson(true, false, 0);
 	}

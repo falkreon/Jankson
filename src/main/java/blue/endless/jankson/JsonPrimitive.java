@@ -118,6 +118,11 @@ public class JsonPrimitive extends JsonElement {
 		return '\"'+escape(value.toString())+'\"';
 	}
 	
+	@Override
+	public String toJson(JsonGrammar grammar, int depth) {
+		return toJson(); //No grammar decisions can be made at this level.
+	}
+	
 	//IMPLEMENTATION for Cloneable
 	@Override
 	public JsonPrimitive clone() {
