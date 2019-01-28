@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2018 Falkreon
+ * Copyright (c) 2018-2019 Falkreon (Isaac Ellingson)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -202,7 +202,7 @@ public class Marshaller {
 				POJODeserializer.unpackObject(result, obj);
 				return result;
 			} catch (Throwable t) {
-				
+				return null;
 			}
 			
 		} else if (elem instanceof JsonArray) {

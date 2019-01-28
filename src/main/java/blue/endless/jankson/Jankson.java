@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2018 Falkreon
+ * Copyright (c) 2018-2019 Falkreon (Isaac Ellingson)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -272,9 +272,6 @@ public class Jankson {
 		 * Registers a marshaller for primitive types. Most built-in json and java types are already supported, but this
 		 * allows one to change the deserialization behavior of Json primitives. Please note that these adapters are not
 		 * suitable for generic types, as these types are erased during jvm execution.
-		 * @param clazz
-		 * @param adapter
-		 * @return
 		 */
 		public <T> Builder registerPrimitiveTypeAdapter(Class<T> clazz, Function<Object, T> adapter) {
 			marshaller.register(clazz, adapter);

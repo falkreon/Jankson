@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2018 Falkreon
+ * Copyright (c) 2018-2019 Falkreon (Isaac Ellingson)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,10 +28,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
 
 import javax.annotation.Nullable;
 
@@ -58,11 +55,12 @@ public class POJODeserializer {
 		
 		//Attempt to fill public, accessible fields declared in the target object's superclass.
 		for(Field f : target.getClass().getFields()) {
+			//System.out.println("Unpacking "+f.getName());
 			unpackField(target, f, work);
 		}
 		
 		if (!work.isEmpty()) {
-			System.out.println("Unable to deserialize: "+work.toJson(true, true));
+			//System.out.println("Unable to deserialize: "+work.toJson(true, true));
 		}
 	}
 	
@@ -74,13 +72,15 @@ public class POJODeserializer {
 				try {
 					f.set(parent, null);
 				} catch (IllegalArgumentException | IllegalAccessException e) {
-					System.out.println("Unable to set field "+f.getName()+" of class "+parent.getClass().getCanonicalName()+" to null.");
+					//System.out.println("Unable to set field "+f.getName()+" of class "+parent.getClass().getCanonicalName()+" to null.");
 				}
 			} else {
 				try {
+					//System.out.println(""+elem+" --> "+f.getName());
 					unpackFieldData(parent, f, elem, source.getMarshaller());
+					//System.out.println(f.getName()+" == "+f.get(parent));
 				} catch (Throwable t) {
-					System.out.println("Unable to unpack field "+f.getName()+" of class "+parent.getClass().getCanonicalName()+" using data "+elem);
+					//System.out.println("Unable to unpack field "+f.getName()+" of class "+parent.getClass().getCanonicalName()+" using data "+elem);
 				}
 			}
 		}
@@ -135,6 +135,7 @@ public class POJODeserializer {
 		try {
 			field.setAccessible(true);
 		} catch (Throwable t) {
+			//System.out.println("Can't set field accessible");
 			return false; //skip this field probably.
 		}
 		
@@ -144,6 +145,15 @@ public class POJODeserializer {
 		}
 		
 		Class<?> fieldClass = field.getType();
+		
+		if (!isCollections(fieldClass)) {
+			//Try to directly marshall
+			Object result = marshaller.marshall(fieldClass, elem);
+			field.set(parent, result);
+			return true;
+		}
+		
+		
 		if (field.get(parent)==null) {
 			Object fieldValue = TypeMagic.createAndCast(field.getGenericType());
 			
@@ -153,6 +163,7 @@ public class POJODeserializer {
 				field.set(parent, fieldValue);
 			}
 		}
+			
 		/*
 		//Is List?
 		if (List.class.isAssignableFrom(fieldClass)) {
@@ -181,6 +192,12 @@ public class POJODeserializer {
 		}
 		
 		return false;
+	}
+	
+	private static boolean isCollections(Class<?> clazz) {
+		return
+				Map.class.isAssignableFrom(clazz) ||
+				Collection.class.isAssignableFrom(clazz);
 	}
 	
 	/*
