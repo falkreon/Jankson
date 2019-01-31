@@ -664,4 +664,17 @@ public class BasicTests {
 			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 	}
+	
+	
+	@Test
+	public void testArrayEdgeCase() {
+		String arrayDuplicates = "{ \"pattern\": [ \"ss\", \"ss\" ] }";
+		try {
+			JsonObject subject = jankson.load(arrayDuplicates);
+			
+			Assert.assertEquals(arrayDuplicates, subject.toJson(false, false));
+		} catch (SyntaxError ex) {
+			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+		}
+	}
 }

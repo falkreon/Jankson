@@ -196,7 +196,7 @@ public class JsonArray extends JsonElement implements Collection<JsonElement>, I
 	}
 	
 	public boolean add(@Nonnull JsonElement e, String comment) {
-		if (contains(e)) return false;
+		//if (contains(e)) return false;
 		
 		Entry entry = new Entry();
 		entry.value = e;
