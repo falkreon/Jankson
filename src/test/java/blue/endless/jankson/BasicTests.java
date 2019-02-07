@@ -677,4 +677,24 @@ public class BasicTests {
 			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 	}
+	
+	private static class StaticAccess {
+		static transient int foo = 8;
+		int bar = 4;
+		transient int baz = 3;
+	}
+	
+	@Test
+	public void preventStaticAccess() {
+		JsonElement elem = jankson.toJson(new StaticAccess());
+		Assert.assertEquals("{ \"bar\": 4 }", elem.toJson(false, false));
+		
+		try {
+			JsonObject subject = jankson.load("{ \"foo\": 1 }");
+			StaticAccess deserialized = jankson.fromJson("{ \"foo\": 1 }", StaticAccess.class);
+			Assert.assertEquals(8, StaticAccess.foo);
+		} catch (SyntaxError ex) {
+			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+		}
+	}
 }

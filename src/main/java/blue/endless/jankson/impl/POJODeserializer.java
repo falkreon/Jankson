@@ -25,6 +25,7 @@
 package blue.endless.jankson.impl;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collection;
@@ -49,13 +50,15 @@ public class POJODeserializer {
 		
 		//Fill public and private fields declared in the target object's immediate class
 		for(Field f : target.getClass().getDeclaredFields()) {
-			//System.out.println("Unpacking "+f.getName());
+			int modifiers = f.getModifiers();
+			if (Modifier.isStatic(modifiers) || Modifier.isTransient(modifiers)) continue;
 			unpackField(target, f, work);
 		}
 		
 		//Attempt to fill public, accessible fields declared in the target object's superclass.
 		for(Field f : target.getClass().getFields()) {
-			//System.out.println("Unpacking "+f.getName());
+			int modifiers = f.getModifiers();
+			if (Modifier.isStatic(modifiers) || Modifier.isTransient(modifiers)) continue;
 			unpackField(target, f, work);
 		}
 		
