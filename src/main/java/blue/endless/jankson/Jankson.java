@@ -36,6 +36,10 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import javax.annotation.Nonnull;
+
+import blue.endless.jankson.impl.AnnotatedElement;
+import blue.endless.jankson.impl.ElementParserContext;
 import blue.endless.jankson.impl.Marshaller;
 import blue.endless.jankson.impl.ObjectParserContext;
 import blue.endless.jankson.impl.ParserContext;
@@ -55,6 +59,7 @@ public class Jankson {
 	
 	private Jankson(Builder builder) {}
 	
+	@Nonnull
 	public JsonObject load(String s) throws SyntaxError {
 		ByteArrayInputStream in = new ByteArrayInputStream(s.getBytes(Charset.forName("UTF-8")));
 		try {
@@ -64,6 +69,7 @@ public class Jankson {
 		}
 	}
 	
+	@Nonnull
 	public JsonObject load(File f) throws IOException, SyntaxError {
 		try(InputStream in = new FileInputStream(f)) {
 			return load(in);
@@ -134,6 +140,7 @@ public class Jankson {
 		return BAD_CHARACTER;
 	}
 	
+	@Nonnull
 	public JsonObject load(InputStream in) throws IOException, SyntaxError {
 		withheldCodePoint = -1;
 		root = null;
@@ -174,6 +181,68 @@ public class Jankson {
 		}
 		
 		return root;
+	}
+	
+	/** Experimental: Parses the supplied String as a JsonElement, which may or may not be an object at the root level */
+	@Nonnull
+	public JsonElement loadElement(String s) throws SyntaxError {
+		ByteArrayInputStream in = new ByteArrayInputStream(s.getBytes(Charset.forName("UTF-8")));
+		try {
+			return loadElement(in);
+		} catch (IOException ex) {
+			throw new RuntimeException(ex); //ByteArrayInputStream never throws
+		}
+	}
+	
+	/** Experimental: Parses the supplied File as a JsonElement, which may or may not be an object at the root level */
+	@Nonnull
+	public JsonElement loadElement(File f) throws IOException, SyntaxError {
+		try(InputStream in = new FileInputStream(f)) {
+			return loadElement(in);
+		}
+	}
+	
+	private AnnotatedElement rootElement;
+	/** Experimental: Parses the supplied InputStream as a JsonElement, which may or may not be an object at the root level */
+	@Nonnull
+	public JsonElement loadElement(InputStream in) throws IOException, SyntaxError {
+		withheldCodePoint = -1;
+		
+		push(new ElementParserContext(), (it)->{
+			rootElement = it;
+		});
+		
+		//int codePoint = 0;
+		while (rootElement==null) {
+			if (delayedError!=null) {
+				throw delayedError;
+			}
+			
+			if (withheldCodePoint!=-1) {
+				retries++;
+				if (retries>25) throw new IOException("Parser got stuck near line "+line+" column "+column);
+				processCodePoint(withheldCodePoint);
+			} else {
+				int inByte = getCodePoint(in);
+				if (inByte==-1) {
+					//Walk up the stack sending EOF to things until either an error occurs or the stack completes
+					while(!contextStack.isEmpty()) {
+						ParserFrame<?> frame = contextStack.pop();
+						try {
+							frame.context.eof();
+						} catch (SyntaxError error) {
+							error.setStartParsing(frame.startLine, frame.startCol);
+							error.setEndParsing(line, column);
+							throw error;
+						}
+					}
+					if (rootElement==null) return JsonNull.INSTANCE;
+				}
+				processCodePoint(inByte);
+			}
+		}
+		
+		return rootElement.getElement();
 	}
 	
 	public <T> T fromJson(JsonObject obj, Class<T> clazz) {
