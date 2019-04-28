@@ -34,6 +34,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import blue.endless.jankson.impl.Marshaller;
+import blue.endless.jankson.impl.serializer.CommentSerializer;
 
 public class JsonArray extends JsonElement implements Collection<JsonElement>, Iterable<JsonElement> {
 	private List<Entry> entries = new ArrayList<>();
@@ -79,18 +80,20 @@ public class JsonArray extends JsonElement implements Collection<JsonElement>, I
 		for(int i=0; i<entries.size(); i++) {
 			Entry entry = entries.get(i);
 			
-			if (entry.comment!=null) {
-				builder.append("/* ");
-				builder.append(entry.comment);
-				builder.append(" */ ");
-				
-				if (newlines) {
-					builder.append('\n');
-					for(int j=0; j<depth+1; j++) {
-						builder.append("\t");
-					}
-				}
-			}
+			CommentSerializer.print(builder, entry.comment, depth, comments, newlines);
+			
+			//if (entry.comment!=null) {
+			//	builder.append("/* ");
+			//	builder.append(entry.comment);
+			//	builder.append(" */ ");
+			//	
+			//	if (newlines) {
+			//		builder.append('\n');
+			//		for(int j=0; j<depth+1; j++) {
+			//			builder.append("\t");
+			//		}
+			//	}
+			//}
 			
 			builder.append(entry.value.toJson(comments, newlines, depth+1));
 			if (i<entries.size()-1) {
@@ -136,18 +139,20 @@ public class JsonArray extends JsonElement implements Collection<JsonElement>, I
 		for(int i=0; i<entries.size(); i++) {
 			Entry entry = entries.get(i);
 			
-			if (grammar.comments && entry.comment!=null) {
-				builder.append("/* ");
-				builder.append(entry.comment);
-				builder.append(" */ ");
-				
-				if (grammar.printWhitespace) {
-					builder.append('\n');
-					for(int j=0; j<depth+1; j++) {
-						builder.append("\t");
-					}
-				}
-			}
+			CommentSerializer.print(builder, entry.comment, depth, grammar);
+			
+			//if (grammar.comments && entry.comment!=null) {
+			//	builder.append("/* ");
+			//	builder.append(entry.comment);
+			//	builder.append(" */ ");
+			//	
+			//	if (grammar.printWhitespace) {
+			//		builder.append('\n');
+			//		for(int j=0; j<depth+1; j++) {
+			//			builder.append("\t");
+			//		}
+			//	}
+			//}
 			
 			builder.append(entry.value.toJson(grammar, depth+1));
 			

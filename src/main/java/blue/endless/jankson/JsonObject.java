@@ -36,6 +36,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import blue.endless.jankson.impl.Marshaller;
+import blue.endless.jankson.impl.serializer.CommentSerializer;
 
 public class JsonObject extends JsonElement implements Map<String, JsonElement> {
 	protected Marshaller marshaller = Marshaller.getFallback();
@@ -210,17 +211,24 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 				}
 			}
 			
-			if (comments && entry.comment!=null) {
-				builder.append("/* ");
-				builder.append(entry.comment);
-				builder.append(" */ ");
-				if (newlines) {
+			//if (comments && entry.comment!=null && !entry.comment.isEmpty()) {
+				CommentSerializer.print(builder, entry.comment, depth, comments, newlines);
+				
+				//builder.append("/* ");
+				/*builder.append(entry.comment); //TODO: if the comment has newlines, indent them!
+				if (entry.comment.contains("\n")) {
+					for(String s : entry.comment.split("\n")) {
+						
+					}
+				}*/
+				//builder.append(" */ ");
+				/*if (newlines) {
 					builder.append('\n');
 					for(int j=0; j<depth+1; j++) {
 						builder.append("\t");
 					}
-				}
-			}
+				}*/
+			//}
 			
 			builder.append("\"");
 			builder.append(entry.key);
@@ -274,17 +282,19 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 				}
 			}
 			
-			if (grammar.comments && entry.comment!=null) {
-				builder.append("/* ");
-				builder.append(entry.comment);
-				builder.append(" */ ");
-				if (grammar.printWhitespace) {
-					builder.append('\n');
-					for(int j=0; j<depth+1; j++) {
-						builder.append("\t");
-					}
-				}
-			}
+			CommentSerializer.print(builder, entry.comment, depth, grammar);
+			
+			//if (grammar.comments && entry.comment!=null) {
+			//	builder.append("/* ");
+			//	builder.append(entry.comment);
+			//	builder.append(" */ ");
+			//	if (grammar.printWhitespace) {
+			//		builder.append('\n');
+			//		for(int j=0; j<depth+1; j++) {
+			//			builder.append("\t");
+			//		}
+			//	}
+			//}
 			
 			builder.append("\"");
 			builder.append(entry.key);
@@ -317,16 +327,16 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 			}
 		}
 		
-		if (entries.size()>0) {
-			if (grammar.printWhitespace) {
-				builder.append('\n');
-				if (depth>0) for(int j=0; j<depth; j++) {
-					builder.append("\t");
-				}
-			} else {
-				builder.append(' ');
-			}
-		}
+		//if (entries.size()>0) {
+			//if (grammar.printWhitespace) {
+			//	builder.append('\n');
+			//	if (depth>0) for(int j=0; j<depth; j++) {
+			//		builder.append("\t");
+			//	}
+			//} else {
+			//	builder.append(' ');
+			//}
+		//}
 		
 		builder.append("}");
 		

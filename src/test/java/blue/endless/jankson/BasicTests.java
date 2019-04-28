@@ -484,15 +484,47 @@ public class BasicTests {
 		
 		String actual = subject.toJson(true, true, 0);
 		
-		String expected = "{ \n" + //This trailing space before the newline is dubious and may change without notice.
+		String expected =
+				"{ \n" + //This trailing space before the newline is dubious and may change without notice.
 				"	\"array\": [ \n" + 
 				"		{ \n" + 
-				"			/* pitiable */ \n" + 
+				"			// pitiable\n" + //Inline comments are now emitted where expedient
 				"			\"foo\": \"foo\",\n" + 
-				"			/* passable */ \n" + 
+				"			// passable\n" + 
 				"			\"bar\": \"bar\"\n" + 
 				"		}\n" + 
 				"	]\n" + 
+				"}";
+		
+		Assert.assertEquals(expected, actual);
+	}
+	
+	@Test
+	public void ensureEmptyCommentsAreOmitted() {
+		JsonObject subject = new JsonObject();
+		subject.put("foo", new JsonPrimitive("bar"), "");
+		subject.put("baz", new JsonPrimitive("bux"), " ");
+		String actual = subject.toJson(JsonGrammar.JSON5);
+		String expected =
+				"{ \n" + //Again, this trailing space is subject to change
+				"	\"foo\": \"bar\",\n" +
+				"	\"baz\": \"bux\",\n" + //Trailing commas are emitted in JSON5 grammar
+				"}";
+		
+		Assert.assertEquals(expected, actual);
+	}
+	
+	@Test
+	public void ensureMultilineCommentsAreIndented() {
+		JsonObject subject = new JsonObject();
+		subject.put("foo", new JsonPrimitive("bar"), "This is a line\nAnd this is another line.");
+		String actual = subject.toJson(JsonGrammar.JSON5);
+		String expected =
+				"{ \n" + //Again, this trailing space is subject to change
+				"	/* This is a line\n" +
+				"	   And this is another line.\n" + //Three spaces precede every subsequent line to line comments up
+				"	*/\n" + //The end-comment is on its own line
+				"	\"foo\": \"bar\",\n" + //Again, trailing comma per JSON5
 				"}";
 		
 		Assert.assertEquals(expected, actual);
