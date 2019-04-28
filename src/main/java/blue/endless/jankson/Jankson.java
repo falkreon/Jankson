@@ -174,7 +174,10 @@ public class Jankson {
 							throw error;
 						}
 					}
-					if (root==null) root = new JsonObject();
+					if (root==null) {
+						root = new JsonObject();
+						root.marshaller = marshaller;
+					}
 					return root;
 				}
 				processCodePoint(inByte);

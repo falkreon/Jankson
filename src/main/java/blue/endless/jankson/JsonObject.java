@@ -464,6 +464,7 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 		for(Entry entry : entries) {
 			result.put(entry.key, entry.value.clone(), entry.comment);
 		}
+		result.marshaller = marshaller;
 		return result;
 	}
 	

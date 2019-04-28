@@ -52,7 +52,7 @@ public class Marshaller {
 	public static Marshaller getFallback() { return INSTANCE; }
 	
 	private Map<Class<?>, Function<Object,?>> primitiveMarshallers = new HashMap<>();
-	private Map<Class<?>, Function<JsonObject,?>> typeAdapters = new HashMap<>();
+	Map<Class<?>, Function<JsonObject,?>> typeAdapters = new HashMap<>();
 	
 	private Map<Class<?>, BiFunction<Object, Marshaller, JsonElement>> serializers = new HashMap<>();
 	private Map<Class<?>, Supplier<?>> typeFactories = new HashMap<>();
@@ -154,9 +154,21 @@ public class Marshaller {
 		return null;
 	}
 	
+	public <T> T marshall(Class<T> clazz, JsonElement elem) {
+		try {
+			return marshall(clazz, elem, false);
+		} catch (Throwable t) {
+			return null;
+		}
+	}
+	
+	public <T> T marshallCarefully(Class<T> clazz, JsonElement elem) throws DeserializationException {
+		return marshall(clazz, elem, true);
+	}
+	
 	@SuppressWarnings("unchecked")
 	@Nullable
-	public <T> T marshall(Class<T> clazz, JsonElement elem) {
+	public <T> T marshall(Class<T> clazz, JsonElement elem, boolean failFast) throws DeserializationException {
 		if (elem==null) return null;
 		if (elem==JsonNull.INSTANCE) return null;
 		if (clazz.isAssignableFrom(elem.getClass())) return (T)elem; //Already the correct type
@@ -204,18 +216,20 @@ public class Marshaller {
 			if (typeFactories.containsKey(clazz)) {
 				T result = (T)typeFactories.get(clazz).get();
 				try {
-					POJODeserializer.unpackObject(result, obj);
+					POJODeserializer.unpackObject(result, obj, failFast);
 					return result;
-				} catch (DeserializationException e) {
+				} catch (Throwable t) {
+					if (failFast) throw t;
 					return null;
 				}
 			} else {
 			
 				try {
-					T result = TypeMagic.createAndCast(clazz);
-					POJODeserializer.unpackObject(result, obj);
+					T result = TypeMagic.createAndCast(clazz, failFast);
+					POJODeserializer.unpackObject(result, obj, failFast);
 					return result;
 				} catch (Throwable t) {
+					if (failFast) throw t;
 					return null;
 				}
 			}

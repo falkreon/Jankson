@@ -770,23 +770,41 @@ public class BasicTests {
 		Assert.assertNotNull(unpacked.getInner());
 	}
 	
-	private static class AdaptedClass {
-		String a = "foo";
+	private static class ElementContainerClass {
+		public List<ElementClass> enclosed = new ArrayList<>();
 	}
-	private static boolean adapterRan = false;
+	
+	private static class ElementClass {
+		String a = "ADAPTER DID NOT RUN";
+	}
+	//private static boolean adapterRan = false;
 	
 	@Test
 	public void ensureTypeAdaptersAreCalled() {
-		Jankson adaptedJankson = Jankson.builder().registerTypeAdapter(AdaptedClass.class, (obj)->{
-			adapterRan = true;
-			return new AdaptedClass();
+		Jankson adaptedJankson = Jankson.builder().registerTypeAdapter(ElementClass.class, (obj)->{
+			//adapterRan = true;
+			ElementClass result = new ElementClass();
+			result.a = "ADAPTER RAN";
+			return result;
 		}).build();
 		try {
-			adaptedJankson.fromJson("{ 'a': 'foo' }", AdaptedClass.class);
-		} catch (SyntaxError e) {
-			e.printStackTrace();
+			JsonObject obj = adaptedJankson.load("{ 'enclosed': [ {'a': 'foo' } ] }");
+			Assert.assertEquals(obj.getMarshaller(), adaptedJankson.getMarshaller());
+			Assert.assertEquals(((JsonArray)obj.get("enclosed")).getMarshaller(), adaptedJankson.getMarshaller());
+			ElementClass test = adaptedJankson.getMarshaller().marshall(ElementClass.class, ((JsonArray)obj.get("enclosed")).get(0));
+			Assert.assertEquals("ADAPTER RAN", test.a);
+			
+			ElementContainerClass result = adaptedJankson.getMarshaller().marshall(ElementContainerClass.class, obj);
+			
+			//EnclosingAdaptedClass result = adaptedJankson.fromJson("{ 'enclosed': [ {'a': 'foo' } ] }", EnclosingAdaptedClass.class);
+			
+			
+			Assert.assertEquals("ADAPTER RAN", result.enclosed.get(0).a);
+		} catch (SyntaxError ex) {
+			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 		
-		Assert.assertTrue(adapterRan);
+		
+		//Assert.assertTrue(adapterRan);
 	}
 }

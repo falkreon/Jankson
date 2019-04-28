@@ -43,6 +43,8 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
+import blue.endless.jankson.impl.DeserializationException;
+
 public class TypeMagic {
 	private static Map<Class<?>, Class<?>> concreteClasses = new HashMap<>();
 	static {
@@ -144,10 +146,15 @@ public class TypeMagic {
 	@Nullable
 	public static <U> U createAndCast(Type t) {
 		try {
-			return (U) createAndCast(classForType(t));
+			return (U) createAndCast(classForType(t), false);
 		} catch (Throwable ex) {
+			ex.printStackTrace();
 			return null;
 		}
+	}
+	
+	public static <U> U createAndCastCarefully(Type t) throws DeserializationException {
+		return createAndCast(classForType(t));
 	}
 	
 	/**
@@ -159,7 +166,7 @@ public class TypeMagic {
 	 */
 	@SuppressWarnings("unchecked")
 	@Nullable
-	public static <U> U createAndCast(Class<U> t) {
+	public static <U> U createAndCast(Class<U> t, boolean failFast) throws DeserializationException {
 		if (t.isInterface()) {
 			Class<?> substitute = concreteClasses.get(t);
 			if (substitute!=null) try {
@@ -169,27 +176,33 @@ public class TypeMagic {
 			}
 		}
 		
+		/* Using getConstructor instead of class::newInstance takes some errors we can't otherwise detect, and
+		 * instead wraps them in InvocationTargetExceptions which we *can* catch.
+		 */
+		Constructor<U> noArg = null;
 		try {
-			/* Using getConstructor instead of class::newInstance takes some errors we can't otherwise detect, and
-			 * instead wraps them in InvocationTargetExceptions which we *can* catch.
-			 */
-			Constructor<U> noArg = null;
+			noArg = t.getConstructor();
+		} catch (Throwable ex2) {
 			try {
-				noArg = t.getConstructor();
-			} catch (Throwable ex2) {
-				try {
-					noArg = t.getDeclaredConstructor();
-				} catch (Throwable ex3) {
-					return null;
+				noArg = t.getDeclaredConstructor();
+			} catch (Throwable ex3) {
+				if (failFast) {
+					throw new DeserializationException("Class "+t.getCanonicalName()+" doesn't have a no-arg constructor, so an instance can't be created.");
 				}
+				return null;
 			}
+		}
+		
+		try {
 			boolean available = noArg.isAccessible();
 			if (!available) noArg.setAccessible(true);
 			U u = noArg.newInstance();
 			if (!available) noArg.setAccessible(false); //restore accessibility
 			return u;
 		} catch (Throwable ex) {
-			ex.printStackTrace();
+			if (failFast) {
+				throw new DeserializationException("An error occurred while creating an object.", ex);
+			}
 			return null;
 		}
 	}

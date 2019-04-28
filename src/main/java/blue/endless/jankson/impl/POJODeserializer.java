@@ -28,6 +28,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 
@@ -35,13 +36,23 @@ import javax.annotation.Nullable;
 
 import blue.endless.jankson.JsonArray;
 import blue.endless.jankson.JsonElement;
+import blue.endless.jankson.JsonGrammar;
 import blue.endless.jankson.JsonNull;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
 import blue.endless.jankson.magic.TypeMagic;
 
 public class POJODeserializer {
-	public static void unpackObject(Object target, JsonObject source) throws DeserializationException {
+	
+	
+	public static void unpackObject(Object target, JsonObject source) {
+		try {
+			unpackObject(target, source, false);
+		} catch (Throwable t) {
+		}
+	}
+	
+	public static void unpackObject(Object target, JsonObject source, boolean failFast) throws DeserializationException {
 		//if (o.getClass().getTypeParameters().length>0) throw new DeserializationException("Can't safely deserialize generic types!");
 		//well, let's try anyway and see if we run into problems.
 		
@@ -52,37 +63,40 @@ public class POJODeserializer {
 		for(Field f : target.getClass().getDeclaredFields()) {
 			int modifiers = f.getModifiers();
 			if (Modifier.isStatic(modifiers) || Modifier.isTransient(modifiers)) continue;
-			unpackField(target, f, work);
+			unpackField(target, f, work, failFast);
 		}
 		
 		//Attempt to fill public, accessible fields declared in the target object's superclass.
 		for(Field f : target.getClass().getFields()) {
 			int modifiers = f.getModifiers();
 			if (Modifier.isStatic(modifiers) || Modifier.isTransient(modifiers)) continue;
-			unpackField(target, f, work);
+			unpackField(target, f, work, failFast);
 		}
 		
-		if (!work.isEmpty()) {
-			//System.out.println("Unable to deserialize: "+work.toJson(true, true));
+		if (!work.isEmpty() && failFast) {
+			throw new DeserializationException("There was data that couldn't be applied to the destination object: "+work.toJson(JsonGrammar.STRICT));
 		}
 	}
 	
-	public static void unpackField(Object parent, Field f, JsonObject source) {
+	public static void unpackField(Object parent, Field f, JsonObject source, boolean failFast) throws DeserializationException {
 		if (source.containsKey(f.getName())) {
 			JsonElement elem = source.get(f.getName());
 			source.remove(f.getName()); //Prevent it from getting re-unpacked
-			if (elem==null) {
+			if (elem==null || elem==JsonNull.INSTANCE) {
+				boolean accessible = f.isAccessible();
+				if (!accessible) f.setAccessible(true);
 				try {
 					f.set(parent, null);
-				} catch (IllegalArgumentException | IllegalAccessException e) {
+					if (!accessible) f.setAccessible(false);
+				} catch (IllegalArgumentException | IllegalAccessException ex) {
+					if (failFast) throw new DeserializationException("Couldn't set field \""+f.getName()+"\" of class \""+parent.getClass().getCanonicalName()+"\"", ex);
 					//System.out.println("Unable to set field "+f.getName()+" of class "+parent.getClass().getCanonicalName()+" to null.");
 				}
 			} else {
 				try {
-					//System.out.println(""+elem+" --> "+f.getName());
 					unpackFieldData(parent, f, elem, source.getMarshaller());
-					//System.out.println(f.getName()+" == "+f.get(parent));
 				} catch (Throwable t) {
+					if (failFast) throw new DeserializationException("There was a problem unpacking field "+f.getName()+" of class "+parent.getClass().getCanonicalName(), t);
 					//System.out.println("Unable to unpack field "+f.getName()+" of class "+parent.getClass().getCanonicalName()+" using data "+elem);
 				}
 			}
@@ -134,6 +148,7 @@ public class POJODeserializer {
 	
 	@SuppressWarnings("unchecked")
 	public static boolean unpackFieldData(Object parent, Field field, JsonElement elem, Marshaller marshaller) throws Throwable {
+		
 		if (elem==null) return true;
 		try {
 			field.setAccessible(true);
@@ -188,6 +203,8 @@ public class POJODeserializer {
 		
 		if (Collection.class.isAssignableFrom(fieldClass)) {
 			Type elementType = ((ParameterizedType)field.getGenericType()).getActualTypeArguments()[0];
+			//System.out.println("Generic Arguments: "+Arrays.toString(((ParameterizedType)field.getGenericType()).getActualTypeArguments()));
+			//System.out.println("ElementType: "+elementType);
 			
 			unpackCollection((Collection<Object>)field.get(parent), elementType, elem, marshaller);
 			
@@ -234,11 +251,12 @@ public class POJODeserializer {
 	public static void unpackCollection(Collection<Object> collection, Type elementType, JsonElement elem, Marshaller marshaller) throws DeserializationException {
 		if (!(elem instanceof JsonArray)) throw new DeserializationException("Cannot deserialize a "+elem.getClass().getSimpleName()+" into a Set - expected a JsonArray!");
 		
-		Class<?> elementClass = TypeMagic.classForType(elementType); //TODO: Marshall to Type instead
+		//Class<?> elementClass = TypeMagic.classForType(elementType); //TODO: Marshall to Type instead
 		
 		JsonArray array = (JsonArray)elem;
 		for(JsonElement arrayElem : array) {
-			Object o = marshaller.marshall(elementClass, arrayElem);
+			
+			Object o = marshaller.marshall(elementType, arrayElem);
 			if (o!=null) collection.add(o);
 		}
 	}
