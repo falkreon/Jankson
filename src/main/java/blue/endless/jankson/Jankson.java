@@ -40,6 +40,7 @@ import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 
 import blue.endless.jankson.impl.AnnotatedElement;
+import blue.endless.jankson.impl.DeserializationException;
 import blue.endless.jankson.impl.ElementParserContext;
 import blue.endless.jankson.impl.Marshaller;
 import blue.endless.jankson.impl.ObjectParserContext;
@@ -256,6 +257,32 @@ public class Jankson {
 	public <T> T fromJson(String json, Class<T> clazz) throws SyntaxError {
 		JsonObject obj = load(json);
 		return fromJson(obj, clazz);
+	}
+	
+	/**
+	 * Converts a String of json into an object of the specified class in fail-fast mode, throwing an exception
+	 * proactively if problems arise.
+	 * @param json    A string containing json data to be unpacked
+	 * @param clazz   The class to convert the data into
+	 * @return An object representing the data in json
+	 * @throws SyntaxError If the json cannot be parsed
+	 * @throws DeserializationException If the conversion into an instance of the specified type fails
+	 */
+	public <T> T fromJsonCarefully(String json, Class<T> clazz) throws SyntaxError, DeserializationException {
+		JsonObject obj = load(json);
+		return fromJsonCarefully(obj, clazz);
+	}
+	
+	/**
+	 * Converts a JsonObject into an object of the specified class, in fail-fast mode, throwing an exception
+	 * proactively if problems arise
+	 * @param obj   A JsonObject holding the data to be unpacked
+	 * @param clazz The class to convert the data into
+	 * @return An object of the specified class, holding the data from json
+	 * @throws DeserializationException If the conversion into an instance of the specified type fails
+	 */
+	public <T> T fromJsonCarefully(JsonObject obj, Class<T> clazz) throws DeserializationException {
+		return marshaller.marshallCarefully(clazz, obj);
 	}
 	
 	public <T> JsonElement toJson(T t) {
