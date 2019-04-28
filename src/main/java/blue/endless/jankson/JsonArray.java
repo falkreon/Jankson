@@ -66,61 +66,49 @@ public class JsonArray extends JsonElement implements Collection<JsonElement>, I
 	
 	@Override
 	public String toJson(boolean comments, boolean newlines, int depth) {
+		JsonGrammar grammar = JsonGrammar.builder().withComments(comments).printWhitespace(newlines).build();
+		return toJson(grammar, depth);
+		/*
 		StringBuilder builder = new StringBuilder();
 		
 		builder.append("[ ");
 		
 		if (newlines) {
 			builder.append('\n');
-			for(int j=0; j<depth+1; j++) {
-				builder.append("\t");
-			}
 		}
 		
 		for(int i=0; i<entries.size(); i++) {
 			Entry entry = entries.get(i);
 			
-			CommentSerializer.print(builder, entry.comment, depth, comments, newlines);
+			if (newlines) {
+				for(int j=0; j<depth+1; j++) {
+					builder.append("\t");
+				}
+			}
 			
-			//if (entry.comment!=null) {
-			//	builder.append("/* ");
-			//	builder.append(entry.comment);
-			//	builder.append(" */ ");
-			//	
-			//	if (newlines) {
-			//		builder.append('\n');
-			//		for(int j=0; j<depth+1; j++) {
-			//			builder.append("\t");
-			//		}
-			//	}
-			//}
+			CommentSerializer.print(builder, entry.comment, depth, comments, newlines);
 			
 			builder.append(entry.value.toJson(comments, newlines, depth+1));
 			if (i<entries.size()-1) {
 				if (newlines) {
 					builder.append(",\n");
-					for(int j=0; j<depth+1; j++) {
-						builder.append("\t");
-					}
 				} else {
 					builder.append(", ");
 				}
 			}
 		}
-		if (entries.size()>0) {
-			if (newlines) {
-				builder.append('\n');
-				for(int j=0; j<depth; j++) {
-					builder.append("\t");
-				}
-			} else {
-				builder.append(' ');
+		
+		if (newlines) {
+			for(int j=0; j<depth; j++) {
+				builder.append("\t");
 			}
+		} else {
+			builder.append(" ");
 		}
 		
 		builder.append(']');
 		
-		return builder.toString();
+		return builder.toString();*/
 	}
 	
 	@Override
@@ -131,58 +119,37 @@ public class JsonArray extends JsonElement implements Collection<JsonElement>, I
 		
 		if (grammar.printWhitespace) {
 			builder.append('\n');
-			for(int j=0; j<depth+1; j++) {
-				builder.append("\t");
-			}
 		}
 		
 		for(int i=0; i<entries.size(); i++) {
 			Entry entry = entries.get(i);
 			
-			CommentSerializer.print(builder, entry.comment, depth, grammar);
+			if (grammar.printWhitespace) {
+				for(int j=0; j<depth+1; j++) {
+					builder.append("\t");
+				}
+			}
 			
-			//if (grammar.comments && entry.comment!=null) {
-			//	builder.append("/* ");
-			//	builder.append(entry.comment);
-			//	builder.append(" */ ");
-			//	
-			//	if (grammar.printWhitespace) {
-			//		builder.append('\n');
-			//		for(int j=0; j<depth+1; j++) {
-			//			builder.append("\t");
-			//		}
-			//	}
-			//}
+			CommentSerializer.print(builder, entry.comment, depth, grammar);
 			
 			builder.append(entry.value.toJson(grammar, depth+1));
 			
 			if (grammar.printCommas) { 
 				if (i<entries.size()-1 || grammar.printTrailingCommas) {
-					if (grammar.printWhitespace) {
-						builder.append(",\n");
-						for(int j=0; j<depth+1; j++) {
-							builder.append("\t");
-						}
-					} else {
-						builder.append(", ");
-					}
+					builder.append(",");
+					if (i<entries.size()-1 && !grammar.printWhitespace) builder.append(' ');
 				}
 			} else {
-				if (i<entries.size()-1) {
-					if (grammar.printWhitespace) {
-						builder.append("\n");
-						for(int j=0; j<depth+1; j++) {
-							builder.append("\t");
-						}
-					} else {
-						builder.append(" ");
-					}
-				}
+				builder.append(" ");
 			}
-		}
-		if (entries.size()>0) {
+			
 			if (grammar.printWhitespace) {
 				builder.append('\n');
+			}
+		}
+		
+		if (entries.size()>0) {
+			if (grammar.printWhitespace) {
 				for(int j=0; j<depth; j++) {
 					builder.append("\t");
 				}

@@ -530,6 +530,22 @@ public class BasicTests {
 		Assert.assertEquals(expected, actual);
 	}
 	
+	@Test
+	public void ensureMultilineArrayCommentsAreIndented() {
+		JsonArray subject = new JsonArray();
+		subject.add(new JsonPrimitive("foo"), "This is a line\nAnd this is another line.");
+		String actual = subject.toJson(JsonGrammar.JSON5);
+		String expected =
+				"[ \n" + //Again, this trailing space is subject to change
+				"	/* This is a line\n" +
+				"	   And this is another line.\n" + //Three spaces precede every subsequent line to line comments up
+				"	*/\n" + //The end-comment is on its own line
+				"	\"foo\",\n" + //Trailing comma per JSON5
+				"]";
+		
+		Assert.assertEquals(expected, actual);
+	}
+	
 	private static class TestClass {
 		private ArrayList<String> strings;
 		private Map<String, Character.UnicodeScript> scripts = new HashMap<>();

@@ -198,6 +198,10 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 	
 	@Override
 	public String toJson(boolean comments, boolean newlines, int depth) {
+		JsonGrammar grammar = JsonGrammar.builder().withComments(comments).printWhitespace(newlines).build();
+		return toJson(grammar, depth);
+		
+		/*
 		StringBuilder builder = new StringBuilder();
 		builder.append("{ ");
 		if (newlines && entries.size()>0) builder.append('\n');
@@ -211,24 +215,7 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 				}
 			}
 			
-			//if (comments && entry.comment!=null && !entry.comment.isEmpty()) {
-				CommentSerializer.print(builder, entry.comment, depth, comments, newlines);
-				
-				//builder.append("/* ");
-				/*builder.append(entry.comment); //TODO: if the comment has newlines, indent them!
-				if (entry.comment.contains("\n")) {
-					for(String s : entry.comment.split("\n")) {
-						
-					}
-				}*/
-				//builder.append(" */ ");
-				/*if (newlines) {
-					builder.append('\n');
-					for(int j=0; j<depth+1; j++) {
-						builder.append("\t");
-					}
-				}*/
-			//}
+			CommentSerializer.print(builder, entry.comment, depth, comments, newlines);
 			
 			builder.append("\"");
 			builder.append(entry.key);
@@ -264,7 +251,7 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 		
 		builder.append("}");
 		
-		return builder.toString();
+		return builder.toString();*/
 	}
 	
 	@Override
@@ -284,18 +271,6 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 			
 			CommentSerializer.print(builder, entry.comment, depth, grammar);
 			
-			//if (grammar.comments && entry.comment!=null) {
-			//	builder.append("/* ");
-			//	builder.append(entry.comment);
-			//	builder.append(" */ ");
-			//	if (grammar.printWhitespace) {
-			//		builder.append('\n');
-			//		for(int j=0; j<depth+1; j++) {
-			//			builder.append("\t");
-			//		}
-			//	}
-			//}
-			
 			builder.append("\"");
 			builder.append(entry.key);
 			builder.append("\": ");
@@ -308,35 +283,29 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 				builder.append(entry.value.toJson(grammar, depth+1));
 			}
 			
-			if (grammar.printCommas) {
+			if (grammar.printCommas) { 
 				if (i<entries.size()-1 || grammar.printTrailingCommas) {
-					if (grammar.printWhitespace) {
-						builder.append(",\n");
-					} else {
-						builder.append(", ");
-					}
+					builder.append(",");
+					if (i<entries.size()-1 && !grammar.printWhitespace) builder.append(' ');
 				}
 			} else {
-				if (i<entries.size()-1) {
-					if (grammar.printWhitespace) {
-						builder.append("\n");
-					} else {
-						builder.append(" ");
-					}
-				}
+				builder.append(" ");
+			}
+			
+			if (grammar.printWhitespace) {
+				builder.append('\n');
 			}
 		}
 		
-		//if (entries.size()>0) {
-			//if (grammar.printWhitespace) {
-			//	builder.append('\n');
-			//	if (depth>0) for(int j=0; j<depth; j++) {
-			//		builder.append("\t");
-			//	}
-			//} else {
-			//	builder.append(' ');
-			//}
-		//}
+		if (entries.size()>0) {
+			if (grammar.printWhitespace) {
+				for(int j=0; j<depth; j++) {
+					builder.append("\t");
+				}
+			} else {
+				builder.append(' ');
+			}
+		}
 		
 		builder.append("}");
 		
