@@ -62,9 +62,17 @@ public class ElementParserContext implements ParserContext<AnnotatedElement> {
 			return true;
 			
 		case '}':
+			loader.throwDelayed(new SyntaxError("Found '"+((char)codePoint)+"' while parsing an element - this shouldn't happen!"));
+			return false;
 		case ']':
-			System.out.println("Curious! Bailing from our intermediate context.");
-			//loader.throwDelayed(new SyntaxError("Found '}' while parsing an element - this shouldn't happen!"));
+			result = new AnnotatedElement(null, comment);
+			/*
+			if (this.result==null) {
+				System.out.println("Comment parser didn't release its context in time?");
+				loader.throwDelayed(new SyntaxError("Found '"+((char)codePoint)+"' while parsing an element - this shouldn't happen!"));
+			} else {
+				System.out.println("We're being called after we're done");
+			}*/
 			return false;
 		default:
 			if (Character.isDigit(codePoint) || codePoint=='-' || codePoint=='+' || codePoint=='.') {

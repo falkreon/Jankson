@@ -64,6 +64,10 @@ public class JsonArray extends JsonElement implements Collection<JsonElement>, I
 		return entries.get(i).comment;
 	}
 	
+	public void setComment(int i, String comment) {
+		entries.get(i).comment = comment;
+	}
+	
 	@Override
 	public String toJson(boolean comments, boolean newlines, int depth) {
 		JsonGrammar grammar = JsonGrammar.builder().withComments(comments).printWhitespace(newlines).build();

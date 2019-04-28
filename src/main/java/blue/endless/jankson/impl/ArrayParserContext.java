@@ -49,7 +49,14 @@ public class ArrayParserContext implements ParserContext<JsonArray> {
 		}
 		
 		loader.push(new ElementParserContext(), (it)->{
-			result.add(it.getElement(), comment);
+			if (it.getElement()!=null) {
+				result.add(it.getElement(), it.getComment());
+			} else {
+				String existing = result.getComment(result.size()-1);
+				if (existing==null) existing="";
+				String combined = existing + " " + it.getComment();
+				result.setComment(result.size()-1, combined);
+			}
 		});
 		return false;
 	}

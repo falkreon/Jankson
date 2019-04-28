@@ -807,4 +807,20 @@ public class BasicTests {
 		
 		//Assert.assertTrue(adapterRan);
 	}
+	
+	@Test
+	public void testUnifontCommentTestCase() {
+		String subject =
+				"{\n" + 
+				"	\"anArray\": [\n" + 
+				"		\"foo\" // A COMMENT\n" + 
+				"	]\n" + 
+				"}";
+		
+		try {
+			JsonObject result = jankson.load(subject);
+		} catch (SyntaxError ex) {
+			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+		}
+	}
 }
