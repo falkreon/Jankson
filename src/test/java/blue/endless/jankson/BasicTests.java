@@ -38,9 +38,7 @@ import org.junit.Test;
 
 import blue.endless.jankson.annotation.NonnullByDefault;
 import blue.endless.jankson.annotation.Nullable;
-import blue.endless.jankson.impl.DeserializationException;
 import blue.endless.jankson.impl.Marshaller;
-import blue.endless.jankson.impl.POJODeserializer;
 import blue.endless.jankson.impl.SyntaxError;
 import blue.endless.jankson.magic.TypeMagic;
 
@@ -744,5 +742,51 @@ public class BasicTests {
 		} catch (SyntaxError ex) {
 			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
+	}
+	
+	private static class NestedObjectInner {
+		protected String id;
+		public NestedObjectInner() { this.id = null; } //Needed for TypeMagic
+		public NestedObjectInner(String id) {
+			this.id = id;
+		}
+	}
+	
+	private static class NestedObjectOuter {
+		NestedObjectInner inner;
+		public void setInner(NestedObjectInner inner) {
+			this.inner = inner;
+		}
+		public NestedObjectInner getInner() { return inner; }
+	}
+	
+	@Test
+	public void ensureNestedObjectMarshalling() {
+		NestedObjectOuter subject = new NestedObjectOuter();
+		subject.setInner(new NestedObjectInner("A unique string"));
+		JsonElement serialized = jankson.toJson(subject);
+		
+		NestedObjectOuter unpacked = jankson.fromJson((JsonObject)serialized, NestedObjectOuter.class);
+		Assert.assertNotNull(unpacked.getInner());
+	}
+	
+	private static class AdaptedClass {
+		String a = "foo";
+	}
+	private static boolean adapterRan = false;
+	
+	@Test
+	public void ensureTypeAdaptersAreCalled() {
+		Jankson adaptedJankson = Jankson.builder().registerTypeAdapter(AdaptedClass.class, (obj)->{
+			adapterRan = true;
+			return new AdaptedClass();
+		}).build();
+		try {
+			adaptedJankson.fromJson("{ 'a': 'foo' }", AdaptedClass.class);
+		} catch (SyntaxError e) {
+			e.printStackTrace();
+		}
+		
+		Assert.assertTrue(adapterRan);
 	}
 }

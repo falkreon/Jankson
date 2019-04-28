@@ -24,18 +24,17 @@
 
 package blue.endless.jankson.impl;
 
-import java.awt.List;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
@@ -56,6 +55,7 @@ public class Marshaller {
 	private Map<Class<?>, Function<JsonObject,?>> typeAdapters = new HashMap<>();
 	
 	private Map<Class<?>, BiFunction<Object, Marshaller, JsonElement>> serializers = new HashMap<>();
+	private Map<Class<?>, Supplier<?>> typeFactories = new HashMap<>();
 	
 	public <T> void register(Class<T> clazz, Function<Object, T> marshaller) {
 		primitiveMarshallers.put(clazz, marshaller);
@@ -73,6 +73,10 @@ public class Marshaller {
 	@SuppressWarnings("unchecked")
 	public <T> void registerSerializer(Class<T> clazz, BiFunction<T, Marshaller, JsonElement> serializer) {
 		serializers.put(clazz, (BiFunction<Object, Marshaller, JsonElement>) serializer);
+	}
+	
+	public <T> void registerTypeFactory(Class<T> clazz, Supplier<T> supplier) {
+		typeFactories.put(clazz, supplier);
 	}
 	
 	public Marshaller() {
@@ -197,12 +201,23 @@ public class Marshaller {
 				return (T) typeAdapters.get(clazz).apply((JsonObject) elem);
 			}
 			
-			try {
-				T result = TypeMagic.createAndCast(clazz);
-				POJODeserializer.unpackObject(result, obj);
-				return result;
-			} catch (Throwable t) {
-				return null;
+			if (typeFactories.containsKey(clazz)) {
+				T result = (T)typeFactories.get(clazz).get();
+				try {
+					POJODeserializer.unpackObject(result, obj);
+					return result;
+				} catch (DeserializationException e) {
+					return null;
+				}
+			} else {
+			
+				try {
+					T result = TypeMagic.createAndCast(clazz);
+					POJODeserializer.unpackObject(result, obj);
+					return result;
+				} catch (Throwable t) {
+					return null;
+				}
 			}
 			
 		} else if (elem instanceof JsonArray) {

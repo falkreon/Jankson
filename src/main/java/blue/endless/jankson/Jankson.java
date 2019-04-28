@@ -35,6 +35,7 @@ import java.util.Deque;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import javax.annotation.Nonnull;
 
@@ -329,7 +330,7 @@ public class Jankson {
 		 * Registers a deserializer that can transform a JsonObject into an instance of the specified class. Please note
 		 * that these type adapters are unsuitable for generic types, as these types are erased during jvm execution.
 		 * @param clazz    The class to register deserialization for
-		 * @param adapter  A function which can produce an object representing the supplied JsonObject
+		 * @param adapter  A function which takes a JsonObject and converts it into an equivalent object of the class `clazz`
 		 * @return This Builder for further modification.
 		 */
 		public <T> Builder registerTypeAdapter(Class<T> clazz, Function<JsonObject, T> adapter) {
@@ -341,14 +342,37 @@ public class Jankson {
 		 * Registers a marshaller for primitive types. Most built-in json and java types are already supported, but this
 		 * allows one to change the deserialization behavior of Json primitives. Please note that these adapters are not
 		 * suitable for generic types, as these types are erased during jvm execution.
+		 * @param clazz   The class to register a type adapter for
+		 * @param adapter A function which takes a plain java object and converts it into the class `clazz`
+		 * @return This Builder for further modification.
 		 */
 		public <T> Builder registerPrimitiveTypeAdapter(Class<T> clazz, Function<Object, T> adapter) {
 			marshaller.register(clazz, adapter);
 			return this;
 		}
 		
+		/**
+		 * Registers a function to serialize an object into json. This can be useful if a class's serialized form is not
+		 * meant to resemble its live-memory form. 
+		 * @param clazz      The class to register a serializer for
+		 * @param serializer A function which takes the object and a Marshaller, and produces a serialized JsonElement
+		 * @return This Builder for further modificaton.
+		 */
 		public <T> Builder registerSerializer(Class<T> clazz, BiFunction<T, Marshaller, JsonElement> serializer) {
 			marshaller.registerSerializer(clazz, serializer);
+			return this;
+		}
+		
+		/**
+		 * Registers a factory that can generate empty objects of the specified type. Sometimes it's not practical
+		 * to have a no-arg constructor available on an object, so the function to create blanks can be specified
+		 * here.
+		 * @param clazz    The class to use an alternate factory for
+		 * @param factory  A Supplier which can create blank objects of class `clazz` for deserialization
+		 * @return This Builder for further modification.
+		 */
+		public <T> Builder registerTypeFactory(Class<T> clazz, Supplier<T> factory) {
+			marshaller.registerTypeFactory(clazz, factory);
 			return this;
 		}
 		
