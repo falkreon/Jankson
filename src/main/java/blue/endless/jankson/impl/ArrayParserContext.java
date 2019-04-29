@@ -54,7 +54,7 @@ public class ArrayParserContext implements ParserContext<JsonArray> {
 			} else {
 				String existing = result.getComment(result.size()-1);
 				if (existing==null) existing="";
-				String combined = existing + " " + it.getComment();
+				String combined = existing + "\n" + it.getComment();
 				result.setComment(result.size()-1, combined);
 			}
 		});
