@@ -24,13 +24,15 @@
 
 package blue.endless.jankson.impl;
 
+import java.util.Locale;
+
 import blue.endless.jankson.Jankson;
 import blue.endless.jankson.JsonPrimitive;
 
 public class NumberParserContext implements ParserContext<JsonPrimitive> {
 	private String numberString = "";
 	private boolean complete = false;
-	private String acceptedChars = "0123456789.+-eExabcdef";
+	private String acceptedChars = "0123456789.+-eExabcdefInityNn";
 	
 	public NumberParserContext(int firstCodePoint) {
 		numberString += (char)firstCodePoint;
@@ -61,6 +63,17 @@ public class NumberParserContext implements ParserContext<JsonPrimitive> {
 
 	@Override
 	public JsonPrimitive getResult() throws SyntaxError {
+		//parse special values
+		String lc = numberString.toLowerCase(Locale.ROOT);
+		if (lc.equals("infinity") || lc.equals("+infinity")) {
+			return new JsonPrimitive(Double.POSITIVE_INFINITY);
+		} else if (lc.equals("-infinity")) {
+			return new JsonPrimitive(Double.NEGATIVE_INFINITY);
+		} else if (lc.equals("nan")) {
+			return new JsonPrimitive(Double.NaN);
+		}
+		
+		//Fallback to the number parsers
 		if (numberString.startsWith(".")) numberString = '0'+numberString;
 		if (numberString.endsWith(".")) numberString = numberString+'0';
 		if (numberString.startsWith("0x")) {

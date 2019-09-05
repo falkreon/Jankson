@@ -82,15 +82,44 @@ public class ElementParserContext implements ParserContext<AnnotatedElement> {
 			}
 			
 			loader.push(new TokenParserContext(codePoint), (it)->{
+				String token = it.asString().toLowerCase(Locale.ROOT);
+				
+				switch(token) {
+				case "null":
+					setResult(JsonNull.INSTANCE);
+					break;
+				case "true":
+					setResult(JsonPrimitive.TRUE);
+					break;
+				case "false":
+					setResult(JsonPrimitive.FALSE);
+					break;
+				case "infinity": //handled by this token context
+				case "+infinity": //handled by number context. here for completeness
+					setResult(new JsonPrimitive(Double.POSITIVE_INFINITY));
+					break;
+				case "-infinity": //number context
+					setResult(new JsonPrimitive(Double.NEGATIVE_INFINITY));
+					break;
+				case "nan": //token context
+					setResult(new JsonPrimitive(Double.NaN));
+					break;
+				default:
+					loader.throwDelayed(new SyntaxError("Found unrecognized token '"+it.asString()+"' while looking for a json element of any type."));
+					break;
+				}
+				/*
 				if (it.asString().toLowerCase(Locale.ROOT).equals("null")) {
 					setResult(JsonNull.INSTANCE);
 				} else if (it.asString().toLowerCase(Locale.ROOT).equals("true")) {
 					setResult(JsonPrimitive.TRUE);
 				} else if (it.asString().toLowerCase(Locale.ROOT).equals("false")) {
 					setResult(JsonPrimitive.FALSE);
+				} else if (it.asString().toLowerCase(Locale.ROOT).equals("infinity")) {
+					setResult(new JsonPrimitive(Double.POSITIVE_INFINITY));
 				} else {
 					loader.throwDelayed(new SyntaxError("Found unrecognized token '"+it.asString()+"' while looking for a json element of any type."));
-				}
+				}*/
 			});
 			childActive = true;
 			

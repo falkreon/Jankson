@@ -803,8 +803,6 @@ public class BasicTests {
 		} catch (SyntaxError ex) {
 			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
-		
-		
 		//Assert.assertTrue(adapterRan);
 	}
 	
@@ -819,6 +817,32 @@ public class BasicTests {
 		
 		try {
 			JsonObject result = jankson.load(subject);
+		} catch (SyntaxError ex) {
+			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+		}
+	}
+	
+	/** This makes sure that values like Infinity, NaN, and -Infinity are parsed properly */
+	@Test
+	public void testSpecialNumericValues() {
+		String subject =
+				"{\n" + 
+				"	\"a\": Infinity,\n" + 
+				"	\"b\": -Infinity,\n" + 
+				"	\"c\": NaN,\n" + 
+				"}";
+		try {
+			JsonObject result = jankson.load(subject);
+			JsonElement a = result.get("a");
+			JsonElement b = result.get("b");
+			JsonElement c = result.get("c");
+			Assert.assertTrue("'Infinity' parses to a JsonPrimitive", a instanceof JsonPrimitive);
+			Assert.assertTrue("'-Infinity' parses to a JsonPrimitive", b instanceof JsonPrimitive);
+			Assert.assertTrue("'NaN' parses to a JsonPrimitive", c instanceof JsonPrimitive);
+			
+			Assert.assertEquals(Double.POSITIVE_INFINITY, ((JsonPrimitive)a).asDouble(-1), 1);
+			Assert.assertEquals(Double.NEGATIVE_INFINITY, ((JsonPrimitive)b).asDouble(-1), 1);
+			Assert.assertEquals(Double.NaN, ((JsonPrimitive)c).asDouble(-1), 1);
 		} catch (SyntaxError ex) {
 			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
