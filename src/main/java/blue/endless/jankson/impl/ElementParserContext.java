@@ -105,7 +105,8 @@ public class ElementParserContext implements ParserContext<AnnotatedElement> {
 					setResult(new JsonPrimitive(Double.NaN));
 					break;
 				default:
-					loader.throwDelayed(new SyntaxError("Found unrecognized token '"+it.asString()+"' while looking for a json element of any type."));
+					setResult(it);
+					//loader.throwDelayed(new SyntaxError("Found unrecognized token '"+it.asString()+"' while looking for a json element of any type."));
 					break;
 				}
 				/*

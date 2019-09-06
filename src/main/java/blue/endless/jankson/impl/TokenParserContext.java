@@ -39,7 +39,7 @@ public class TokenParserContext implements ParserContext<JsonPrimitive> {
 	public boolean consume(int codePoint, Jankson loader) throws SyntaxError {
 		if (complete) return false;
 		
-		if (Character.isUnicodeIdentifierPart(codePoint)) {
+		if (codePoint=='~' || Character.isUnicodeIdentifierPart(codePoint)) {
 			
 			if (codePoint<0xFFFF) {
 				token+=((char)codePoint);

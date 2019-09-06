@@ -189,7 +189,10 @@ public class Marshaller {
 			//Almost everything has a String representation
 			if (elem instanceof JsonObject) return (T)((JsonObject)elem).toJson(false, false);
 			if (elem instanceof JsonArray) return (T)((JsonArray)elem).toJson(false, false);
-			if (elem instanceof JsonPrimitive) return (T)((JsonPrimitive)elem).getValue().toString();
+			if (elem instanceof JsonPrimitive) {
+				((JsonPrimitive)elem).getValue();
+				return (T)((JsonPrimitive)elem).asString();
+			}
 			if (elem instanceof JsonNull) return (T)"null";
 			return null;
 		}

@@ -871,4 +871,24 @@ public class BasicTests {
 			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 	}
+	
+	/** This makes sure tilde on its own gets processed as a String by the token parser */
+	@Test
+	public void testUnquotedStrings() {
+		String subject =
+				"{\n" + 
+				"	\"foo_bar\": ~,\n" + 
+				"	~: bux,\n" + 
+				"}";
+		try {
+			JsonObject obj = jankson.fromJson(subject, JsonObject.class);
+			String foo_bar = obj.get(String.class, "foo_bar");
+			String baz = obj.get(String.class, "~");
+			
+			Assert.assertEquals("~", foo_bar);
+			Assert.assertEquals("bux", baz);
+		} catch (SyntaxError ex) {
+			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+		}
+	}
 }
