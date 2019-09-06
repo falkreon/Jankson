@@ -28,7 +28,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 
@@ -40,6 +39,7 @@ import blue.endless.jankson.JsonGrammar;
 import blue.endless.jankson.JsonNull;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
+import blue.endless.jankson.annotation.SerializedName;
 import blue.endless.jankson.magic.TypeMagic;
 
 public class POJODeserializer {
@@ -79,9 +79,13 @@ public class POJODeserializer {
 	}
 	
 	public static void unpackField(Object parent, Field f, JsonObject source, boolean failFast) throws DeserializationException {
-		if (source.containsKey(f.getName())) {
-			JsonElement elem = source.get(f.getName());
-			source.remove(f.getName()); //Prevent it from getting re-unpacked
+		String fieldName = f.getName();
+		SerializedName nameAnnotation = f.getAnnotation(SerializedName.class);
+		if (nameAnnotation!=null) fieldName = nameAnnotation.value();
+		
+		if (source.containsKey(fieldName)) {
+			JsonElement elem = source.get(fieldName);
+			source.remove(fieldName); //Prevent it from getting re-unpacked
 			if (elem==null || elem==JsonNull.INSTANCE) {
 				boolean accessible = f.isAccessible();
 				if (!accessible) f.setAccessible(true);
@@ -107,7 +111,7 @@ public class POJODeserializer {
 	/** NOT WORKING YET, HIGHLY EXPERIMENTAL */
 	@SuppressWarnings("unchecked")
 	@Nullable
-	public static Object Unpack(Type t, JsonElement elem, Marshaller marshaller) {
+	public static Object unpack(Type t, JsonElement elem, Marshaller marshaller) {
 		Class<?> rawClass = TypeMagic.classForType(t);
 		if (rawClass.isPrimitive()) return null; //We can't unpack a primitive into an object of primitive type. Maybe in the future we can return a boxed type?
 		

@@ -119,10 +119,12 @@ public class JsonArray extends JsonElement implements Collection<JsonElement>, I
 	public String toJson(JsonGrammar grammar, int depth) {
 		StringBuilder builder = new StringBuilder();
 		
-		builder.append("[ ");
+		builder.append("[");
 		
 		if (grammar.printWhitespace) {
 			builder.append('\n');
+		} else {
+			builder.append(' ');
 		}
 		
 		for(int i=0; i<entries.size(); i++) {

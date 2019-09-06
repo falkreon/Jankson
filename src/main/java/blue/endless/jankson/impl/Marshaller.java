@@ -44,6 +44,7 @@ import blue.endless.jankson.JsonElement;
 import blue.endless.jankson.JsonNull;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
+import blue.endless.jankson.annotation.SerializedName;
 import blue.endless.jankson.magic.TypeMagic;
 
 public class Marshaller {
@@ -321,6 +322,9 @@ public class Marshaller {
 			try {
 				Object child = f.get(obj);
 				String name = f.getName();
+				SerializedName nameAnnotation = f.getAnnotation(SerializedName.class);
+				if (nameAnnotation!=null) name = nameAnnotation.value();
+				
 				Comment comment = f.getAnnotation(Comment.class);
 				if (comment==null) {
 					result.put(name, serialize(child));
@@ -346,6 +350,9 @@ public class Marshaller {
 			try {
 				Object child = f.get(obj);
 				String name = f.getName();
+				SerializedName nameAnnotation = f.getAnnotation(SerializedName.class);
+				if (nameAnnotation!=null) name = nameAnnotation.value();
+				
 				Comment comment = f.getAnnotation(Comment.class);
 				if (comment==null) {
 					result.put(name, serialize(child));

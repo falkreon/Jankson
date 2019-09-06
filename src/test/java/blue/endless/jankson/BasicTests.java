@@ -38,6 +38,7 @@ import org.junit.Test;
 
 import blue.endless.jankson.annotation.NonnullByDefault;
 import blue.endless.jankson.annotation.Nullable;
+import blue.endless.jankson.annotation.SerializedName;
 import blue.endless.jankson.impl.Marshaller;
 import blue.endless.jankson.impl.SyntaxError;
 import blue.endless.jankson.magic.TypeMagic;
@@ -483,9 +484,9 @@ public class BasicTests {
 		String actual = subject.toJson(true, true, 0);
 		
 		String expected =
-				"{ \n" + //This trailing space before the newline is dubious and may change without notice.
-				"	\"array\": [ \n" + 
-				"		{ \n" + 
+				"{\n" +
+				"	\"array\": [\n" + 
+				"		{\n" + 
 				"			// pitiable\n" + //Inline comments are now emitted where expedient
 				"			\"foo\": \"foo\",\n" + 
 				"			// passable\n" + 
@@ -504,7 +505,7 @@ public class BasicTests {
 		subject.put("baz", new JsonPrimitive("bux"), " ");
 		String actual = subject.toJson(JsonGrammar.JSON5);
 		String expected =
-				"{ \n" + //Again, this trailing space is subject to change
+				"{\n" + //Again, this trailing space is subject to change
 				"	\"foo\": \"bar\",\n" +
 				"	\"baz\": \"bux\",\n" + //Trailing commas are emitted in JSON5 grammar
 				"}";
@@ -518,7 +519,7 @@ public class BasicTests {
 		subject.put("foo", new JsonPrimitive("bar"), "This is a line\nAnd this is another line.");
 		String actual = subject.toJson(JsonGrammar.JSON5);
 		String expected =
-				"{ \n" + //Again, this trailing space is subject to change
+				"{\n" +
 				"	/* This is a line\n" +
 				"	   And this is another line.\n" + //Three spaces precede every subsequent line to line comments up
 				"	*/\n" + //The end-comment is on its own line
@@ -534,7 +535,7 @@ public class BasicTests {
 		subject.add(new JsonPrimitive("foo"), "This is a line\nAnd this is another line.");
 		String actual = subject.toJson(JsonGrammar.JSON5);
 		String expected =
-				"[ \n" + //Again, this trailing space is subject to change
+				"[\n" +
 				"	/* This is a line\n" +
 				"	   And this is another line.\n" + //Three spaces precede every subsequent line to line comments up
 				"	*/\n" + //The end-comment is on its own line
@@ -843,6 +844,29 @@ public class BasicTests {
 			Assert.assertEquals(Double.POSITIVE_INFINITY, ((JsonPrimitive)a).asDouble(-1), 1);
 			Assert.assertEquals(Double.NEGATIVE_INFINITY, ((JsonPrimitive)b).asDouble(-1), 1);
 			Assert.assertEquals(Double.NaN, ((JsonPrimitive)c).asDouble(-1), 1);
+		} catch (SyntaxError ex) {
+			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+		}
+	}
+	
+	private static class NameTest {
+		@SerializedName("foo_bar")
+		public int fooBar = 0;
+	}
+	
+	/** SerializedName should be preferred over the field's name in both POJO serialization and deserialization */
+	@Test
+	public void testSerializedName() {
+		String subject =
+				"{\n" + 
+				"	\"foo_bar\": 31,\n" + 
+				"}";
+		try {
+			NameTest object = jankson.fromJson(subject, NameTest.class);
+			Assert.assertEquals(31, object.fooBar);
+			
+			String out = jankson.toJson(object).toJson(JsonGrammar.JSON5);
+			Assert.assertEquals(subject, out);
 		} catch (SyntaxError ex) {
 			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}

@@ -257,8 +257,12 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 	@Override
 	public String toJson(JsonGrammar grammar, int depth) {
 		StringBuilder builder = new StringBuilder();
-		builder.append("{ ");
-		if (grammar.printWhitespace && entries.size()>0) builder.append('\n');
+		builder.append("{");
+		if (grammar.printWhitespace && entries.size()>0) {
+			builder.append('\n');
+		} else {
+			builder.append(' ');
+		}
 		
 		for(int i=0; i<entries.size(); i++) {
 			Entry entry = entries.get(i);
