@@ -47,6 +47,46 @@ public class JsonPrimitive extends JsonElement {
 		return value.toString();
 	}
 	
+	public boolean asBoolean(boolean defaultValue) {
+		if (value instanceof Boolean) {
+			return ((Boolean) value).booleanValue();
+		} else {
+			return defaultValue;
+		}
+	}
+	
+	public byte asByte(byte defaultValue) {
+		if (value instanceof Number) {
+			return ((Number)value).byteValue();
+		} else {
+			return defaultValue;
+		}
+	}
+	
+	public char asChar(char defaultValue) {
+		if (value instanceof Number) {
+			return (char)((Number)value).intValue();
+		} else if (value instanceof Character) {
+			return ((Character) value).charValue();
+		} else if (value instanceof String) {
+			if (((String)value).length()==1) {
+				return ((String) value).charAt(0);
+			} else {
+				return defaultValue;
+			}
+		} else {
+			return defaultValue;
+		}
+	}
+	
+	public short asShort(short defaultValue) {
+		if (value instanceof Number) {
+			return ((Number)value).shortValue();
+		} else {
+			return defaultValue;
+		}
+	}
+	
 	public int asInt(int defaultValue) {
 		if (value instanceof Number) {
 			return ((Number)value).intValue();

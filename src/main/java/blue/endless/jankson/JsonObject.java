@@ -307,6 +307,72 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 		return marshaller.marshall(clazz, elem);
 	}
 	
+	//Convenience getters
+	
+	public boolean getBoolean(@Nonnull String key, boolean defaultValue) {
+		JsonElement elem = get(key);
+		if (elem != null && elem instanceof JsonPrimitive) {
+			return ((JsonPrimitive)elem).asBoolean(defaultValue);
+		}
+		return defaultValue;
+	}
+	
+	public byte getByte(@Nonnull String key, byte defaultValue) {
+		JsonElement elem = get(key);
+		if (elem != null && elem instanceof JsonPrimitive) {
+			return ((JsonPrimitive)elem).asByte(defaultValue);
+		}
+		return defaultValue;
+	}
+	
+	public char getChar(@Nonnull String key, char defaultValue) {
+		JsonElement elem = get(key);
+		if (elem != null && elem instanceof JsonPrimitive) {
+			return ((JsonPrimitive)elem).asChar(defaultValue);
+		}
+		return defaultValue;
+	}
+	
+	public short getShort(@Nonnull String key, short defaultValue) {
+		JsonElement elem = get(key);
+		if (elem != null && elem instanceof JsonPrimitive) {
+			return ((JsonPrimitive)elem).asShort(defaultValue);
+		}
+		return defaultValue;
+	}
+	
+	public int getInt(@Nonnull String key, int defaultValue) {
+		JsonElement elem = get(key);
+		if (elem != null && elem instanceof JsonPrimitive) {
+			return ((JsonPrimitive)elem).asInt(defaultValue);
+		}
+		return defaultValue;
+	}
+	
+	public long getLong(@Nonnull String key, long defaultValue) {
+		JsonElement elem = get(key);
+		if (elem != null && elem instanceof JsonPrimitive) {
+			return ((JsonPrimitive)elem).asLong(defaultValue);
+		}
+		return defaultValue;
+	}
+	
+	public float getFloat(@Nonnull String key, float defaultValue) {
+		JsonElement elem = get(key);
+		if (elem != null && elem instanceof JsonPrimitive) {
+			return ((JsonPrimitive)elem).asFloat(defaultValue);
+		}
+		return defaultValue;
+	}
+	
+	public double getDouble(@Nonnull String key, double defaultValue) {
+		JsonElement elem = get(key);
+		if (elem != null && elem instanceof JsonPrimitive) {
+			return ((JsonPrimitive)elem).asDouble(defaultValue);
+		}
+		return defaultValue;
+	}
+	
 	/**
 	 * Gets a (potentially nested) element from this object if it exists.
 	 * @param clazz The expected class of the element
@@ -408,166 +474,169 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 		}
 	}
 
-	//IMPLEMENTATION for Cloneable
+	//implements Cloneable {
 	
-	@Override
-	public JsonObject clone() {
-		JsonObject result = new JsonObject();
-		for(Entry entry : entries) {
-			result.put(entry.key, entry.value.clone(), entry.comment);
-		}
-		result.marshaller = marshaller;
-		return result;
-	}
-	
-	//IMPLEMENTATION for Map<JsonElement>
-	
-	/**
-	 * Replaces a key-value mapping in this object if it exists, or adds the mapping to the end of the object if it
-	 * doesn't. Returns the old value mapped to this key if there was one.
-	 */
-	@Override
-	@Nullable
-	public JsonElement put(@Nonnull String key, @Nonnull JsonElement elem) {
-		for(Entry entry : entries) {
-			if (entry.key.equalsIgnoreCase(key)) {
-				JsonElement result = entry.value;
-				entry.value = elem;
-				return result;
+		@Override
+		public JsonObject clone() {
+			JsonObject result = new JsonObject();
+			for(Entry entry : entries) {
+				result.put(entry.key, entry.value.clone(), entry.comment);
 			}
+			result.marshaller = marshaller;
+			return result;
 		}
-		
-		//If we reached here, there's no existing mapping, so make one.
-		Entry entry = new Entry();
-		entry.key = key;
-		entry.value = elem;
-		entries.add(entry);
-		return null;
-	}
 	
-	@Override
-	public void clear() {
-		entries.clear();
-	}
-
-	@Override
-	public boolean containsKey(@Nullable Object key) {
-		if (key==null) return false;
-		if (!(key instanceof String)) return false;
-		
-		for(Entry entry : entries) {
-			if (entry.key.equalsIgnoreCase((String)key)) {
-				return true;
-			}
-		}
-		
-		return false;
-	}
-
-	@Override
-	public boolean containsValue(@Nullable Object val) {
-		if (val==null) return false;
-		if (!(val instanceof JsonElement)) return false;
-		
-		for(Entry entry : entries) {
-			if (entry.value.equals(val)) return true;
-		}
-		
-		return false;
-	}
+	//}
 	
-	/**
-	 * Creates a semi-live shallow copy instead of a live view
-	 */
-	@Override
-	public Set<Map.Entry<String, JsonElement>> entrySet() {
-		Set<Map.Entry<String, JsonElement>> result = new HashSet<>();
-		for(Entry entry : entries) {
-			result.add(new Map.Entry<String, JsonElement>(){
-				@Override
-				public String getKey() {
-					return entry.key;
+	//implements Map<JsonElement> {
+		
+		/**
+		 * Replaces a key-value mapping in this object if it exists, or adds the mapping to the end of the object if it
+		 * doesn't. Returns the old value mapped to this key if there was one.
+		 */
+		@Override
+		@Nullable
+		public JsonElement put(@Nonnull String key, @Nonnull JsonElement elem) {
+			for(Entry entry : entries) {
+				if (entry.key.equalsIgnoreCase(key)) {
+					JsonElement result = entry.value;
+					entry.value = elem;
+					return result;
 				}
-
-				@Override
-				public JsonElement getValue() {
+			}
+			
+			//If we reached here, there's no existing mapping, so make one.
+			Entry entry = new Entry();
+			entry.key = key;
+			entry.value = elem;
+			entries.add(entry);
+			return null;
+		}
+		
+		@Override
+		public void clear() {
+			entries.clear();
+		}
+	
+		@Override
+		public boolean containsKey(@Nullable Object key) {
+			if (key==null) return false;
+			if (!(key instanceof String)) return false;
+			
+			for(Entry entry : entries) {
+				if (entry.key.equalsIgnoreCase((String)key)) {
+					return true;
+				}
+			}
+			
+			return false;
+		}
+	
+		@Override
+		public boolean containsValue(@Nullable Object val) {
+			if (val==null) return false;
+			if (!(val instanceof JsonElement)) return false;
+			
+			for(Entry entry : entries) {
+				if (entry.value.equals(val)) return true;
+			}
+			
+			return false;
+		}
+		
+		/**
+		 * Creates a semi-live shallow copy instead of a live view
+		 */
+		@Override
+		public Set<Map.Entry<String, JsonElement>> entrySet() {
+			Set<Map.Entry<String, JsonElement>> result = new HashSet<>();
+			for(Entry entry : entries) {
+				result.add(new Map.Entry<String, JsonElement>(){
+					@Override
+					public String getKey() {
+						return entry.key;
+					}
+	
+					@Override
+					public JsonElement getValue() {
+						return entry.value;
+					}
+	
+					@Override
+					public JsonElement setValue(JsonElement value) {
+						JsonElement oldValue = entry.value;
+						entry.value = value;
+						return oldValue;
+					}
+					
+				});
+			}
+			
+			return result;
+		}
+	
+		@Override
+		@Nullable
+		public JsonElement get(@Nullable Object key) {
+			if (key==null || !(key instanceof String)) return null;
+			
+			for(Entry entry : entries) {
+				if (entry.key.equalsIgnoreCase((String)key)) {
 					return entry.value;
 				}
-
-				@Override
-				public JsonElement setValue(JsonElement value) {
-					JsonElement oldValue = entry.value;
-					entry.value = value;
-					return oldValue;
+			}
+			return null;
+		}
+	
+		@Override
+		public boolean isEmpty() {
+			return entries.isEmpty();
+		}
+	
+		/** Returns a defensive copy instead of a live view */
+		@Override
+		@Nonnull
+		public Set<String> keySet() {
+			Set<String> keys = new HashSet<>();
+			for(Entry entry : entries) {
+				keys.add(entry.key);
+			}
+			return keys;
+		}
+	
+		@Override
+		public void putAll(Map<? extends String, ? extends JsonElement> map) {
+			for(Map.Entry<? extends String, ? extends JsonElement> entry : map.entrySet()) {
+				put(entry.getKey(), entry.getValue());
+			}
+		}
+	
+		@Override
+		@Nullable
+		public JsonElement remove(@Nullable Object key) {
+			if (key==null || !(key instanceof String)) return null;
+			
+			for(int i=0; i<entries.size(); i++) {
+				Entry entry = entries.get(i);
+				if (entry.key.equalsIgnoreCase((String)key)) {
+					return entries.remove(i).value;
 				}
-				
-			});
-		}
-		
-		return result;
-	}
-
-	@Override
-	@Nullable
-	public JsonElement get(@Nullable Object key) {
-		if (key==null || !(key instanceof String)) return null;
-		
-		for(Entry entry : entries) {
-			if (entry.key.equalsIgnoreCase((String)key)) {
-				return entry.value;
 			}
+			return null;
 		}
-		return null;
-	}
-
-	@Override
-	public boolean isEmpty() {
-		return entries.isEmpty();
-	}
-
-	/** Returns a defensive copy instead of a live view */
-	@Override
-	@Nonnull
-	public Set<String> keySet() {
-		Set<String> keys = new HashSet<>();
-		for(Entry entry : entries) {
-			keys.add(entry.key);
+	
+		@Override
+		public int size() {
+			return entries.size();
 		}
-		return keys;
-	}
-
-	@Override
-	public void putAll(Map<? extends String, ? extends JsonElement> map) {
-		for(Map.Entry<? extends String, ? extends JsonElement> entry : map.entrySet()) {
-			put(entry.getKey(), entry.getValue());
-		}
-	}
-
-	@Override
-	@Nullable
-	public JsonElement remove(@Nullable Object key) {
-		if (key==null || !(key instanceof String)) return null;
-		
-		for(int i=0; i<entries.size(); i++) {
-			Entry entry = entries.get(i);
-			if (entry.key.equalsIgnoreCase((String)key)) {
-				return entries.remove(i).value;
+	
+		@Override
+		public Collection<JsonElement> values() {
+			List<JsonElement> values = new ArrayList<>();
+			for(Entry entry : entries) {
+				values.add(entry.value);
 			}
+			return values;
 		}
-		return null;
-	}
-
-	@Override
-	public int size() {
-		return entries.size();
-	}
-
-	@Override
-	public Collection<JsonElement> values() {
-		List<JsonElement> values = new ArrayList<>();
-		for(Entry entry : entries) {
-			values.add(entry.value);
-		}
-		return values;
-	}
+	//}
 }
