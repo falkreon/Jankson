@@ -81,10 +81,12 @@ public class JsonArray extends JsonElement implements List<JsonElement>, Iterabl
 		
 		builder.append("[");
 		
-		if (grammar.printWhitespace) {
-			builder.append('\n');
-		} else {
-			builder.append(' ');
+		if (entries.size()>0) {
+			if (grammar.printWhitespace) {
+				builder.append('\n');
+			} else {
+				builder.append(' ');
+			}
 		}
 		
 		for(int i=0; i<entries.size(); i++) {
@@ -112,6 +114,16 @@ public class JsonArray extends JsonElement implements List<JsonElement>, Iterabl
 			if (grammar.printWhitespace) {
 				builder.append('\n');
 			}
+		}
+		
+		if (entries.size()>0) {
+			if (grammar.printWhitespace && depth>0) {
+				for(int j=0; j<depth-1; j++) {
+					builder.append("\t");
+				}
+			} //else {
+			//	builder.append(' ');
+			//}
 		}
 		
 		if (entries.size()>0) {
