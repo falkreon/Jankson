@@ -200,58 +200,6 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 	public String toJson(boolean comments, boolean newlines, int depth) {
 		JsonGrammar grammar = JsonGrammar.builder().withComments(comments).printWhitespace(newlines).build();
 		return toJson(grammar, depth);
-		
-		/*
-		StringBuilder builder = new StringBuilder();
-		builder.append("{ ");
-		if (newlines && entries.size()>0) builder.append('\n');
-		
-		for(int i=0; i<entries.size(); i++) {
-			Entry entry = entries.get(i);
-			
-			if (newlines) {
-				for(int j=0; j<depth+1; j++) {
-					builder.append("\t");
-				}
-			}
-			
-			CommentSerializer.print(builder, entry.comment, depth, comments, newlines);
-			
-			builder.append("\"");
-			builder.append(entry.key);
-			builder.append("\": ");
-			
-			if (entry.value instanceof JsonObject) {
-				builder.append(((JsonObject)entry.value).toJson(comments, newlines, depth+1));
-			} else if (entry.value instanceof JsonArray) {
-				builder.append(((JsonArray)entry.value).toJson(comments, newlines, depth+1));
-			} else {
-				builder.append(entry.value.toJson(comments, newlines, depth+1));
-			}
-			
-			if (i<entries.size()-1) {
-				if (newlines) {
-					builder.append(",\n");
-				} else {
-					builder.append(", ");
-				}
-			}
-		}
-		
-		if (entries.size()>0) {
-			if (newlines) {
-				builder.append('\n');
-				if (depth>0) for(int j=0; j<depth; j++) {
-					builder.append("\t");
-				}
-			} else {
-				builder.append(' ');
-			}
-		}
-		
-		builder.append("}");
-		
-		return builder.toString();*/
 	}
 	
 	@Override

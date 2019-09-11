@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Objects;
 
 import javax.annotation.Nonnull;
@@ -36,7 +37,7 @@ import javax.annotation.Nullable;
 import blue.endless.jankson.impl.Marshaller;
 import blue.endless.jankson.impl.serializer.CommentSerializer;
 
-public class JsonArray extends JsonElement implements Collection<JsonElement>, Iterable<JsonElement> {
+public class JsonArray extends JsonElement implements List<JsonElement>, Iterable<JsonElement> {
 	private List<Entry> entries = new ArrayList<>();
 	protected Marshaller marshaller = Marshaller.getFallback();
 	
@@ -72,47 +73,6 @@ public class JsonArray extends JsonElement implements Collection<JsonElement>, I
 	public String toJson(boolean comments, boolean newlines, int depth) {
 		JsonGrammar grammar = JsonGrammar.builder().withComments(comments).printWhitespace(newlines).build();
 		return toJson(grammar, depth);
-		/*
-		StringBuilder builder = new StringBuilder();
-		
-		builder.append("[ ");
-		
-		if (newlines) {
-			builder.append('\n');
-		}
-		
-		for(int i=0; i<entries.size(); i++) {
-			Entry entry = entries.get(i);
-			
-			if (newlines) {
-				for(int j=0; j<depth+1; j++) {
-					builder.append("\t");
-				}
-			}
-			
-			CommentSerializer.print(builder, entry.comment, depth, comments, newlines);
-			
-			builder.append(entry.value.toJson(comments, newlines, depth+1));
-			if (i<entries.size()-1) {
-				if (newlines) {
-					builder.append(",\n");
-				} else {
-					builder.append(", ");
-				}
-			}
-		}
-		
-		if (newlines) {
-			for(int j=0; j<depth; j++) {
-				builder.append("\t");
-			}
-		} else {
-			builder.append(" ");
-		}
-		
-		builder.append(']');
-		
-		return builder.toString();*/
 	}
 	
 	@Override
@@ -212,6 +172,8 @@ public class JsonArray extends JsonElement implements Collection<JsonElement>, I
 		return marshaller.marshall(clazz, elem);
 	}
 	
+	
+	
 	public void setMarshaller(Marshaller marshaller) {
 		this.marshaller = marshaller;
 	}
@@ -231,118 +193,183 @@ public class JsonArray extends JsonElement implements Collection<JsonElement>, I
 		return result;
 	}
 	
-	//IMPLEMENTATION for Collection<JsonElement>
+	//implements List<JsonElement> {
 	
-	@Override
-	public int size() {
-		return entries.size();
-	}
-	
-	@Override
-	public boolean add(@Nonnull JsonElement e) {
-		Entry entry = new Entry();
-		entry.value = e;
-		entries.add(entry);
-		return true;
-	}
-	
-	@Override
-	public boolean addAll(Collection<? extends JsonElement> c) {
-		boolean result = false;
-		for(JsonElement elem : c) result |= add(elem);
-		
-		return result;
-	}
-	
-	@Override
-	public void clear() {
-		entries.clear();
-	}
-	
-	@Override
-	public boolean contains(Object o) {
-		if (o==null || !(o instanceof JsonElement)) return false;
-		
-		for(Entry entry : entries) {
-			if (entry.value.equals(o)) return true;
-		}
-		return false;
-	}
-	
-	@Override
-	public boolean containsAll(Collection<?> c) {
-		for(Object o : c) {
-			if (!contains(o)) return false;
+		@Override
+		public int size() {
+			return entries.size();
 		}
 		
-		return true;
-	}
-	
-	@Override
-	public boolean isEmpty() {
-		return entries.isEmpty();
-	}
-	
-	@Override
-	public boolean remove(Object o) {
-		for(int i=0; i<entries.size(); i++) {
-			Entry cur = entries.get(i);
-			if (cur.value.equals(o)) {
-				entries.remove(i);
-				return true;
+		@Override
+		public boolean add(@Nonnull JsonElement e) {
+			Entry entry = new Entry();
+			entry.value = e;
+			entries.add(entry);
+			return true;
+		}
+		
+		@Override
+		public boolean addAll(Collection<? extends JsonElement> c) {
+			boolean result = false;
+			for(JsonElement elem : c) result |= add(elem);
+			
+			return result;
+		}
+		
+		@Override
+		public void clear() {
+			entries.clear();
+		}
+		
+		@Override
+		public boolean contains(Object o) {
+			if (o==null || !(o instanceof JsonElement)) return false;
+			
+			for(Entry entry : entries) {
+				if (entry.value.equals(o)) return true;
 			}
+			return false;
 		}
-		return false;
-	}
-	
-	@Override
-	public boolean removeAll(Collection<?> c) {
-		throw new UnsupportedOperationException("removeAll not supported");
-	}
-	
-	@Override
-	public boolean retainAll(Collection<?> c) {
-		throw new UnsupportedOperationException("retainAll not supported");
-	}
-	
-	@Override
-	public JsonElement[] toArray() {
-		JsonElement[] result = new JsonElement[entries.size()];
-		for(int i=0; i<entries.size(); i++) {
-			result[i] = entries.get(i).value;
+		
+		@Override
+		public boolean containsAll(Collection<?> c) {
+			for(Object o : c) {
+				if (!contains(o)) return false;
+			}
+			
+			return true;
 		}
-		return result;
-	}
-	
-	@SuppressWarnings("unchecked")
-	@Override
-	public <T> T[] toArray(T[] a) {
-		if (a.length<entries.size()) a = (T[]) new Object[entries.size()];
-		for(int i=0; i<entries.size(); i++) {
-			a[i] = (T)entries.get(i).value;
+		
+		@Override
+		public boolean isEmpty() {
+			return entries.isEmpty();
 		}
-		if (a.length>entries.size()) {
-			a[entries.size()] = null; //Little-known and basically unused quirk of the toArray contract
+		
+		@Override
+		public boolean remove(Object o) {
+			for(int i=0; i<entries.size(); i++) {
+				Entry cur = entries.get(i);
+				if (cur.value.equals(o)) {
+					entries.remove(i);
+					return true;
+				}
+			}
+			return false;
 		}
-		return a;
-	}
+		
+		@Override
+		public boolean removeAll(Collection<?> c) {
+			throw new UnsupportedOperationException("removeAll not supported");
+		}
+		
+		@Override
+		public boolean retainAll(Collection<?> c) {
+			throw new UnsupportedOperationException("retainAll not supported");
+		}
+		
+		@Override
+		public JsonElement[] toArray() {
+			JsonElement[] result = new JsonElement[entries.size()];
+			for(int i=0; i<entries.size(); i++) {
+				result[i] = entries.get(i).value;
+			}
+			return result;
+		}
+		
+		@SuppressWarnings("unchecked")
+		@Override
+		public <T> T[] toArray(T[] a) {
+			if (a.length<entries.size()) a = (T[]) new Object[entries.size()];
+			for(int i=0; i<entries.size(); i++) {
+				a[i] = (T)entries.get(i).value;
+			}
+			if (a.length>entries.size()) {
+				a[entries.size()] = null; //Little-known and basically unused quirk of the toArray contract
+			}
+			return a;
+		}
+		
+		@Override
+		public Iterator<JsonElement> iterator() {
+			return new EntryIterator(entries);
+		}
 	
+		@Override
+		public void add(int index, JsonElement element) {
+			entries.add(index, new Entry(element));
+		}
 	
-	//IMPLEMENTATION for Iterable<JsonElement>
+		@Override
+		public boolean addAll(int index, Collection<? extends JsonElement> elements) {
+			if (elements.isEmpty()) return false;
+			int i = index;
+			for (JsonElement element : elements) {
+				entries.add(i, new Entry(element));
+				i++;
+			}
+			return true;
+		}
 	
-	@Override
-	public Iterator<JsonElement> iterator() {
-		return new EntryIterator(entries);
-	}
+		@Override
+		public int indexOf(Object obj) {
+			if (obj==null) return -1;
+			for(int i=0; i<entries.size(); i++) {
+				JsonElement val = entries.get(i).value;
+				if (val!=null && val.equals(obj)) return i;
+			}
+			return -1;
+		}
+	
+		@Override
+		public int lastIndexOf(Object obj) {
+			if (obj==null) return -1;
+			for(int i=entries.size()-1; i>=0; i--) {
+				JsonElement val = entries.get(i).value;
+				if (val!=null && val.equals(obj)) return i;
+			}
+			return -1;
+		}
+	
+		@Override
+		public ListIterator<JsonElement> listIterator() {
+			return new EntryIterator(entries);
+		}
+	
+		@Override
+		public ListIterator<JsonElement> listIterator(int index) {
+			return new EntryIterator(entries, index);
+		}
+	
+		@Override
+		public JsonElement remove(int index) {
+			return entries.remove(index).value;
+		}
+	
+		@Override
+		public JsonElement set(int index, JsonElement element) {
+			Entry old = entries.set(index, new Entry(element));
+			return (old==null) ? null : old.value;
+		}
+	
+		@Override
+		public List<JsonElement> subList(int arg0, int arg1) {
+			throw new UnsupportedOperationException(); //TODO: Implement
+		}
+	
+	//}
 	
 	
 	//MISC CLASSES
 	
-	private static class EntryIterator implements Iterator<JsonElement> {
-		private final Iterator<Entry> delegate;
+	private static class EntryIterator implements ListIterator<JsonElement> {
+		private final ListIterator<Entry> delegate;
 		
 		public EntryIterator(List<Entry> list) {
-			delegate = list.iterator();
+			delegate = list.listIterator();
+		}
+		
+		public EntryIterator(List<Entry> list, int index) {
+			delegate = list.listIterator(index);
 		}
 		
 		@Override
@@ -359,11 +386,44 @@ public class JsonArray extends JsonElement implements Collection<JsonElement>, I
 		public void remove() {
 			delegate.remove();
 		}
+
+		@Override
+		public void add(JsonElement elem) {
+			delegate.add(new Entry(elem));
+		}
+
+		@Override
+		public boolean hasPrevious() {
+			return delegate.hasPrevious();
+		}
+
+		@Override
+		public int nextIndex() {
+			return delegate.nextIndex();
+		}
+
+		@Override
+		public JsonElement previous() {
+			return delegate.previous().value;
+		}
+
+		@Override
+		public int previousIndex() {
+			return delegate.previousIndex();
+		}
+
+		@Override
+		public void set(JsonElement obj) {
+			delegate.set(new Entry(obj));
+		}
 	}
 	
 	private static class Entry {
 		String comment;
 		JsonElement value;
+		
+		public Entry() {}
+		public Entry(JsonElement value) { this.value = value; }
 		
 		@Override
 		public boolean equals(Object other) {
