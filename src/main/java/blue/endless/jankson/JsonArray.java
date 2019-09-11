@@ -61,6 +61,72 @@ public class JsonArray extends JsonElement implements List<JsonElement>, Iterabl
 		return entries.get(i).value;
 	}
 	
+	//Convenience getters
+	
+	public boolean getBoolean(int index, boolean defaultValue) {
+		JsonElement elem = get(index);
+		if (elem != null && elem instanceof JsonPrimitive) {
+			return ((JsonPrimitive)elem).asBoolean(defaultValue);
+		}
+		return defaultValue;
+	}
+	
+	public byte getByte(int index, byte defaultValue) {
+		JsonElement elem = get(index);
+		if (elem != null && elem instanceof JsonPrimitive) {
+			return ((JsonPrimitive)elem).asByte(defaultValue);
+		}
+		return defaultValue;
+	}
+	
+	public char getChar(int index, char defaultValue) {
+		JsonElement elem = get(index);
+		if (elem != null && elem instanceof JsonPrimitive) {
+			return ((JsonPrimitive)elem).asChar(defaultValue);
+		}
+		return defaultValue;
+	}
+	
+	public short getShort(int index, short defaultValue) {
+		JsonElement elem = get(index);
+		if (elem != null && elem instanceof JsonPrimitive) {
+			return ((JsonPrimitive)elem).asShort(defaultValue);
+		}
+		return defaultValue;
+	}
+	
+	public int getInt(int index, int defaultValue) {
+		JsonElement elem = get(index);
+		if (elem != null && elem instanceof JsonPrimitive) {
+			return ((JsonPrimitive)elem).asInt(defaultValue);
+		}
+		return defaultValue;
+	}
+	
+	public long getLong(int index, long defaultValue) {
+		JsonElement elem = get(index);
+		if (elem != null && elem instanceof JsonPrimitive) {
+			return ((JsonPrimitive)elem).asLong(defaultValue);
+		}
+		return defaultValue;
+	}
+	
+	public float getFloat(int index, float defaultValue) {
+		JsonElement elem = get(index);
+		if (elem != null && elem instanceof JsonPrimitive) {
+			return ((JsonPrimitive)elem).asFloat(defaultValue);
+		}
+		return defaultValue;
+	}
+	
+	public double getDouble(int index, double defaultValue) {
+		JsonElement elem = get(index);
+		if (elem != null && elem instanceof JsonPrimitive) {
+			return ((JsonPrimitive)elem).asDouble(defaultValue);
+		}
+		return defaultValue;
+	}
+	
 	public String getComment(int i) {
 		return entries.get(i).comment;
 	}
