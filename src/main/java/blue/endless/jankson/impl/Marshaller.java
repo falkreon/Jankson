@@ -45,6 +45,7 @@ import blue.endless.jankson.JsonNull;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
 import blue.endless.jankson.annotation.SerializedName;
+import blue.endless.jankson.impl.serializer.DeserializerFunction;
 import blue.endless.jankson.magic.TypeMagic;
 
 public class Marshaller {
@@ -173,6 +174,10 @@ public class Marshaller {
 		if (elem==null) return null;
 		if (elem==JsonNull.INSTANCE) return null;
 		if (clazz.isAssignableFrom(elem.getClass())) return (T)elem; //Already the correct type
+		
+		Object srcObject = (elem instanceof JsonPrimitive) ? ((JsonPrimitive)elem).getValue() : elem;
+		T fromClass = POJODeserializer.deserializeFromClass(srcObject.getClass(), clazz, srcObject, this);
+		if (fromClass!=null) return fromClass;
 		
 		if (Enum.class.isAssignableFrom(clazz)) {
 			if (!(elem instanceof JsonPrimitive)) return null;

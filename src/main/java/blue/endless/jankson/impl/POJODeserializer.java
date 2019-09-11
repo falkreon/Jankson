@@ -25,12 +25,16 @@
 package blue.endless.jankson.impl;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import blue.endless.jankson.JsonArray;
@@ -39,7 +43,9 @@ import blue.endless.jankson.JsonGrammar;
 import blue.endless.jankson.JsonNull;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
+import blue.endless.jankson.annotation.Deserializer;
 import blue.endless.jankson.annotation.SerializedName;
+import blue.endless.jankson.impl.serializer.DeserializerFunction;
 import blue.endless.jankson.magic.TypeMagic;
 
 public class POJODeserializer {
@@ -263,5 +269,43 @@ public class POJODeserializer {
 			Object o = marshaller.marshall(elementType, arrayElem);
 			if (o!=null) collection.add(o);
 		}
+	}
+
+	@Nullable
+	public static <A> A deserializeFromClass(@Nonnull Class<?> elementClass, @Nonnull Class<A> targetClass, @Nonnull Object element, @Nonnull Marshaller marshaller) throws DeserializationException {
+		for(Method m: targetClass.getDeclaredMethods()) {
+			Deserializer d = m.getAnnotation(Deserializer.class);
+			if (d!=null) {
+				//Deserializer candidate
+				if (!m.getReturnType().equals(targetClass)) continue; //Must return an instance of the class
+				if (!Modifier.isStatic(m.getModifiers())) continue; //Must be static
+				Class<?>[] params = m.getParameterTypes();
+				if (params.length==1) {
+					Class<?> sourceClass = params[0];
+					
+					if (elementClass.isAssignableFrom(sourceClass)) {
+						try {
+							m.invoke(null, element);
+						} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+							throw new DeserializationException("Could not invoke method "+m.getName()+" to deserialize an object.", ex);
+						}
+					}
+				} else if (params.length==2) {
+					if (!params[1].equals(Marshaller.class)) continue; //Second param, if present, must be Marshaller
+					Class<?> sourceClass = params[0];
+					
+					if (elementClass.isAssignableFrom(sourceClass)) {
+						try {
+							m.invoke(null, element, marshaller);
+						} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+							throw new DeserializationException("Could not invoke method "+m.getName()+" to deserialize an object.", ex);
+						}
+					}
+					
+				} else continue; //Must have 1 or 2 arguments
+			}
+		}
+		
+		return null;
 	}
 }
