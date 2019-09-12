@@ -33,7 +33,7 @@ public class JsonGrammar {
 	 * A grammar which will accept all supported quirks, and output JSON-with-comments, which is a
 	 * valid jankson subset. This is the default behavior.
 	 */
-	public static final JsonGrammar JANKSON = builder().build();
+	public static final JsonGrammar JANKSON = builder().bareSpecialNumerics(true).build();
 	
 	/**
 	 * A grammar which will accept JSON5 and output JSON-with-comments with trailing commas.
@@ -41,6 +41,7 @@ public class JsonGrammar {
 	public static final JsonGrammar JSON5 = builder()
 			.withComments(true)
 			.printTrailingCommas(true)
+			.bareSpecialNumerics(true)
 			.build();
 	
 	/** A grammar which will only accept or output strict JSON. */
@@ -48,10 +49,20 @@ public class JsonGrammar {
 			.withComments(false)
 			.build();
 	
+	/** A grammar which will print compactified JSON readable by almost all vanilla json parsers.
+	 * (Note: Jackson may read special numerics like NaN in as Strings)
+	 */
+	public static final JsonGrammar COMPACT = builder()
+			.withComments(false)
+			.printWhitespace(false)
+			.bareSpecialNumerics(true)
+			.build();
+	
 	protected boolean comments = true;
 	protected boolean printWhitespace = true;
 	protected boolean printCommas = true;
 	protected boolean printTrailingCommas = false;
+	protected boolean bareSpecialNumerics = false;
 	
 	public boolean hasComments() { return comments; }
 	public boolean shouldOutputWhitespace() { return printWhitespace; }
@@ -101,6 +112,15 @@ public class JsonGrammar {
 		 */
 		public Builder printTrailingCommas(boolean trailing) {
 			grammar.printTrailingCommas = trailing;
+			return this;
+		}
+		
+		/**
+		 * When printing output, print numeric values like NaN and Infinity without quotes. These
+		 * will get picked up by Gson and HJSON as-is, and apparently Jackson will read them as unquoted strings.
+		 */
+		public Builder bareSpecialNumerics(boolean bare) {
+			grammar.bareSpecialNumerics = bare;
 			return this;
 		}
 		

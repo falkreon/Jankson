@@ -181,18 +181,31 @@ public class JsonPrimitive extends JsonElement {
 	
 	@Override
 	public String toJson(boolean comments, boolean newlines, int depth) {
+		return toJson(JsonGrammar.builder().withComments(comments).printWhitespace(newlines).build(), depth);
+	}
+	
+	@Override
+	public String toJson(JsonGrammar grammar, int depth) {
+		
 		if (value==null) return "null";
-		if (value instanceof Number) {
+		
+		if (value instanceof Double && grammar.bareSpecialNumerics) {
+			double d = ((Double)value).doubleValue();
+			if (Double.isNaN(d)) return "NaN";
+			if (Double.isInfinite(d)) {
+				if (d<0) {
+					return "-Infinity";
+				} else {
+					return "Infinity";
+				}
+			}
+			return value.toString();
+		} else if (value instanceof Number) {
 			return value.toString();
 		}
 		if (value instanceof Boolean) return value.toString();
 		
 		return '\"'+escape(value.toString())+'\"';
-	}
-	
-	@Override
-	public String toJson(JsonGrammar grammar, int depth) {
-		return toJson(); //No grammar decisions can be made at this level.
 	}
 	
 	//IMPLEMENTATION for Cloneable
