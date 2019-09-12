@@ -45,7 +45,6 @@ import blue.endless.jankson.api.Marshaller;
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.impl.AnnotatedElement;
 import blue.endless.jankson.impl.ElementParserContext;
-import blue.endless.jankson.impl.MarshallerImpl;
 import blue.endless.jankson.impl.ObjectParserContext;
 import blue.endless.jankson.impl.ParserContext;
 

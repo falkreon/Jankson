@@ -154,6 +154,9 @@ public class JsonArray extends JsonElement implements List<JsonElement>, Iterabl
 	public String toJson(JsonGrammar grammar, int depth) {
 		StringBuilder builder = new StringBuilder();
 		
+		int effectiveDepth = (grammar.bareRootObject) ? Math.max(depth-1,0) : depth;
+		int nextDepth = (grammar.bareRootObject) ? depth : depth+1; 
+		
 		builder.append("[");
 		
 		if (entries.size()>0) {
@@ -168,12 +171,12 @@ public class JsonArray extends JsonElement implements List<JsonElement>, Iterabl
 			Entry entry = entries.get(i);
 			
 			if (grammar.printWhitespace) {
-				for(int j=0; j<depth+1; j++) {
+				for(int j=0; j<nextDepth; j++) {
 					builder.append("\t");
 				}
 			}
 			
-			CommentSerializer.print(builder, entry.comment, depth, grammar);
+			CommentSerializer.print(builder, entry.comment, effectiveDepth, grammar);
 			
 			builder.append(entry.value.toJson(grammar, depth+1));
 			
@@ -193,7 +196,7 @@ public class JsonArray extends JsonElement implements List<JsonElement>, Iterabl
 		
 		if (entries.size()>0) {
 			if (grammar.printWhitespace && depth>0) {
-				for(int j=0; j<depth-1; j++) {
+				for(int j=0; j<effectiveDepth; j++) {
 					builder.append("\t");
 				}
 			} //else {
@@ -203,7 +206,7 @@ public class JsonArray extends JsonElement implements List<JsonElement>, Iterabl
 		
 		if (entries.size()>0) {
 			if (grammar.printWhitespace) {
-				for(int j=0; j<depth; j++) {
+				for(int j=0; j<effectiveDepth-1; j++) {
 					builder.append("\t");
 				}
 			} else {

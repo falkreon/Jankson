@@ -890,4 +890,33 @@ public class BasicTests {
 		
 		Assert.assertEquals(expected, actual);
 	}
+	
+	/**
+	 * Issue: #22
+	 * Offer a grammar option for outputting root objects without braces ( "{}" ) while inner objects retain their delimiters.
+	 */
+	@Test
+	public void testBareObject() {
+		JsonGrammar BARE = JsonGrammar.builder().bareRootObject(true).build();
+		JsonObject obj = new JsonObject();
+		obj.put("foo", new JsonPrimitive("bar"));
+		obj.put("baz", new JsonPrimitive(42));
+		JsonObject nested = new JsonObject();
+		JsonArray moreNested = new JsonArray();
+		nested.put("boo", moreNested);
+		moreNested.add(new JsonPrimitive(3));
+		obj.put("bux", nested);
+		
+		String expected =
+				"\"foo\": \"bar\",\n" + 
+				"\"baz\": 42,\n" +
+				"\"bux\": {\n" +
+				"	\"boo\": [\n" +
+				"		3\n" +
+				"	]\n" +
+				"}\n";
+		
+		String actual = obj.toJson(BARE);
+		Assert.assertEquals(expected, actual);
+	}
 }

@@ -207,35 +207,41 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 	@Override
 	public String toJson(JsonGrammar grammar, int depth) {
 		StringBuilder builder = new StringBuilder();
-		builder.append("{");
-		if (grammar.printWhitespace && entries.size()>0) {
-			builder.append('\n');
-		} else {
-			builder.append(' ');
+		boolean skipBraces = depth==0 && grammar.bareRootObject;
+		int effectiveDepth = (grammar.bareRootObject) ? Math.max(depth-1,0) : depth;
+		int nextDepth = (grammar.bareRootObject) ? depth : depth+1; 
+		
+		if (!skipBraces) {
+			builder.append("{");
+			
+			if (grammar.printWhitespace && entries.size()>0) {
+				builder.append('\n');
+			} else {
+				builder.append(' ');
+			}
 		}
 		
 		for(int i=0; i<entries.size(); i++) {
 			Entry entry = entries.get(i);
 			
 			if (grammar.printWhitespace) {
-				for(int j=0; j<depth+1; j++) {
+				for(int j=0; j<nextDepth; j++) {
 					builder.append("\t");
 				}
 			}
 			
-			CommentSerializer.print(builder, entry.comment, depth, grammar);
+			CommentSerializer.print(builder, entry.comment, Math.max(effectiveDepth,0), grammar);
 			
 			builder.append("\"");
 			builder.append(entry.key);
 			builder.append("\": ");
-			
-			if (entry.value instanceof JsonObject) {
-				builder.append(((JsonObject)entry.value).toJson(grammar, depth+1));
-			} else if (entry.value instanceof JsonArray) {
-				builder.append(((JsonArray)entry.value).toJson(grammar, depth+1));
-			} else {
+			//if (entry.value instanceof JsonObject) {
+			//	builder.append(((JsonObject)entry.value).toJson(grammar, depth+1));
+			//} else if (entry.value instanceof JsonArray) {
+			//	builder.append(((JsonArray)entry.value).toJson(grammar, depth+1));
+			//} else {
 				builder.append(entry.value.toJson(grammar, depth+1));
-			}
+			//}
 			
 			if (grammar.printCommas) { 
 				if (i<entries.size()-1 || grammar.printTrailingCommas) {
@@ -251,17 +257,19 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 			}
 		}
 		
-		if (entries.size()>0) {
-			if (grammar.printWhitespace) {
-				for(int j=0; j<depth; j++) {
-					builder.append("\t");
+		if (!skipBraces) {
+			if (entries.size()>0) {
+				if (grammar.printWhitespace) {
+					for(int j=0; j<effectiveDepth; j++) {
+						builder.append("\t");
+					}
+				} else {
+					builder.append(' ');
 				}
-			} else {
-				builder.append(' ');
 			}
+			
+			builder.append("}");
 		}
-		
-		builder.append("}");
 		
 		return builder.toString();
 	}

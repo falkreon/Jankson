@@ -63,6 +63,7 @@ public class JsonGrammar {
 	protected boolean printCommas = true;
 	protected boolean printTrailingCommas = false;
 	protected boolean bareSpecialNumerics = false;
+	protected boolean bareRootObject = false;
 	
 	public boolean hasComments() { return comments; }
 	public boolean shouldOutputWhitespace() { return printWhitespace; }
@@ -121,6 +122,14 @@ public class JsonGrammar {
 		 */
 		public Builder bareSpecialNumerics(boolean bare) {
 			grammar.bareSpecialNumerics = bare;
+			return this;
+		}
+		
+		/**
+		 * When printing out a root object, omit the opening and closing braces ( "{}" )
+		 */
+		public Builder bareRootObject(boolean bare) {
+			grammar.bareRootObject = bare;
 			return this;
 		}
 		
