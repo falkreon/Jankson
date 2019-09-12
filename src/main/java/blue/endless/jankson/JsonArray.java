@@ -155,7 +155,7 @@ public class JsonArray extends JsonElement implements List<JsonElement>, Iterabl
 		StringBuilder builder = new StringBuilder();
 		
 		int effectiveDepth = (grammar.bareRootObject) ? Math.max(depth-1,0) : depth;
-		int nextDepth = (grammar.bareRootObject) ? depth : depth+1; 
+		int nextDepth = (grammar.bareRootObject) ? depth-1 : depth; 
 		
 		builder.append("[");
 		
@@ -171,7 +171,7 @@ public class JsonArray extends JsonElement implements List<JsonElement>, Iterabl
 			Entry entry = entries.get(i);
 			
 			if (grammar.printWhitespace) {
-				for(int j=0; j<nextDepth; j++) {
+				for(int j=0; j<effectiveDepth+1; j++) {
 					builder.append("\t");
 				}
 			}
@@ -199,19 +199,11 @@ public class JsonArray extends JsonElement implements List<JsonElement>, Iterabl
 				for(int j=0; j<effectiveDepth; j++) {
 					builder.append("\t");
 				}
-			} //else {
-			//	builder.append(' ');
-			//}
+			}
 		}
 		
 		if (entries.size()>0) {
-			if (grammar.printWhitespace) {
-				for(int j=0; j<effectiveDepth-1; j++) {
-					builder.append("\t");
-				}
-			} else {
-				builder.append(' ');
-			}
+			if (!grammar.printWhitespace) builder.append(' ');
 		}
 		
 		builder.append(']');

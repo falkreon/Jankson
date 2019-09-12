@@ -232,9 +232,10 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 			
 			CommentSerializer.print(builder, entry.comment, Math.max(effectiveDepth,0), grammar);
 			
-			builder.append("\"");
+			if (!grammar.printUnquotedKeys) builder.append("\"");
 			builder.append(entry.key);
-			builder.append("\": ");
+			if (!grammar.printUnquotedKeys) builder.append("\""); 
+			builder.append(": ");
 			//if (entry.value instanceof JsonObject) {
 			//	builder.append(((JsonObject)entry.value).toJson(grammar, depth+1));
 			//} else if (entry.value instanceof JsonArray) {

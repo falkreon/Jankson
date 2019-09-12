@@ -919,4 +919,34 @@ public class BasicTests {
 		String actual = obj.toJson(BARE);
 		Assert.assertEquals(expected, actual);
 	}
+	
+	/**
+	 * Issue: #23
+	 * Grammar option to print unquoted keys
+	 */
+	@Test
+	public void testUnquotedKeys() {
+		JsonGrammar UNQUOTED = JsonGrammar.builder().printUnquotedKeys(true).build();
+		JsonObject obj = new JsonObject();
+		obj.put("foo", new JsonPrimitive("bar"));
+		obj.put("baz", new JsonPrimitive(42));
+		JsonObject nested = new JsonObject();
+		JsonArray moreNested = new JsonArray();
+		nested.put("boo", moreNested);
+		moreNested.add(new JsonPrimitive(3));
+		obj.put("bux", nested);
+		
+		String expected =
+				"{\n" +
+				"	foo: \"bar\",\n" + 
+				"	baz: 42,\n" +
+				"	bux: {\n" +
+				"		boo: [\n" +
+				"			3\n" +
+				"		]\n" +
+				"	}\n" +
+				"}";
+		String actual = obj.toJson(UNQUOTED);
+		Assert.assertEquals(expected, actual);
+	}
 }

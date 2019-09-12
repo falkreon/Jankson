@@ -64,6 +64,7 @@ public class JsonGrammar {
 	protected boolean printTrailingCommas = false;
 	protected boolean bareSpecialNumerics = false;
 	protected boolean bareRootObject = false;
+	protected boolean printUnquotedKeys = false;
 	
 	public boolean hasComments() { return comments; }
 	public boolean shouldOutputWhitespace() { return printWhitespace; }
@@ -130,6 +131,11 @@ public class JsonGrammar {
 		 */
 		public Builder bareRootObject(boolean bare) {
 			grammar.bareRootObject = bare;
+			return this;
+		}
+		
+		public Builder printUnquotedKeys(boolean unquoted) {
+			grammar.printUnquotedKeys = unquoted;
 			return this;
 		}
 		
