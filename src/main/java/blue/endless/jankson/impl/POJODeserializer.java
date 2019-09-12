@@ -176,7 +176,7 @@ public class POJODeserializer {
 		
 		if (!isCollections(fieldClass)) {
 			//Try to directly marshall
-			Object result = marshaller.marshall(fieldClass, elem);
+			Object result = marshaller.marshallCarefully(fieldClass, elem);
 			field.set(parent, result);
 			return true;
 		}

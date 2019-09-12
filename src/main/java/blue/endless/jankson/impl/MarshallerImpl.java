@@ -93,6 +93,10 @@ public class MarshallerImpl implements blue.endless.jankson.api.Marshaller {
 	public <A,B> void registerDeserializer(Class<A> sourceClass, Class<B> targetClass, DeserializerFunction<A,B> function) {
 		@SuppressWarnings("unchecked")
 		DeserializerFunctionPool<B> pool = (DeserializerFunctionPool<B>)deserializers.get(targetClass);
+		if (pool==null) {
+			pool = new DeserializerFunctionPool<B>(targetClass);
+			deserializers.put(targetClass, pool);
+		}
 		pool.registerUnsafe(sourceClass, function);
 	}
 	
@@ -190,7 +194,18 @@ public class MarshallerImpl implements blue.endless.jankson.api.Marshaller {
 		if (elem==JsonNull.INSTANCE) return null;
 		if (clazz.isAssignableFrom(elem.getClass())) return (T)elem; //Already the correct type
 		
-		DeserializerFunctionPool<T> pool = POJODeserializer.deserializersFor(clazz);
+		//Externally registered deserializers
+		DeserializerFunctionPool<T> pool = (DeserializerFunctionPool<T>)deserializers.get(clazz);
+		if (pool!=null) {
+			try {
+				return pool.apply(elem, this);
+			} catch (FunctionMatchFailedException e) {
+				//Don't return the result, but continue
+			}
+		}
+		
+		//Internally annotated deserializers
+		pool = POJODeserializer.deserializersFor(clazz);
 		T poolResult;
 		try {
 			poolResult = pool.apply(elem, this);
@@ -220,6 +235,8 @@ public class MarshallerImpl implements blue.endless.jankson.api.Marshaller {
 				return (T)((JsonPrimitive)elem).asString();
 			}
 			if (elem instanceof JsonNull) return (T)"null";
+			
+			if (failFast) throw new DeserializationException("Encountered unexpected JsonElement type while deserializing to string: "+elem.getClass().getCanonicalName());
 			return null;
 		}
 		
@@ -228,19 +245,21 @@ public class MarshallerImpl implements blue.endless.jankson.api.Marshaller {
 			if (func!=null) {
 				return (T)func.apply(((JsonPrimitive)elem).getValue());
 			} else {
+				if (failFast) throw new DeserializationException("Don't know how to unpack value '"+elem.toString()+"' into target type '"+clazz.getCanonicalName()+"'");
 				return null;
 			}
 		} else if (elem instanceof JsonObject) {
 			
 			
-			if (clazz.isPrimitive()) return null;
+			if (clazz.isPrimitive()) throw new DeserializationException("Can't marshall json object into primitive type "+clazz.getCanonicalName());
 			if (JsonPrimitive.class.isAssignableFrom(clazz)) {
+				if (failFast) throw new DeserializationException("Can't marshall json object into a json primitive");
 				return null;
 			}
 			
 			JsonObject obj = (JsonObject) elem;
 			obj.setMarshaller(this);
-
+			
 			if (typeAdapters.containsKey(clazz)) {
 				return (T) typeAdapters.get(clazz).apply((JsonObject) elem);
 			}

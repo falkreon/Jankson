@@ -64,17 +64,20 @@ public class TestDeserializer {
 	public static class Bar {
 		public Foo stringDeserializer;
 		public Foo arrayDeserializer;
-		//public Foo unmappedDeserializer;
+		public Foo unmappedDeserializer = new Foo();
 		public Foo defaultDeserializer;
 	}
 	
+	/**
+	 * Make sure that various kinds of self-described deserializers are working alongside each other
+	 */
 	@Test
 	public void testBasicFeatures() throws DeserializationException {
 		String subject =
 				"{\n" + 
 				"	\"stringDeserializer\": \"test\",\n" + 
 				"	\"arrayDeserializer\": [ \"someValue\", \"someOptValue\" ],\n" + 
-				//"	\"unmappedDeserializer\": false,\n" + 
+				"	\"unmappedDeserializer\": false,\n" + 
 				"	\"defaultDeserializer\": {\n" + 
 				"		\"value\": \"someValue\",\n" + 
 				"		\"opt\": \"someOptValue\"\n" + 
@@ -83,23 +86,45 @@ public class TestDeserializer {
 				"}";
 		
 		try {
-			Bar obj = jankson.fromJsonCarefully(subject, Bar.class);
+			Bar obj = jankson.fromJson(subject, Bar.class);
 			
 			Assert.assertNotNull(obj.stringDeserializer);
 			Assert.assertNotNull(obj.arrayDeserializer);
-			//Assert.assertNotNull(obj.unmappedDeserializer);
+			Assert.assertNotNull(obj.unmappedDeserializer);
 			Assert.assertNotNull(obj.defaultDeserializer);
 			
 			Assert.assertEquals("test", obj.stringDeserializer.value);
 			Assert.assertEquals("someValue", obj.arrayDeserializer.value);
 			Assert.assertEquals("someOptValue", obj.arrayDeserializer.opt);
-			//Assert.assertEquals("", obj.unmappedDeserializer.value);
+			Assert.assertEquals("", obj.unmappedDeserializer.value);
 			Assert.assertEquals("someValue", obj.defaultDeserializer.value);
 			Assert.assertEquals("someOptValue", obj.defaultDeserializer.opt);
-			
-			
 		} catch (SyntaxError ex) {
 			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
+	}
+	
+	/**
+	 * Just to be clear: If we can't unpack a key for any reason, Carefully should throw an error.
+	 */
+	@Test(expected = DeserializationException.class)
+	public void ensureErrorOnMissingDeserializer() throws SyntaxError, DeserializationException {
+		String subject =
+				"{\n" + 
+				"	\"stringDeserializer\": \"test\",\n" + 
+				"	\"arrayDeserializer\": [ \"someValue\", \"someOptValue\" ],\n" + 
+				"	\"unmappedDeserializer\": false,\n" + 
+				"	\"defaultDeserializer\": {\n" + 
+				"		\"value\": \"someValue\",\n" + 
+				"		\"opt\": \"someOptValue\"\n" + 
+				"	}\n" + 
+				"\n" + 
+				"}";
+		
+		Bar obj = jankson.fromJsonCarefully(subject, Bar.class);
+	}
+	
+	public static class Baz {
+		public Foo foo;
 	}
 }
