@@ -46,6 +46,8 @@ import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
 import blue.endless.jankson.annotation.SerializedName;
 import blue.endless.jankson.api.DeserializationException;
+import blue.endless.jankson.api.DeserializerFunction;
+import blue.endless.jankson.api.Marshaller;
 import blue.endless.jankson.impl.serializer.DeserializerFunctionPool;
 import blue.endless.jankson.impl.serializer.DeserializerFunctionPool.FunctionMatchFailedException;
 import blue.endless.jankson.magic.TypeMagic;
@@ -54,15 +56,16 @@ import blue.endless.jankson.magic.TypeMagic;
  * @deprecated For removal; please use {@link blue.endless.jankson.api.Marshaller}
  */
 @Deprecated
-public class Marshaller implements blue.endless.jankson.api.Marshaller {
-	private static Marshaller INSTANCE = new Marshaller();
+public class MarshallerImpl implements blue.endless.jankson.api.Marshaller {
+	private static MarshallerImpl INSTANCE = new MarshallerImpl();
 	
 	public static Marshaller getFallback() { return INSTANCE; }
 	
 	private Map<Class<?>, Function<Object,?>> primitiveMarshallers = new HashMap<>();
 	Map<Class<?>, Function<JsonObject,?>> typeAdapters = new HashMap<>();
 	
-	private Map<Class<?>, BiFunction<Object, Marshaller, JsonElement>> serializers = new HashMap<>();
+	private Map<Class<?>, BiFunction<Object, blue.endless.jankson.api.Marshaller, JsonElement>> serializers = new HashMap<>();
+	private Map<Class<?>, DeserializerFunctionPool<?>> deserializers = new HashMap<>();
 	private Map<Class<?>, Supplier<?>> typeFactories = new HashMap<>();
 	
 	public <T> void register(Class<T> clazz, Function<Object, T> marshaller) {
@@ -79,19 +82,21 @@ public class Marshaller implements blue.endless.jankson.api.Marshaller {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public <T> void registerSerializer(Class<T> clazz, BiFunction<T, Marshaller, JsonElement> serializer) {
-		serializers.put(clazz, (BiFunction<Object, Marshaller, JsonElement>) serializer);
+	public <T> void registerSerializer(Class<T> clazz, BiFunction<T, blue.endless.jankson.api.Marshaller, JsonElement> serializer) {
+		serializers.put(clazz, (BiFunction<Object, blue.endless.jankson.api.Marshaller, JsonElement>) serializer);
 	}
 	
 	public <T> void registerTypeFactory(Class<T> clazz, Supplier<T> supplier) {
 		typeFactories.put(clazz, supplier);
 	}
 	
-	public <A,B> void registerDeserializer(Class<A> sourceClass, Class<B> targetClass) {
-		
+	public <A,B> void registerDeserializer(Class<A> sourceClass, Class<B> targetClass, DeserializerFunction<A,B> function) {
+		@SuppressWarnings("unchecked")
+		DeserializerFunctionPool<B> pool = (DeserializerFunctionPool<B>)deserializers.get(targetClass);
+		pool.registerUnsafe(sourceClass, function);
 	}
 	
-	public Marshaller() {
+	public MarshallerImpl() {
 		register(Void.class, (it)->null);
 		
 		register(String.class, (it)->(it instanceof String) ? (String)it : it.toString());
@@ -282,7 +287,7 @@ public class Marshaller implements blue.endless.jankson.api.Marshaller {
 		if (obj==null) return JsonNull.INSTANCE;
 		
 		//Prefer exact match
-		BiFunction<Object, Marshaller, JsonElement> serializer = serializers.get(obj.getClass());
+		BiFunction<Object, blue.endless.jankson.api.Marshaller, JsonElement> serializer = serializers.get(obj.getClass());
 		if (serializer!=null) {
 			JsonElement result = serializer.apply(obj, this);
 			if (result instanceof JsonObject) ((JsonObject)result).setMarshaller(this);
@@ -290,7 +295,7 @@ public class Marshaller implements blue.endless.jankson.api.Marshaller {
 			return result;
 		} else {
 			//Detailed match
-			for(Map.Entry<Class<?>, BiFunction<Object, Marshaller, JsonElement>> entry : serializers.entrySet()) {
+			for(Map.Entry<Class<?>, BiFunction<Object, blue.endless.jankson.api.Marshaller, JsonElement>> entry : serializers.entrySet()) {
 				if (entry.getKey().isAssignableFrom(obj.getClass())) {
 					JsonElement result = entry.getValue().apply(obj, this);
 					if (result instanceof JsonObject) ((JsonObject)result).setMarshaller(this);
@@ -359,11 +364,6 @@ public class Marshaller implements blue.endless.jankson.api.Marshaller {
 				}
 			} catch (IllegalArgumentException | IllegalAccessException e) {}
 		}
-		
-		/*
-		 * TODO: Walk supers and add in private fields from most distant ancestor to least? Seems like a lot of
-		 *       extra computation, and would gain support for very few extra cases.
-		 */
 		
 		//Add in what private fields we can reach
 		for (Field f : obj.getClass().getDeclaredFields()) {

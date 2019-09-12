@@ -37,10 +37,10 @@ import javax.annotation.Nullable;
 import blue.endless.jankson.api.Marshaller;
 import blue.endless.jankson.impl.serializer.CommentSerializer;
 
+@SuppressWarnings("deprecation")
 public class JsonArray extends JsonElement implements List<JsonElement>, Iterable<JsonElement> {
 	private List<Entry> entries = new ArrayList<>();
-	@SuppressWarnings("deprecation")
-	protected Marshaller marshaller = blue.endless.jankson.impl.Marshaller.getFallback();
+	protected Marshaller marshaller = blue.endless.jankson.impl.MarshallerImpl.getFallback();
 	
 	public JsonArray() {}
 	

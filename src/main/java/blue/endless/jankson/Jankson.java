@@ -40,10 +40,12 @@ import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 
 import blue.endless.jankson.api.DeserializationException;
+import blue.endless.jankson.api.DeserializerFunction;
+import blue.endless.jankson.api.Marshaller;
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.impl.AnnotatedElement;
 import blue.endless.jankson.impl.ElementParserContext;
-import blue.endless.jankson.impl.Marshaller;
+import blue.endless.jankson.impl.MarshallerImpl;
 import blue.endless.jankson.impl.ObjectParserContext;
 import blue.endless.jankson.impl.ParserContext;
 
@@ -54,7 +56,8 @@ public class Jankson {
 	private int line = 0;
 	private int column = 0;
 	private int withheldCodePoint = -1;
-	private Marshaller marshaller = new Marshaller();
+	@SuppressWarnings("deprecation")
+	private Marshaller marshaller = blue.endless.jankson.impl.MarshallerImpl.getFallback();
 	
 	private int retries = 0;
 	private SyntaxError delayedError = null;
@@ -289,7 +292,7 @@ public class Jankson {
 		return marshaller.serialize(t);
 	}
 	
-	public <T> JsonElement toJson(T t, Marshaller alternateMarshaller) {
+	public <T> JsonElement toJson(T t, blue.endless.jankson.api.Marshaller alternateMarshaller) {
 		return alternateMarshaller.serialize(t);
 	}
 	
@@ -345,7 +348,7 @@ public class Jankson {
 		contextStack.push(frame);
 	}
 	
-	public Marshaller getMarshaller() {
+	public blue.endless.jankson.api.Marshaller getMarshaller() {
 		return marshaller;
 	}
 	
@@ -354,7 +357,8 @@ public class Jankson {
 	}
 	
 	public static class Builder {
-		Marshaller marshaller = new Marshaller();
+		@SuppressWarnings("deprecation")
+		blue.endless.jankson.impl.MarshallerImpl marshaller = new blue.endless.jankson.impl.MarshallerImpl();
 		
 		/**
 		 * Registers a deserializer that can transform a JsonObject into an instance of the specified class. Please note
@@ -362,7 +366,9 @@ public class Jankson {
 		 * @param clazz    The class to register deserialization for
 		 * @param adapter  A function which takes a JsonObject and converts it into an equivalent object of the class `clazz`
 		 * @return This Builder for further modification.
+		 * @deprecated please use {@link #registerDeserializer(Class, Class, DeserializerFunction)} instead.
 		 */
+		@Deprecated
 		public <T> Builder registerTypeAdapter(Class<T> clazz, Function<JsonObject, T> adapter) {
 			marshaller.registerTypeAdapter(clazz, adapter);
 			return this;
@@ -375,7 +381,9 @@ public class Jankson {
 		 * @param clazz   The class to register a type adapter for
 		 * @param adapter A function which takes a plain java object and converts it into the class `clazz`
 		 * @return This Builder for further modification.
+		 * @deprecated please use {@link #registerDeserializer(Class, Class, DeserializerFunction)} instead.
 		 */
+		@Deprecated
 		public <T> Builder registerPrimitiveTypeAdapter(Class<T> clazz, Function<Object, T> adapter) {
 			marshaller.register(clazz, adapter);
 			return this;
@@ -388,8 +396,14 @@ public class Jankson {
 		 * @param serializer A function which takes the object and a Marshaller, and produces a serialized JsonElement
 		 * @return This Builder for further modificaton.
 		 */
-		public <T> Builder registerSerializer(Class<T> clazz, BiFunction<T, Marshaller, JsonElement> serializer) {
+		public <T> Builder registerSerializer(Class<T> clazz, BiFunction<T, blue.endless.jankson.api.Marshaller, JsonElement> serializer) {
 			marshaller.registerSerializer(clazz, serializer);
+			return this;
+		}
+		
+		@SuppressWarnings("deprecation")
+		public <A,B> Builder registerDeserializer(Class<A> sourceClass, Class<B> targetClass, DeserializerFunction<A,B> function) {
+			marshaller.registerDeserializer(sourceClass, targetClass, function);
 			return this;
 		}
 		

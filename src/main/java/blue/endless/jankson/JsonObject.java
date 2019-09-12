@@ -35,11 +35,12 @@ import java.util.Set;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import blue.endless.jankson.impl.Marshaller;
+import blue.endless.jankson.api.Marshaller;
 import blue.endless.jankson.impl.serializer.CommentSerializer;
 
 public class JsonObject extends JsonElement implements Map<String, JsonElement> {
-	protected Marshaller marshaller = Marshaller.getFallback();
+	@SuppressWarnings("deprecation")
+	protected Marshaller marshaller = blue.endless.jankson.impl.MarshallerImpl.getFallback();
 	private List<Entry> entries = new ArrayList<>();
 	
 	/**
