@@ -27,6 +27,7 @@ package blue.endless.jankson;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -550,7 +551,7 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 		 */
 		@Override
 		public Set<Map.Entry<String, JsonElement>> entrySet() {
-			Set<Map.Entry<String, JsonElement>> result = new HashSet<>();
+			Set<Map.Entry<String, JsonElement>> result = new LinkedHashSet<>();
 			for(Entry entry : entries) {
 				result.add(new Map.Entry<String, JsonElement>(){
 					@Override
