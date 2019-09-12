@@ -45,12 +45,16 @@ import blue.endless.jankson.JsonNull;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
 import blue.endless.jankson.annotation.SerializedName;
-import blue.endless.jankson.impl.serializer.InternalDeserializerFunction;
+import blue.endless.jankson.api.DeserializationException;
 import blue.endless.jankson.impl.serializer.DeserializerFunctionPool;
 import blue.endless.jankson.impl.serializer.DeserializerFunctionPool.FunctionMatchFailedException;
 import blue.endless.jankson.magic.TypeMagic;
 
-public class Marshaller {
+/**
+ * @deprecated For removal; please use {@link blue.endless.jankson.api.Marshaller}
+ */
+@Deprecated
+public class Marshaller implements blue.endless.jankson.api.Marshaller {
 	private static Marshaller INSTANCE = new Marshaller();
 	
 	public static Marshaller getFallback() { return INSTANCE; }
@@ -81,6 +85,10 @@ public class Marshaller {
 	
 	public <T> void registerTypeFactory(Class<T> clazz, Supplier<T> supplier) {
 		typeFactories.put(clazz, supplier);
+	}
+	
+	public <A,B> void registerDeserializer(Class<A> sourceClass, Class<B> targetClass) {
+		
 	}
 	
 	public Marshaller() {

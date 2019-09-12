@@ -25,6 +25,7 @@
 package blue.endless.jankson.impl;
 
 import blue.endless.jankson.JsonArray;
+import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.Jankson;
 
 public class ArrayParserContext implements ParserContext<JsonArray> {

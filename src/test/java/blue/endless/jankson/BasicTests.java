@@ -39,8 +39,8 @@ import org.junit.Test;
 import blue.endless.jankson.annotation.NonnullByDefault;
 import blue.endless.jankson.annotation.Nullable;
 import blue.endless.jankson.annotation.SerializedName;
+import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.impl.Marshaller;
-import blue.endless.jankson.impl.SyntaxError;
 import blue.endless.jankson.magic.TypeMagic;
 
 public class BasicTests {

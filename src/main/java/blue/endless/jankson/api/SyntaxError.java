@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.impl;
+package blue.endless.jankson.api;
 
 @SuppressWarnings("serial")
 public class SyntaxError extends Exception {

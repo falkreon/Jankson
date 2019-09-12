@@ -25,6 +25,7 @@
 package blue.endless.jankson.impl;
 
 import blue.endless.jankson.Jankson;
+import blue.endless.jankson.api.SyntaxError;
 
 public class CommentParserContext implements ParserContext<String> {
 	int firstChar = -1;

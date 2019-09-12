@@ -30,6 +30,7 @@ import blue.endless.jankson.Jankson;
 import blue.endless.jankson.JsonElement;
 import blue.endless.jankson.JsonNull;
 import blue.endless.jankson.JsonPrimitive;
+import blue.endless.jankson.api.SyntaxError;
 
 public class ElementParserContext implements ParserContext<AnnotatedElement> {
 	String comment = null;

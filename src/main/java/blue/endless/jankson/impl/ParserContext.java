@@ -25,6 +25,7 @@
 package blue.endless.jankson.impl;
 
 import blue.endless.jankson.Jankson;
+import blue.endless.jankson.api.SyntaxError;
 
 public interface ParserContext<T> {
 	/** Consume one codepoint from the stream, and either use it to continue composing the result or to discover that

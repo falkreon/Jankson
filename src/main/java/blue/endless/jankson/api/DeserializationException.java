@@ -22,12 +22,24 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.impl.serializer;
+package blue.endless.jankson.api;
 
-import blue.endless.jankson.api.DeserializationException;
-import blue.endless.jankson.api.Marshaller;
+public class DeserializationException extends Exception {
+	private static final long serialVersionUID = 8425560848572561283L;
+	
+	public DeserializationException() {
+		super();
+	}
+	
+	public DeserializationException(String message) {
+		super(message);
+	}
 
-@FunctionalInterface
-public interface InternalDeserializerFunction<B> {
-	public B deserialize(Object a, Marshaller m) throws DeserializationException;
+	public DeserializationException(String message, Throwable cause) {
+		super(message, cause);
+	}
+	
+	public DeserializationException(Throwable cause) {
+		super(cause);
+	}
 }

@@ -34,12 +34,13 @@ import java.util.Objects;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import blue.endless.jankson.impl.Marshaller;
+import blue.endless.jankson.api.Marshaller;
 import blue.endless.jankson.impl.serializer.CommentSerializer;
 
 public class JsonArray extends JsonElement implements List<JsonElement>, Iterable<JsonElement> {
 	private List<Entry> entries = new ArrayList<>();
-	protected Marshaller marshaller = Marshaller.getFallback();
+	@SuppressWarnings("deprecation")
+	protected Marshaller marshaller = blue.endless.jankson.impl.Marshaller.getFallback();
 	
 	public JsonArray() {}
 	

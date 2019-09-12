@@ -31,7 +31,7 @@ import blue.endless.jankson.JsonElement;
 import blue.endless.jankson.JsonGrammar;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
-import blue.endless.jankson.impl.DeserializationException;
+import blue.endless.jankson.api.DeserializationException;
 import blue.endless.jankson.impl.Marshaller;
 
 /**

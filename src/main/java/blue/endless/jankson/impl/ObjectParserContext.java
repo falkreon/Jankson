@@ -26,6 +26,7 @@ package blue.endless.jankson.impl;
 
 import blue.endless.jankson.Jankson;
 import blue.endless.jankson.JsonObject;
+import blue.endless.jankson.api.SyntaxError;
 
 public class ObjectParserContext implements ParserContext<JsonObject> {
 	private JsonObject result = new JsonObject();

@@ -29,8 +29,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import blue.endless.jankson.annotation.Deserializer;
-import blue.endless.jankson.impl.DeserializationException;
-import blue.endless.jankson.impl.SyntaxError;
+import blue.endless.jankson.api.DeserializationException;
+import blue.endless.jankson.api.SyntaxError;
 
 public class TestDeserializer {
 	Jankson jankson;

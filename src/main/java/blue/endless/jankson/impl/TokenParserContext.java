@@ -26,6 +26,7 @@ package blue.endless.jankson.impl;
 
 import blue.endless.jankson.Jankson;
 import blue.endless.jankson.JsonPrimitive;
+import blue.endless.jankson.api.SyntaxError;
 
 public class TokenParserContext implements ParserContext<JsonPrimitive> {
 	private String token = "";
