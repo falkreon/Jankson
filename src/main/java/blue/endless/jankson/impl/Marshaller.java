@@ -45,7 +45,9 @@ import blue.endless.jankson.JsonNull;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
 import blue.endless.jankson.annotation.SerializedName;
-import blue.endless.jankson.impl.serializer.DeserializerFunction;
+import blue.endless.jankson.impl.serializer.InternalDeserializerFunction;
+import blue.endless.jankson.impl.serializer.DeserializerFunctionPool;
+import blue.endless.jankson.impl.serializer.DeserializerFunctionPool.FunctionMatchFailedException;
 import blue.endless.jankson.magic.TypeMagic;
 
 public class Marshaller {
@@ -175,9 +177,14 @@ public class Marshaller {
 		if (elem==JsonNull.INSTANCE) return null;
 		if (clazz.isAssignableFrom(elem.getClass())) return (T)elem; //Already the correct type
 		
-		Object srcObject = (elem instanceof JsonPrimitive) ? ((JsonPrimitive)elem).getValue() : elem;
-		T fromClass = POJODeserializer.deserializeFromClass(srcObject.getClass(), clazz, srcObject, this);
-		if (fromClass!=null) return fromClass;
+		DeserializerFunctionPool<T> pool = POJODeserializer.deserializersFor(clazz);
+		T poolResult;
+		try {
+			poolResult = pool.apply(elem, this);
+			return poolResult;
+		} catch (FunctionMatchFailedException e) {
+			//Don't return the result, but continue
+		}
 		
 		if (Enum.class.isAssignableFrom(clazz)) {
 			if (!(elem instanceof JsonPrimitive)) return null;
