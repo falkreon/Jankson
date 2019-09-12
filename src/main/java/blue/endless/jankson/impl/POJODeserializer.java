@@ -276,13 +276,19 @@ public class POJODeserializer {
 	protected static <B> DeserializerFunctionPool<B> deserializersFor(Class<B> targetClass) {
 		DeserializerFunctionPool<B> pool = new DeserializerFunctionPool<>(targetClass);
 		for(Method m: targetClass.getDeclaredMethods()) {
+			//System.out.println("Examining "+m.getName());
+			if (m.getAnnotation(Deserializer.class)==null) continue; //Must be annotated
+			
 			if (!Modifier.isStatic(m.getModifiers())) continue; //Must be static
 			if (!m.getReturnType().equals(targetClass)) continue; //Must return an instance of the class
+			//System.out.println("    Cleared first screening");
 			Parameter[] params = m.getParameters();
 			if (params.length>=1) {
 				Class<?> sourceClass = params[0].getType();
 				InternalDeserializerFunction<B> deserializer = makeDeserializer(m, sourceClass, targetClass);
+				if (deserializer==null) continue;
 				pool.registerUnsafe(sourceClass, deserializer);
+				//System.out.println("    Registered deserializer");
 			}
 		}
 		return pool;
@@ -297,7 +303,7 @@ public class POJODeserializer {
 		if (!m.getReturnType().equals(targetClass)) return null;
 		Parameter[] params = m.getParameters();
 		if (params.length==1) {
-			if (params[0].getClass().isAssignableFrom(sourceClass)) {
+			//if (params[0].getClass().isAssignableFrom(sourceClass)) {
 				return (Object o, Marshaller marshaller)->{
 					try {
 						return (B)m.invoke(null, o);
@@ -305,10 +311,10 @@ public class POJODeserializer {
 						throw new DeserializationException(ex);
 					}
 				};
-			}
-			return null;
+			//}
+			//return null;
 		} else if (params.length==2) {
-			if (params[0].getClass().isAssignableFrom(sourceClass)) {
+			//if (params[0].getClass().isAssignableFrom(sourceClass)) {
 				if (params[1].getClass().equals(Marshaller.class)) {
 					return (Object o, Marshaller marshaller)->{
 						try {
@@ -318,7 +324,7 @@ public class POJODeserializer {
 						}
 					};
 				}
-			}
+			//}
 			return null;
 		} else {
 			return null;

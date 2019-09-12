@@ -63,6 +63,14 @@ public class JsonArray extends JsonElement implements List<JsonElement>, Iterabl
 	
 	//Convenience getters
 	
+	public String getString(int index, String defaultValue) {
+		JsonElement elem = get(index);
+		if (elem != null && elem instanceof JsonPrimitive) {
+			return ((JsonPrimitive)elem).asString();
+		}
+		return defaultValue;
+	}
+	
 	public boolean getBoolean(int index, boolean defaultValue) {
 		JsonElement elem = get(index);
 		if (elem != null && elem instanceof JsonPrimitive) {

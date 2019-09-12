@@ -186,6 +186,7 @@ public class Marshaller {
 			//Don't return the result, but continue
 		}
 		
+		
 		if (Enum.class.isAssignableFrom(clazz)) {
 			if (!(elem instanceof JsonPrimitive)) return null;
 			String name = ((JsonPrimitive)elem).getValue().toString();
@@ -217,6 +218,8 @@ public class Marshaller {
 				return null;
 			}
 		} else if (elem instanceof JsonObject) {
+			
+			
 			if (clazz.isPrimitive()) return null;
 			if (JsonPrimitive.class.isAssignableFrom(clazz)) {
 				return null;
