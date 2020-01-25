@@ -214,6 +214,7 @@ public class Jankson {
 	@Nonnull
 	public JsonElement loadElement(InputStream in) throws IOException, SyntaxError {
 		withheldCodePoint = -1;
+		rootElement = null;
 		
 		push(new ElementParserContext(), (it)->{
 			rootElement = it;
@@ -237,13 +238,20 @@ public class Jankson {
 						ParserFrame<?> frame = contextStack.pop();
 						try {
 							frame.context.eof();
+							if (frame.context.isComplete()) {
+								frame.supply();
+							}
 						} catch (SyntaxError error) {
 							error.setStartParsing(frame.startLine, frame.startCol);
 							error.setEndParsing(line, column);
 							throw error;
 						}
 					}
-					if (rootElement==null) return JsonNull.INSTANCE;
+					if (rootElement==null) {
+						return JsonNull.INSTANCE;
+					} else {
+						return rootElement.getElement();
+					}
 				}
 				processCodePoint(inByte);
 			}

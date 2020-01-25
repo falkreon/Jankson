@@ -157,4 +157,17 @@ public class TestDeserializer {
 			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 	}
+	
+	/**
+	 * Problems reported: loadElement returns jsonNull for an array or a bare numeric element.
+	 */
+	@Test
+	public void testLoadElementNonnull() throws SyntaxError {
+		Jankson jankson = Jankson.builder().build();
+		Object x;
+		x = jankson.loadElement("1");
+		Assert.assertTrue("'1' must be a JsonPrimitive", x instanceof JsonPrimitive);
+		x = jankson.loadElement("[1]");
+		Assert.assertTrue("'[1]' must be a jsonArray", x instanceof JsonArray);
+	}
 }
