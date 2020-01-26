@@ -171,6 +171,7 @@ public class JsonPrimitive extends JsonElement {
 			case '\\':
 				result.append("\\\\");
 				break;
+				//TODO: Deal with unicode escapes
 			default:
 				result.append(ch);
 			}

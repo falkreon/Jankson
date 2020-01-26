@@ -163,11 +163,24 @@ public class TestDeserializer {
 	 */
 	@Test
 	public void testLoadElementNonnull() throws SyntaxError {
-		Jankson jankson = Jankson.builder().build();
 		Object x;
 		x = jankson.loadElement("1");
 		Assert.assertTrue("'1' must be a JsonPrimitive", x instanceof JsonPrimitive);
 		x = jankson.loadElement("[1]");
 		Assert.assertTrue("'[1]' must be a jsonArray", x instanceof JsonArray);
+	}
+	
+	/**
+	 * Issue #31: Unicode escape sequences aren't deserialized correctly
+	 * 
+	 * <p>StringParserContext was fitted with a new unicode escape parser to cover this case.
+	 */
+	@Test
+	public void testUnicodeEscapes() throws SyntaxError {
+		String example = "{ \"test\": \"\\u003C0\" }";
+		Assert.assertEquals("Unicode escapes must be parsed correctly.", "\"<0\"", jankson.load(example).get("test").toJson());
+		
+		String slightlyUnescaped = ((JsonPrimitive)jankson.load("{'test': \"\\uu003C\" }").get("test")).asString();
+		Assert.assertEquals("Unicode escapes which are themselves escaped must be unescaped exactly one level.", "\\u003c", slightlyUnescaped); //implied here is that hex digit case MUST be lost
 	}
 }

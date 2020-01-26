@@ -24,15 +24,20 @@
 
 package blue.endless.jankson.impl;
 
+import java.util.Locale;
+
 import blue.endless.jankson.Jankson;
 import blue.endless.jankson.JsonPrimitive;
 import blue.endless.jankson.api.SyntaxError;
 
 public class StringParserContext implements ParserContext<JsonPrimitive> {
+	private static final String HEX_DIGITS = "0123456789abcdefABCDEF";
 	private int quote;
 	private boolean escape = false;
+	private int unicodeUs = 0;
 	private StringBuilder builder = new StringBuilder();
 	private boolean complete = false;
+	private String unicodeSequence = "";
 	
 	public StringParserContext(int quote) {
 		this.quote = quote;
@@ -46,6 +51,28 @@ public class StringParserContext implements ParserContext<JsonPrimitive> {
 		//}
 		
 		if (escape) {
+			if (unicodeUs>0) {
+				if (codePoint=='u'||codePoint=='U') {
+					unicodeUs++;
+					return true;
+				} else {
+					if (HEX_DIGITS.indexOf(codePoint)!=-1) {
+						//consume the char and emit the sequence if needed
+						unicodeSequence+=(char)codePoint;
+						if (unicodeSequence.length()==4) {
+							emitUnicodeSequence(loader);
+							escape = false;
+						}
+						return true;
+					} else {
+						//don't consume the char, but emit the sequence immediately and take us out of escape mode
+						emitUnicodeSequence(loader);
+						escape = false;
+						return false;
+					}
+				}
+			}
+			
 			escape = false;
 			switch(codePoint) {
 			
@@ -75,6 +102,11 @@ public class StringParserContext implements ParserContext<JsonPrimitive> {
 				return true;
 			case '\\':
 				builder.append('\\');
+				return true;
+			case 'u':
+			case 'U':
+				escape = true;
+				unicodeUs = 1;
 				return true;
 			default:
 				builder.append((char)codePoint);
@@ -113,7 +145,26 @@ public class StringParserContext implements ParserContext<JsonPrimitive> {
 			}
 		}
 	}
-
+	
+	private void emitUnicodeSequence(Jankson loader) {
+		if (unicodeUs>1) {
+			unicodeUs--;
+			builder.append("\\");
+			for(int i=0; i<unicodeUs; i++) builder.append('u');
+			while(unicodeSequence.length()<4) unicodeSequence = "0"+unicodeSequence; //TODO: THIS IS A QUIRK. CONSIDER THROWING INSTEAD
+			builder.append(unicodeSequence.toLowerCase(Locale.ROOT));
+		} else {
+			//we unbox and cast all the way from Long to int because parseInt has some problems with the top bit being set
+			int sequence = (int)Long.parseLong(unicodeSequence, 16); //TODO: Also part of the quirk; consider checking the character count
+			char[] chars = Character.toChars(sequence); //poor man's conversion to surrogate pair if needed
+			for(char ch : chars) builder.append(ch);
+		}
+		
+		unicodeUs = 0;
+		unicodeSequence = "";
+		escape = false;
+	}
+	
 	@Override
 	public boolean isComplete() {
 		return complete;
