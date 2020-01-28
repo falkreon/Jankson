@@ -51,7 +51,25 @@ public class JsonPrimitive extends JsonElement {
 	 * @param value
 	 */
 	public JsonPrimitive(@Nonnull Object value) {
-		this.value = value;
+		if (value instanceof Character) {
+			this.value = ""+(Character)value;
+		} else if (value instanceof Long) {
+			this.value = value;
+		} else if (value instanceof Double) {
+			this.value = value;
+		} else if (value instanceof BigInteger) {
+			this.value = ((BigInteger)value).toString(16);
+		} else if (value instanceof Float) {
+			this.value = Double.valueOf((Float)value);
+		} else if (value instanceof Number) {
+			this.value =  ((Number)value).longValue();
+		} else if (value instanceof CharSequence) {
+			this.value = value.toString();
+		} else if (value instanceof Boolean) {
+			this.value = value;
+		} else {
+			throw new IllegalArgumentException("Object of type '"+value.getClass().getCanonicalName()+"' not allowed as a JsonPrimitive");
+		}
 	}
 
 	@Nonnull
