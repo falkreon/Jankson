@@ -403,6 +403,7 @@ public class Jankson {
 		 * @param serializer A function which takes the object and a Marshaller, and produces a serialized JsonElement
 		 * @return This Builder for further modificaton.
 		 */
+		@SuppressWarnings("deprecation")
 		public <T> Builder registerSerializer(Class<T> clazz, BiFunction<T, blue.endless.jankson.api.Marshaller, JsonElement> serializer) {
 			marshaller.registerSerializer(clazz, serializer);
 			return this;
@@ -422,6 +423,7 @@ public class Jankson {
 		 * @param factory  A Supplier which can create blank objects of class `clazz` for deserialization
 		 * @return This Builder for further modification.
 		 */
+		@SuppressWarnings("deprecation")
 		public <T> Builder registerTypeFactory(Class<T> clazz, Supplier<T> factory) {
 			marshaller.registerTypeFactory(clazz, factory);
 			return this;
@@ -446,7 +448,7 @@ public class Jankson {
 		}
 		
 		public ParserContext<T> context() { return context; }
-		public Consumer<T> consumer() { return consumer; }
+		//public Consumer<T> consumer() { return consumer; }
 		
 		/** Feed the result directly from the context at this entry to its corresponding consumer */
 		public void supply() throws SyntaxError {

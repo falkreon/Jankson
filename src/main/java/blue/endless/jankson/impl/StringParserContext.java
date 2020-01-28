@@ -172,7 +172,7 @@ public class StringParserContext implements ParserContext<JsonPrimitive> {
 
 	@Override
 	public JsonPrimitive getResult() {
-		return new JsonPrimitive(builder.toString());
+		return JsonPrimitive.of(builder.toString());
 	}
 
 	@Override

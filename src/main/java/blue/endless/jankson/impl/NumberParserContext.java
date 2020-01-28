@@ -67,11 +67,11 @@ public class NumberParserContext implements ParserContext<JsonPrimitive> {
 		//parse special values
 		String lc = numberString.toLowerCase(Locale.ROOT);
 		if (lc.equals("infinity") || lc.equals("+infinity")) {
-			return new JsonPrimitive(Double.POSITIVE_INFINITY);
+			return JsonPrimitive.of(Double.POSITIVE_INFINITY);
 		} else if (lc.equals("-infinity")) {
-			return new JsonPrimitive(Double.NEGATIVE_INFINITY);
+			return JsonPrimitive.of(Double.NEGATIVE_INFINITY);
 		} else if (lc.equals("nan")) {
-			return new JsonPrimitive(Double.NaN);
+			return JsonPrimitive.of(Double.NaN);
 		}
 		
 		//Fallback to the number parsers
@@ -81,7 +81,7 @@ public class NumberParserContext implements ParserContext<JsonPrimitive> {
 			numberString = numberString.substring(2);
 			try {
 				Long l = Long.parseUnsignedLong(numberString, 16);
-				return new JsonPrimitive(l);
+				return JsonPrimitive.of(l);
 			} catch(NumberFormatException nfe) {
 				throw new SyntaxError("Tried to parse '"+numberString+"' as a hexadecimal number, but it appears to be invalid.");
 			}
@@ -90,7 +90,7 @@ public class NumberParserContext implements ParserContext<JsonPrimitive> {
 			numberString = numberString.substring(3);
 			try {
 				Long l = -Long.parseUnsignedLong(numberString, 16);
-				return new JsonPrimitive(l);
+				return JsonPrimitive.of(l);
 			} catch(NumberFormatException nfe) {
 				throw new SyntaxError("Tried to parse '"+numberString+"' as a hexadecimal number, but it appears to be invalid.");
 			}
@@ -101,7 +101,7 @@ public class NumberParserContext implements ParserContext<JsonPrimitive> {
 			//Return as a Double
 			try {
 				Double d = Double.valueOf(numberString);
-				return new JsonPrimitive(d);
+				return JsonPrimitive.of(d);
 			} catch (NumberFormatException ex) {
 				throw new SyntaxError("Tried to parse '"+numberString+"' as a floating-point number, but it appears to be invalid.");
 			}
@@ -109,7 +109,7 @@ public class NumberParserContext implements ParserContext<JsonPrimitive> {
 			//Return as a Long
 			try {
 				Long l = Long.valueOf(numberString);
-				return new JsonPrimitive(l);
+				return JsonPrimitive.of(l);
 			} catch (NumberFormatException ex) {
 				throw new SyntaxError("Tried to parse '"+numberString+"' as an integer, but it appears to be invalid.");
 			}

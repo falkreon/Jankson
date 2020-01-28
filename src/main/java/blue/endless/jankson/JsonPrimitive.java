@@ -24,6 +24,7 @@
 
 package blue.endless.jankson;
 
+import java.math.BigInteger;
 import java.util.Objects;
 
 import javax.annotation.Nonnull;
@@ -39,6 +40,16 @@ public class JsonPrimitive extends JsonElement {
 	@Nonnull
 	private Object value;
 	
+	private JsonPrimitive() {}
+	
+	/**
+	 * Creates a new JsonPrimitive node representing the passed-in value.
+	 * 
+	 * <p>Note: This constructor may do expensive type inspection to verify that the passed-in object
+	 * is well-formed. Please use one of the JsonPrimitive.of(x) static factory variants if possible,
+	 * because using function polymorphism often winds up validating the results "for free".
+	 * @param value
+	 */
 	public JsonPrimitive(@Nonnull Object value) {
 		this.value = value;
 	}
@@ -121,6 +132,16 @@ public class JsonPrimitive extends JsonElement {
 		}
 	}
 	
+	public BigInteger asBigInteger(BigInteger defaultValue) {
+		if (value instanceof Number) {
+			return BigInteger.valueOf(((Number)value).longValue());
+		} else if (value instanceof String) {
+			return new BigInteger((String)value, 16);
+		} else {
+			return defaultValue;
+		}
+	}
+	
 	@Nonnull
 	public String toString() {
 		return toJson();
@@ -145,43 +166,6 @@ public class JsonPrimitive extends JsonElement {
 	public int hashCode() {
 		return value.hashCode();
 	}
-	
-	/*
-	public static String escape(String s) {
-		StringBuilder result = new StringBuilder();
-		for(int i=0; i<s.length(); i++) {
-			char ch = s.charAt(i);
-			
-			switch(ch) {
-			case '\u0008':
-				result.append("\\b");
-				break;
-			case '\f':
-				result.append("\\f");
-				break;
-			case '\n':
-				result.append("\\n");
-				break;
-			case '\r':
-				result.append("\\r");
-				break;
-			case '\t':
-				result.append("\\t");
-				break;
-			case '"':
-				result.append("\\\"");
-				break;
-			case '\\':
-				result.append("\\\\");
-				break;
-				//TODO: Deal with unicode escapes
-			default:
-				result.append(ch);
-			}
-		}
-		
-		return result.toString();
-	}*/
 	
 	@Override
 	public String toJson(boolean comments, boolean newlines, int depth) {
@@ -215,6 +199,38 @@ public class JsonPrimitive extends JsonElement {
 	//IMPLEMENTATION for Cloneable
 	@Override
 	public JsonPrimitive clone() {
-		return this;
+		JsonPrimitive result = new JsonPrimitive();
+		result.value = this.value;
+		return result;
+	}
+	
+	public static JsonPrimitive of(@Nonnull String s) {
+		JsonPrimitive result = new JsonPrimitive();
+		result.value = s;
+		return result;
+	}
+	
+	public static JsonPrimitive of(@Nonnull BigInteger n) {
+		JsonPrimitive result = new JsonPrimitive();
+		result.value = ((BigInteger)n).toString(16);
+		return result;
+	}
+	
+	public static JsonPrimitive of(@Nonnull Double d) {
+		JsonPrimitive result = new JsonPrimitive();
+		result.value = d;
+		return result;
+	}
+	
+	public static JsonPrimitive of(@Nonnull Long l) {
+		JsonPrimitive result = new JsonPrimitive();
+		result.value = l;
+		return result;
+	}
+	
+	public static JsonPrimitive of(@Nonnull Boolean b) {
+		JsonPrimitive result = new JsonPrimitive();
+		result.value = b;
+		return result;
 	}
 }

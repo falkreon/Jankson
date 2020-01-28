@@ -55,6 +55,6 @@ public class JsonNull extends JsonElement {
 	//IMPLEMENTATION for Cloneable
 	@Override
 	public JsonNull clone() {
-		return this;
+		return this; //Technically violates the contract for Cloneable, but this is a singleton
 	}
 }

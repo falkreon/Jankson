@@ -31,7 +31,7 @@ import blue.endless.jankson.Jankson;
 public class ArrayParserContext implements ParserContext<JsonArray> {
 	private JsonArray result = new JsonArray();
 	private boolean foundClosingBrace = false;
-	private String comment = null;
+	//private String comment = null;
 	
 	/** Assumes the opening brace has already been consumed! */
 	public ArrayParserContext() {

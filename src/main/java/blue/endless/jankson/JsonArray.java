@@ -155,7 +155,7 @@ public class JsonArray extends JsonElement implements List<JsonElement>, Iterabl
 		StringBuilder builder = new StringBuilder();
 		
 		int effectiveDepth = (grammar.bareRootObject) ? Math.max(depth-1,0) : depth;
-		int nextDepth = (grammar.bareRootObject) ? depth-1 : depth; 
+		//int nextDepth = (grammar.bareRootObject) ? depth-1 : depth; 
 		
 		builder.append("[");
 		

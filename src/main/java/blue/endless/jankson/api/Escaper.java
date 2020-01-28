@@ -1,7 +1,6 @@
 package blue.endless.jankson.api;
 
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
 

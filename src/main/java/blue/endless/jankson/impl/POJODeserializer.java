@@ -32,7 +32,6 @@ import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 
 import javax.annotation.Nonnull;
@@ -116,7 +115,6 @@ public class POJODeserializer {
 	
 	
 	/** NOT WORKING YET, HIGHLY EXPERIMENTAL */
-	@SuppressWarnings("unchecked")
 	@Nullable
 	public static Object unpack(Type t, JsonElement elem, blue.endless.jankson.api.Marshaller marshaller) {
 		Class<?> rawClass = TypeMagic.classForType(t);

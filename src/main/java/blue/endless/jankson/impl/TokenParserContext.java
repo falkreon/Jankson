@@ -76,6 +76,6 @@ public class TokenParserContext implements ParserContext<JsonPrimitive> {
 
 	@Override
 	public JsonPrimitive getResult() throws SyntaxError {
-		return new JsonPrimitive(token);
+		return JsonPrimitive.of(token);
 	}
 }
