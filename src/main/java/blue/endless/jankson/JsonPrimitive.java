@@ -28,6 +28,8 @@ import java.util.Objects;
 
 import javax.annotation.Nonnull;
 
+import blue.endless.jankson.api.Escaper;
+
 public class JsonPrimitive extends JsonElement {
 	/** Convenience instance of json "true". Don't use identity comparison (==) on these! Use equals instead. */
 	public static JsonPrimitive TRUE = new JsonPrimitive(Boolean.TRUE);
@@ -144,6 +146,7 @@ public class JsonPrimitive extends JsonElement {
 		return value.hashCode();
 	}
 	
+	/*
 	public static String escape(String s) {
 		StringBuilder result = new StringBuilder();
 		for(int i=0; i<s.length(); i++) {
@@ -178,7 +181,7 @@ public class JsonPrimitive extends JsonElement {
 		}
 		
 		return result.toString();
-	}
+	}*/
 	
 	@Override
 	public String toJson(boolean comments, boolean newlines, int depth) {
@@ -206,7 +209,7 @@ public class JsonPrimitive extends JsonElement {
 		}
 		if (value instanceof Boolean) return value.toString();
 		
-		return '\"'+escape(value.toString())+'\"';
+		return '\"'+Escaper.escapeString(value.toString())+'\"'; //TODO: Configurable unicode blocks to escape?
 	}
 	
 	//IMPLEMENTATION for Cloneable
