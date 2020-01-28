@@ -429,7 +429,11 @@ public class JsonArray extends JsonElement implements List<JsonElement>, Iterabl
 	
 		@Override
 		public JsonElement set(int index, JsonElement element) {
-			Entry old = entries.set(index, new Entry(element));
+			Entry cur = new Entry(element);
+			Entry old = entries.get(index);
+			if (old!=null) cur.comment = old.comment;
+			entries.set(index, cur);
+			
 			return (old==null) ? null : old.value;
 		}
 	
