@@ -456,7 +456,7 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 					return (E) elem;
 				} else {
 					E result = (E) fallback.clone();
-					cur.put(key, result, comment);
+					cur.put(s, result, comment);
 					return result;
 				}
 			}
