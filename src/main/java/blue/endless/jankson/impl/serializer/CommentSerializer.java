@@ -24,9 +24,20 @@
 
 package blue.endless.jankson.impl.serializer;
 
+import java.io.IOException;
+import java.io.Writer;
+
 import blue.endless.jankson.JsonGrammar;
 
 public class CommentSerializer {
+	
+	public static void print(Writer writer, String comment, int indent, JsonGrammar grammar) throws IOException {
+		if (comment==null || comment.trim().isEmpty()) return;
+		StringBuilder b = new StringBuilder(comment.length());
+		print(b, comment, indent, grammar);
+		writer.append(b);
+	}
+	
 	public static void print(StringBuilder builder, String comment, int indent, JsonGrammar grammar) {
 		boolean comments = grammar.hasComments();
 		boolean whitespace = grammar.shouldOutputWhitespace();

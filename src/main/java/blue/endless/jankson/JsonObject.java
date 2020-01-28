@@ -24,6 +24,9 @@
 
 package blue.endless.jankson;
 
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -32,6 +35,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -40,6 +45,8 @@ import blue.endless.jankson.api.Marshaller;
 import blue.endless.jankson.impl.serializer.CommentSerializer;
 
 public class JsonObject extends JsonElement implements Map<String, JsonElement> {
+	/** This pattern matches JsonObject keys that are permitted to appear unquoted */
+	private static final Predicate<String> CAN_BE_UNQUOTED = Pattern.compile("[a-zA-Z0-9]+").asPredicate();
 	@SuppressWarnings("deprecation")
 	protected Marshaller marshaller = blue.endless.jankson.impl.MarshallerImpl.getFallback();
 	private List<Entry> entries = new ArrayList<>();
@@ -206,18 +213,30 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 	
 	@Override
 	public String toJson(JsonGrammar grammar, int depth) {
-		StringBuilder builder = new StringBuilder();
+		StringWriter w = new StringWriter();
+		try {
+			toJson(w, grammar, depth);
+			w.flush();
+			return w.toString();
+		} catch (IOException ex) {
+			throw new RuntimeException(ex);
+		}
+		
+	}
+	
+	public void toJson(Writer w, JsonGrammar grammar, int depth) throws IOException {
+		//StringBuilder builder = new StringBuilder();
 		boolean skipBraces = depth==0 && grammar.bareRootObject;
 		int effectiveDepth = (grammar.bareRootObject) ? Math.max(depth-1,0) : depth;
 		int nextDepth = (grammar.bareRootObject) ? depth : depth+1; 
 		
 		if (!skipBraces) {
-			builder.append("{");
+			w.append("{");
 			
 			if (grammar.printWhitespace && entries.size()>0) {
-				builder.append('\n');
+				w.append('\n');
 			} else {
-				builder.append(' ');
+				w.append(' ');
 			}
 		}
 		
@@ -226,38 +245,36 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 			
 			if (grammar.printWhitespace) {
 				for(int j=0; j<nextDepth; j++) {
-					builder.append("\t");
+					w.append("\t");
 				}
 			}
 			
-			CommentSerializer.print(builder, entry.comment, Math.max(effectiveDepth,0), grammar);
+			CommentSerializer.print(w, entry.comment, Math.max(effectiveDepth,0), grammar);
 			
 			boolean quoted = !grammar.printUnquotedKeys;
-			if (entry.key.contains(" ")) quoted = true;
 			
-			if (quoted) builder.append("\"");
-			builder.append(entry.key);
-			if (quoted) builder.append("\""); 
-			builder.append(": ");
-			//if (entry.value instanceof JsonObject) {
-			//	builder.append(((JsonObject)entry.value).toJson(grammar, depth+1));
-			//} else if (entry.value instanceof JsonArray) {
-			//	builder.append(((JsonArray)entry.value).toJson(grammar, depth+1));
-			//} else {
-				builder.append(entry.value.toJson(grammar, depth+1));
-			//}
+			//If it can't be unquoted, quote it anyway
+			if (!CAN_BE_UNQUOTED.test(entry.key)) {
+				quoted = true;
+			}
+			
+			if (quoted) w.append("\"");
+			w.append(entry.key);
+			if (quoted) w.append("\""); 
+			w.append(": ");
+			w.append(entry.value.toJson(grammar, depth+1));
 			
 			if (grammar.printCommas) { 
 				if (i<entries.size()-1 || grammar.printTrailingCommas) {
-					builder.append(",");
-					if (i<entries.size()-1 && !grammar.printWhitespace) builder.append(' ');
+					w.append(",");
+					if (i<entries.size()-1 && !grammar.printWhitespace) w.append(' ');
 				}
 			} else {
-				builder.append(" ");
+				w.append(" ");
 			}
 			
 			if (grammar.printWhitespace) {
-				builder.append('\n');
+				w.append('\n');
 			}
 		}
 		
@@ -265,17 +282,15 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 			if (entries.size()>0) {
 				if (grammar.printWhitespace) {
 					for(int j=0; j<effectiveDepth; j++) {
-						builder.append("\t");
+						w.append("\t");
 					}
 				} else {
-					builder.append(' ');
+					w.append(' ');
 				}
 			}
 			
-			builder.append("}");
+			w.append("}");
 		}
-		
-		return builder.toString();
 	}
 	
 	@Override
