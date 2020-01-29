@@ -26,7 +26,10 @@ package blue.endless.jankson.impl;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collection;
@@ -45,6 +48,7 @@ import blue.endless.jankson.JsonNull;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
 import blue.endless.jankson.annotation.SerializedName;
+import blue.endless.jankson.annotation.Serializer;
 import blue.endless.jankson.api.DeserializationException;
 import blue.endless.jankson.api.DeserializerFunction;
 import blue.endless.jankson.api.Marshaller;
@@ -103,7 +107,7 @@ public class MarshallerImpl implements blue.endless.jankson.api.Marshaller {
 	public MarshallerImpl() {
 		register(Void.class, (it)->null);
 		
-		register(String.class, (it)->(it instanceof String) ? (String)it : it.toString());
+		register(String.class, (it)->it.toString());
 		
 		register(Byte.class, (it)->(it instanceof Number) ? ((Number)it).byteValue() : null);
 		register(Character.class, (it)->(it instanceof Number) ? (char)((Number)it).shortValue() : it.toString().charAt(0));
@@ -320,6 +324,44 @@ public class MarshallerImpl implements blue.endless.jankson.api.Marshaller {
 					if (result instanceof JsonObject) ((JsonObject)result).setMarshaller(this);
 					if (result instanceof JsonArray) ((JsonArray)result).setMarshaller(this);
 					return result;
+				}
+			}
+		}
+		
+		//Check for annotations
+		for(Method m : obj.getClass().getDeclaredMethods()) {
+			if (m.isAnnotationPresent(Serializer.class) && !Modifier.isStatic(m.getModifiers())) {
+				Class<?> clazz = m.getReturnType();
+				if (JsonElement.class.isAssignableFrom(clazz)) {
+					//This is probably the method we're looking for! Let's figure out its method signature!
+					Parameter[] params = m.getParameters();
+					if (params.length==0) {
+						try {
+							boolean access = m.isAccessible();
+							if (!access) m.setAccessible(true);
+							JsonElement result = (JsonElement) m.invoke(obj);
+							if (!access) m.setAccessible(false);
+							if (result instanceof JsonObject) ((JsonObject)result).setMarshaller(this);
+							if (result instanceof JsonArray) ((JsonArray)result).setMarshaller(this);
+							return result;
+						} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+							return JsonNull.INSTANCE; //TODO: This is a very real and important error case. We need a SerializationException and a way to expose exceptions proactively.
+						}
+					} else if (params.length==1) {
+						if (Marshaller.class.isAssignableFrom(params[0].getType())) {
+							try {
+								boolean access = m.isAccessible();
+								if (!access) m.setAccessible(true);
+								JsonElement result = (JsonElement) m.invoke(obj, this);
+								if (!access) m.setAccessible(false);
+								if (result instanceof JsonObject) ((JsonObject)result).setMarshaller(this);
+								if (result instanceof JsonArray) ((JsonArray)result).setMarshaller(this);
+								return result;
+							} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+								return JsonNull.INSTANCE; //TODO: Same failure case that needs expressing
+							}
+						}
+					}
 				}
 			}
 		}
