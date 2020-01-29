@@ -24,6 +24,8 @@
 
 package blue.endless.jankson;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -151,19 +153,17 @@ public class JsonArray extends JsonElement implements List<JsonElement>, Iterabl
 	}
 	
 	@Override
-	public String toJson(JsonGrammar grammar, int depth) {
-		StringBuilder builder = new StringBuilder();
-		
+	public void toJson(Writer writer, JsonGrammar grammar, int depth) throws IOException {
 		int effectiveDepth = (grammar.bareRootObject) ? Math.max(depth-1,0) : depth;
 		//int nextDepth = (grammar.bareRootObject) ? depth-1 : depth; 
 		
-		builder.append("[");
+		writer.append("[");
 		
 		if (entries.size()>0) {
 			if (grammar.printWhitespace) {
-				builder.append('\n');
+				writer.append('\n');
 			} else {
-				builder.append(' ');
+				writer.append(' ');
 			}
 		}
 		
@@ -172,43 +172,41 @@ public class JsonArray extends JsonElement implements List<JsonElement>, Iterabl
 			
 			if (grammar.printWhitespace) {
 				for(int j=0; j<effectiveDepth+1; j++) {
-					builder.append("\t");
+					writer.append("\t");
 				}
 			}
 			
-			CommentSerializer.print(builder, entry.comment, effectiveDepth, grammar);
+			CommentSerializer.print(writer, entry.comment, effectiveDepth, grammar);
 			
-			builder.append(entry.value.toJson(grammar, depth+1));
+			writer.append(entry.value.toJson(grammar, depth+1));
 			
 			if (grammar.printCommas) { 
 				if (i<entries.size()-1 || grammar.printTrailingCommas) {
-					builder.append(",");
-					if (i<entries.size()-1 && !grammar.printWhitespace) builder.append(' ');
+					writer.append(",");
+					if (i<entries.size()-1 && !grammar.printWhitespace) writer.append(' ');
 				}
 			} else {
-				builder.append(" ");
+				writer.append(" ");
 			}
 			
 			if (grammar.printWhitespace) {
-				builder.append('\n');
+				writer.append('\n');
 			}
 		}
 		
 		if (entries.size()>0) {
 			if (grammar.printWhitespace && depth>0) {
 				for(int j=0; j<effectiveDepth; j++) {
-					builder.append("\t");
+					writer.append("\t");
 				}
 			}
 		}
 		
 		if (entries.size()>0) {
-			if (!grammar.printWhitespace) builder.append(' ');
+			if (!grammar.printWhitespace) writer.append(' ');
 		}
 		
-		builder.append(']');
-		
-		return builder.toString();
+		writer.append(']');
 	}
 	
 	public String toString() {

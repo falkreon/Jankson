@@ -24,6 +24,8 @@
 
 package blue.endless.jankson;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.math.BigInteger;
 import java.util.Objects;
 
@@ -191,27 +193,41 @@ public class JsonPrimitive extends JsonElement {
 	}
 	
 	@Override
-	public String toJson(JsonGrammar grammar, int depth) {
+	public void toJson(Writer writer, JsonGrammar grammar, int depth) throws IOException {
 		
-		if (value==null) return "null";
+		if (value==null) {
+			writer.write("null");
+			return;
+		}
 		
 		if (value instanceof Double && grammar.bareSpecialNumerics) {
 			double d = ((Double)value).doubleValue();
-			if (Double.isNaN(d)) return "NaN";
+			if (Double.isNaN(d)) {
+				writer.write("NaN");
+				return;
+			}
 			if (Double.isInfinite(d)) {
 				if (d<0) {
-					return "-Infinity";
+					 writer.write("-Infinity");
+					 return;
 				} else {
-					return "Infinity";
+					 writer.write("Infinity");
+					 return;
 				}
 			}
-			return value.toString();
+			writer.write(value.toString());
 		} else if (value instanceof Number) {
-			return value.toString();
+			writer.write(value.toString());
+			return;
 		}
-		if (value instanceof Boolean) return value.toString();
+		if (value instanceof Boolean) {
+			writer.write(value.toString());
+			return;
+		}
 		
-		return '\"'+Escaper.escapeString(value.toString())+'\"'; //TODO: Configurable unicode blocks to escape?
+		writer.write('\"');
+		writer.write(Escaper.escapeString(value.toString())); //TODO: Configurable unicode blocks to escape?
+		writer.write('\"');
 	}
 	
 	//IMPLEMENTATION for Cloneable

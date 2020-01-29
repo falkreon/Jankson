@@ -210,7 +210,7 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 		JsonGrammar grammar = JsonGrammar.builder().withComments(comments).printWhitespace(newlines).build();
 		return toJson(grammar, depth);
 	}
-	
+	/*
 	@Override
 	public String toJson(JsonGrammar grammar, int depth) {
 		StringWriter w = new StringWriter();
@@ -222,8 +222,9 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 			throw new RuntimeException(ex);
 		}
 		
-	}
+	}*/
 	
+	@Override
 	public void toJson(Writer w, JsonGrammar grammar, int depth) throws IOException {
 		//StringBuilder builder = new StringBuilder();
 		boolean skipBraces = depth==0 && grammar.bareRootObject;

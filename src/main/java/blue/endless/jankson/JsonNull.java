@@ -24,6 +24,9 @@
 
 package blue.endless.jankson;
 
+import java.io.IOException;
+import java.io.Writer;
+
 public class JsonNull extends JsonElement {
 	public static final JsonNull INSTANCE = new JsonNull();
 	private JsonNull() {}
@@ -48,8 +51,8 @@ public class JsonNull extends JsonElement {
 	}
 	
 	@Override
-	public String toJson(JsonGrammar grammar, int depth) {
-		return "null";
+	public void toJson(Writer writer, JsonGrammar grammar, int depth) throws IOException {
+		writer.write("null");
 	}
 	
 	//IMPLEMENTATION for Cloneable
