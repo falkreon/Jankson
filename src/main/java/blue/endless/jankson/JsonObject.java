@@ -25,7 +25,6 @@
 package blue.endless.jankson;
 
 import java.io.IOException;
-import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -78,7 +77,7 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 			if (entry.key.equalsIgnoreCase(key)) {
 				JsonElement result = entry.value;
 				entry.value = elem;
-				entry.comment = comment;
+				entry.setComment(comment);
 				return result;
 			}
 		}
@@ -89,7 +88,7 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 		if (elem instanceof JsonArray) ((JsonArray)elem).marshaller = marshaller;
 		entry.key = key;
 		entry.value = elem;
-		entry.comment = comment;
+		entry.setComment(comment);
 		entries.add(entry);
 		return null;
 	}
@@ -106,7 +105,7 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 		Entry entry = new Entry();
 		entry.key = key;
 		entry.value = elem;
-		entry.comment = comment;
+		entry.setComment(comment);
 		entries.add(entry);
 		return elem;
 	}
@@ -132,7 +131,7 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 		entry.key = key;
 		entry.value = marshaller.serialize(elem);
 		if (entry.value==null) entry.value = JsonNull.INSTANCE;
-		entry.comment = comment;
+		entry.setComment(comment);
 		entries.add(entry);
 		return elem;
 	}
@@ -157,7 +156,7 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 			String key = entry.key;
 			JsonElement defaultValue = defaults.get(key);
 			if (defaultValue==null) {
-				result.put(entry.key, entry.value, entry.comment);
+				result.put(entry.key, entry.value, entry.getComment());
 				continue;
 			}
 			
@@ -167,7 +166,7 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 					if (subDelta.isEmpty()) {
 						continue;
 					} else {
-						result.put(entry.key, subDelta, entry.comment);
+						result.put(entry.key, subDelta, entry.getComment());
 						continue;
 					}
 				}
@@ -175,7 +174,7 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 			
 			if (entry.value.equals(defaultValue)) continue;
 			
-			result.put(entry.key, entry.value, entry.comment);
+			result.put(entry.key, entry.value, entry.getComment());
 		}
 		
 		return result;
@@ -189,7 +188,7 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 	public String getComment(@Nonnull String name) {
 		for(Entry entry : entries) {
 			if (entry.key.equalsIgnoreCase(name)) {
-				return entry.comment;
+				return entry.getComment();
 			}
 		}
 		
@@ -199,7 +198,7 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 	public void setComment(@Nonnull String name, @Nullable String comment) {
 		for(Entry entry : entries) {
 			if (entry.key.equalsIgnoreCase(name)) {
-				entry.comment = comment;
+				entry.setComment(comment);
 				return;
 			}
 		}
@@ -210,19 +209,6 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 		JsonGrammar grammar = JsonGrammar.builder().withComments(comments).printWhitespace(newlines).build();
 		return toJson(grammar, depth);
 	}
-	/*
-	@Override
-	public String toJson(JsonGrammar grammar, int depth) {
-		StringWriter w = new StringWriter();
-		try {
-			toJson(w, grammar, depth);
-			w.flush();
-			return w.toString();
-		} catch (IOException ex) {
-			throw new RuntimeException(ex);
-		}
-		
-	}*/
 	
 	@Override
 	public void toJson(Writer w, JsonGrammar grammar, int depth) throws IOException {
@@ -250,7 +236,7 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 				}
 			}
 			
-			CommentSerializer.print(w, entry.comment, Math.max(effectiveDepth,0), grammar);
+			CommentSerializer.print(w, entry.getComment(), Math.max(effectiveDepth,0), grammar);
 			
 			boolean quoted = !grammar.printUnquotedKeys;
 			
@@ -483,7 +469,7 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 	
 	
 	private static final class Entry {
-		protected String comment;
+		private String comment;
 		protected String key;
 		protected JsonElement value;
 		
@@ -501,6 +487,18 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 		@Override
 		public int hashCode() {
 			return Objects.hash(comment, key, value);
+		}
+		
+		public String getComment() {
+			return this.comment;
+		}
+		
+		public void setComment(String comment) {
+			if (comment!=null && !comment.trim().isEmpty()) {
+				this.comment = comment;
+			} else {
+				this.comment = null;
+			}
 		}
 	}
 

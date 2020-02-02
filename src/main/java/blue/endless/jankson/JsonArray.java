@@ -139,11 +139,11 @@ public class JsonArray extends JsonElement implements List<JsonElement>, Iterabl
 	}
 	
 	public String getComment(int i) {
-		return entries.get(i).comment;
+		return entries.get(i).getComment();
 	}
 	
 	public void setComment(int i, String comment) {
-		entries.get(i).comment = comment;
+		entries.get(i).setComment(comment);
 	}
 	
 	@Override
@@ -176,7 +176,7 @@ public class JsonArray extends JsonElement implements List<JsonElement>, Iterabl
 				}
 			}
 			
-			CommentSerializer.print(writer, entry.comment, effectiveDepth, grammar);
+			CommentSerializer.print(writer, entry.getComment(), effectiveDepth, grammar);
 			
 			writer.append(entry.value.toJson(grammar, depth+1));
 			
@@ -218,7 +218,7 @@ public class JsonArray extends JsonElement implements List<JsonElement>, Iterabl
 		
 		Entry entry = new Entry();
 		entry.value = e;
-		entry.comment = comment;
+		entry.setComment(comment);
 		entries.add(entry);
 		return true;
 	}
@@ -235,7 +235,7 @@ public class JsonArray extends JsonElement implements List<JsonElement>, Iterabl
 			Entry ae = a.get(i);
 			Entry be = b.get(i);
 			if (!ae.value.equals(be.value)) return false;
-			if (!Objects.equals(ae.comment, be.comment)) return false;
+			if (!Objects.equals(ae.getComment(), be.getComment())) return false;
 		}
 		
 		return true;
@@ -268,7 +268,7 @@ public class JsonArray extends JsonElement implements List<JsonElement>, Iterabl
 		JsonArray result = new JsonArray();
 		result.marshaller = marshaller;
 		for(Entry entry : entries) {
-			result.add(entry.value.clone(), entry.comment);
+			result.add(entry.value.clone(), entry.getComment());
 		}
 		return result;
 	}
@@ -429,7 +429,7 @@ public class JsonArray extends JsonElement implements List<JsonElement>, Iterabl
 		public JsonElement set(int index, JsonElement element) {
 			Entry cur = new Entry(element);
 			Entry old = entries.get(index);
-			if (old!=null) cur.comment = old.comment;
+			if (old!=null) cur.setComment(old.getComment());
 			entries.set(index, cur);
 			
 			return (old==null) ? null : old.value;
@@ -515,6 +515,18 @@ public class JsonArray extends JsonElement implements List<JsonElement>, Iterabl
 			Entry o = (Entry)other;
 			return Objects.equals(comment, o.comment) &&
 					Objects.equals(value, o.value);
+		}
+		
+		public String getComment() {
+			return comment;
+		}
+		
+		public void setComment(String comment) {
+			if (comment!=null && !comment.trim().isEmpty()) {
+				this.comment = comment;
+			} else {
+				this.comment = null;
+			}
 		}
 		
 		@Override
