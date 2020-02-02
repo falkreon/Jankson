@@ -216,6 +216,7 @@ public class JsonPrimitive extends JsonElement {
 				}
 			}
 			writer.write(value.toString());
+			return;
 		} else if (value instanceof Number) {
 			writer.write(value.toString());
 			return;

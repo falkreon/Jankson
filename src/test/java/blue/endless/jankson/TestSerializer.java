@@ -64,4 +64,17 @@ public class TestSerializer {
 		JsonElement elem = jankson.toJson(new DeclaredSerializerTest());
 		Assert.assertEquals("42", elem.toJson());
 	}
+	
+	/**
+	 * Issue #34 - switching to Writer caused a small bug where doubles were double-printed
+	 */
+	@Test
+	public void testBareSpecialNumericsDuplication() {
+		JsonObject subject = new JsonObject();
+		subject.put("foo", JsonPrimitive.of(42.0));
+		
+		JsonGrammar grammar = JsonGrammar.builder().bareSpecialNumerics(true).printWhitespace(false).build();
+		
+		Assert.assertEquals("{ \"foo\": 42.0 }", subject.toJson(grammar));
+	}
 }
