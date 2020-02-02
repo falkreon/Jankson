@@ -35,6 +35,7 @@ public class CommentParserContext implements ParserContext<String> {
 	
 	int prevChar = -1;
 	
+	boolean startOfLine = true;
 	boolean multiLine = false;
 	boolean done = false;
 	
@@ -74,6 +75,14 @@ public class CommentParserContext implements ParserContext<String> {
 		
 		//We're past the initiating character(s)
 		if (multiLine) {
+			if (codePoint!='\n' && Character.isWhitespace(codePoint)) {
+				if (startOfLine) return true;
+			} else if (codePoint=='\n') {
+				startOfLine = true;
+			} else {
+				if (startOfLine) startOfLine = false;
+			}
+			
 			if (codePoint=='/' && prevChar=='*') {
 				result.deleteCharAt(result.length()-1); //Get rid of the *
 				done = true;

@@ -183,4 +183,20 @@ public class TestDeserializer {
 		String slightlyUnescaped = ((JsonPrimitive)jankson.load("{'test': \"\\uu003C\" }").get("test")).asString();
 		Assert.assertEquals("Unicode escapes which are themselves escaped must be unescaped exactly one level.", "\\u003c", slightlyUnescaped); //implied here is that hex digit case MUST be lost
 	}
+	
+	/**
+	 * Issue #35: Serialize/deserialize cycles of multiline comments cause whitespace of lines after the first to creep larger and larger
+	 * 
+	 * <p>Now leading whitespace is stripped from each line of multiline comments.
+	 */
+	@Test
+	public void testMultilineCommentReads() throws SyntaxError {
+		JsonObject obj = new JsonObject();
+		JsonPrimitive p = new JsonPrimitive(42);
+		obj.put("thing", p, "this is a multiline\ncomment");
+		
+		JsonObject recyc = jankson.load(obj.toJson(JsonGrammar.JSON5));
+		
+		Assert.assertEquals(obj.toJson(JsonGrammar.JSON5), recyc.toJson(JsonGrammar.JSON5));
+	}
 }
