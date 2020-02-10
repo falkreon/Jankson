@@ -24,6 +24,8 @@
 
 package blue.endless.jankson;
 
+import java.util.regex.Pattern;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -76,5 +78,15 @@ public class TestSerializer {
 		JsonGrammar grammar = JsonGrammar.builder().bareSpecialNumerics(true).printWhitespace(false).build();
 		
 		Assert.assertEquals("{ \"foo\": 42.0 }", subject.toJson(grammar));
+	}
+	
+	/** Issues #26 and #38 - ':' isn't force-quoted in object keys */
+	@Test
+	public void testIssue26() {
+		JsonObject obj = new JsonObject();
+		obj.put("test:key", JsonNull.INSTANCE);
+		
+		String result = obj.toJson(JsonGrammar.builder().printWhitespace(false).printUnquotedKeys(true).build());
+		Assert.assertEquals("{ \"test:key\": null }", result);
 	}
 }
