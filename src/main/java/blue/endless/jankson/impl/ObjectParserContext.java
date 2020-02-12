@@ -31,13 +31,19 @@ import blue.endless.jankson.api.SyntaxError;
 public class ObjectParserContext implements ParserContext<JsonObject> {
 	private JsonObject result = new JsonObject();
 	
+	private final boolean assumeOpen;
+	
 	private String comment;
 	private boolean openBraceFound = false;
+	private boolean noOpenBrace = false;
 	private String key;
 	private boolean colonFound = false;
 	private boolean closeBraceFound = false;
+	private boolean eof = false;
 	
-	public ObjectParserContext() {}
+	public ObjectParserContext(boolean assumeOpen) {
+		this.assumeOpen = assumeOpen;
+	}
 	
 	
 	@Override
@@ -55,73 +61,79 @@ public class ObjectParserContext implements ParserContext<JsonObject> {
 				return true;
 			}
 			
-			throw new SyntaxError("Found character '"+(char)codePoint+"' instead of '{' while looking for the start of an object");
-		} else {
-			if (closeBraceFound) return false; //Shouldn't happen!
-			
-			if (key==null) {
-				if (Character.isWhitespace(codePoint) || codePoint==',') return true;
-				
-				//Expecting: Key or End
-				switch(codePoint) {
-				case '}':
-					closeBraceFound = true;
-					return true;
-				case ',':
-					return true; //commas are basically whitespace to us
-				case '\'':
-				case '"':
-					loader.push(new StringParserContext(codePoint), (it)->key=it.asString());
-					return true;
-				case '/':
-				case '#':
-					loader.push(new CommentParserContext(codePoint), (it)->comment=it);
-					return true;
-					
-				//Let's capture some error cases!
-				case '{':
-					loader.throwDelayed(new SyntaxError("Found spurious '{' while parsing an object."));
-					return true;
-					
-				default:
-					loader.push(new TokenParserContext(codePoint), (it)->key=it.asString());
-					return true;
-				}
-				
-			} else if (colonFound) {
-				final String elemKey = key;
-				loader.push(new ElementParserContext(), (it)->{
-					
-					//Combine the two possible comment locations into a canonical form
-					String resolvedComment = "";
-					if (comment!=null) resolvedComment+=comment;
-					if (comment!=null && it.getComment()!=null) resolvedComment += '\n';
-					if (it.getComment()!=null) resolvedComment += it.getComment();
-					
-					//if (key==null) System.out.println("KEY WAS NULL! "+it.getElement()+" using saved key '"+elemKey+"'");
-					result.put(elemKey, it.getElement(), resolvedComment);
-					key = null;
-					colonFound = false;
-					comment = null;
-					
-				});
-				return false; //give the first non-colon character to the resulting element.
-				
+			if (assumeOpen) {
+				// We're a root parser; maybe this is a file written with omitRootBraces
+				openBraceFound = true;
+				noOpenBrace = true;
 			} else {
-				if (Character.isWhitespace(codePoint)) return true; //Don't care about whitespace
-				if (codePoint==':') {
-					colonFound = true;
-					return true;
-				}
-				
-				throw new SyntaxError("Found unexpected character '"+(char)codePoint+"' while looking for the colon (':') between a key and a value in an object");
+				throw new SyntaxError("Found character '"+(char)codePoint+"' instead of '{' while looking for the start of an object");
 			}
+		}
+		if (closeBraceFound) return false; //Shouldn't happen!
+		
+		if (key==null) {
+			if (Character.isWhitespace(codePoint) || codePoint==',') return true;
+			
+			//Expecting: Key or End
+			switch(codePoint) {
+			case '}':
+				if (noOpenBrace) throw new SyntaxError("Found spurious '}' while parsing an object with no open brace.");
+				closeBraceFound = true;
+				return true;
+			case ',':
+				return true; //commas are basically whitespace to us
+			case '\'':
+			case '"':
+				loader.push(new StringParserContext(codePoint), (it)->key=it.asString());
+				return true;
+			case '/':
+			case '#':
+				loader.push(new CommentParserContext(codePoint), (it)->comment=it);
+				return true;
+				
+			//Let's capture some error cases!
+			case '{':
+				loader.throwDelayed(new SyntaxError("Found spurious '{' while parsing an object."));
+				return true;
+				
+			default:
+				loader.push(new TokenParserContext(codePoint), (it)->key=it.asString());
+				return true;
+			}
+			
+		} else if (colonFound) {
+			final String elemKey = key;
+			loader.push(new ElementParserContext(), (it)->{
+				
+				//Combine the two possible comment locations into a canonical form
+				String resolvedComment = "";
+				if (comment!=null) resolvedComment+=comment;
+				if (comment!=null && it.getComment()!=null) resolvedComment += '\n';
+				if (it.getComment()!=null) resolvedComment += it.getComment();
+				
+				//if (key==null) System.out.println("KEY WAS NULL! "+it.getElement()+" using saved key '"+elemKey+"'");
+				result.put(elemKey, it.getElement(), resolvedComment);
+				key = null;
+				colonFound = false;
+				comment = null;
+				
+			});
+			return false; //give the first non-colon character to the resulting element.
+			
+		} else {
+			if (Character.isWhitespace(codePoint)) return true; //Don't care about whitespace
+			if (codePoint==':') {
+				colonFound = true;
+				return true;
+			}
+			
+			throw new SyntaxError("Found unexpected character '"+(char)codePoint+"' while looking for the colon (':') between a key and a value in an object");
 		}
 	}
 
 	@Override
 	public boolean isComplete() {
-		return closeBraceFound;
+		return closeBraceFound || (assumeOpen && noOpenBrace && eof);
 	}
 
 	@Override
@@ -132,6 +144,8 @@ public class ObjectParserContext implements ParserContext<JsonObject> {
 
 	@Override
 	public void eof() throws SyntaxError {
+		eof = true;
+		if (assumeOpen && noOpenBrace) return;
 		if (closeBraceFound) return;
 		throw new SyntaxError("Expected to find '}' to end an object, found EOF instead.");
 	}

@@ -201,4 +201,39 @@ public class TestDeserializer {
 		
 		Assert.assertEquals(obj.toJson(JsonGrammar.JSON5), recyc.toJson(JsonGrammar.JSON5));
 	}
+
+	@Test
+	public void testOmitRootBraces() throws DeserializationException {
+		String subject =
+				"\"stringDeserializer\": \"test\",\n" +
+				"\"arrayDeserializer\": [ \"someValue\", \"someOptValue\" ],\n" +
+				"\"unmappedDeserializer\": false,\n" +
+				"\"defaultDeserializer\": {\n" +
+				"	\"value\": \"someValue\",\n" +
+				"	\"opt\": \"someOptValue\"\n" +
+				"}";
+
+		try {
+			Bar obj = Jankson.builder().allowBareRootObject().build().fromJson(subject, Bar.class);
+
+			Assert.assertNotNull(obj.stringDeserializer);
+			Assert.assertNotNull(obj.arrayDeserializer);
+			Assert.assertNotNull(obj.unmappedDeserializer);
+			Assert.assertNotNull(obj.defaultDeserializer);
+
+			Assert.assertEquals("test", obj.stringDeserializer.value);
+			Assert.assertEquals("someValue", obj.arrayDeserializer.value);
+			Assert.assertEquals("someOptValue", obj.arrayDeserializer.opt);
+			Assert.assertEquals("", obj.unmappedDeserializer.value);
+			Assert.assertEquals("someValue", obj.defaultDeserializer.value);
+			Assert.assertEquals("someOptValue", obj.defaultDeserializer.opt);
+		} catch (SyntaxError ex) {
+			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+		}
+		try {
+			Jankson.builder().build().fromJson(subject, Bar.class);
+			Assert.fail("Should not successfully load bare root object without enabling option");
+		} catch (SyntaxError ex) {
+		}
+	}
 }

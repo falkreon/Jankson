@@ -127,7 +127,9 @@ public class JsonGrammar {
 		}
 		
 		/**
-		 * When printing out a root object, omit the opening and closing braces ( "{}" )
+		 * When printing out a root object, omit the opening and closing braces ( "{}" ). Loading a
+		 * file generated with this setting requires setting {@link Jankson.Builder#allowBareRootObject() allowBareRootObject}
+		 * in the builder for the Jankson object that will load them.
 		 */
 		public Builder bareRootObject(boolean bare) {
 			grammar.bareRootObject = bare;
