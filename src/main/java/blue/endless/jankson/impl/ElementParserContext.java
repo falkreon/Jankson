@@ -54,7 +54,7 @@ public class ElementParserContext implements ParserContext<AnnotatedElement> {
 			childActive = true;
 			return true;
 		case '{': //Object
-			loader.push(new ObjectParserContext(), this::setResult);
+			loader.push(new ObjectParserContext(false), this::setResult);
 			childActive = true;
 			return false; //Give the opening brace to the object context
 		case '[': //Array

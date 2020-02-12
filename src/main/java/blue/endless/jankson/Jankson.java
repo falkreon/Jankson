@@ -57,6 +57,7 @@ public class Jankson {
 	private int withheldCodePoint = -1;
 	@SuppressWarnings("deprecation")
 	private Marshaller marshaller = blue.endless.jankson.impl.MarshallerImpl.getFallback();
+	private boolean allowBareRootObject = false;
 	
 	private int retries = 0;
 	private SyntaxError delayedError = null;
@@ -149,7 +150,7 @@ public class Jankson {
 		withheldCodePoint = -1;
 		root = null;
 		
-		push(new ObjectParserContext(), (it)->{
+		push(new ObjectParserContext(allowBareRootObject), (it)->{
 			root = it;
 		});
 		
@@ -171,6 +172,9 @@ public class Jankson {
 						ParserFrame<?> frame = contextStack.pop();
 						try {
 							frame.context.eof();
+							if (frame.context.isComplete()) {
+								frame.supply();
+							}
 						} catch (SyntaxError error) {
 							error.setStartParsing(frame.startLine, frame.startCol);
 							error.setEndParsing(line, column);
@@ -366,6 +370,7 @@ public class Jankson {
 	public static class Builder {
 		@SuppressWarnings("deprecation")
 		blue.endless.jankson.impl.MarshallerImpl marshaller = new blue.endless.jankson.impl.MarshallerImpl();
+		boolean allowBareRootObject = false;
 		
 		/**
 		 * Registers a deserializer that can transform a JsonObject into an instance of the specified class. Please note
@@ -429,9 +434,20 @@ public class Jankson {
 			return this;
 		}
 		
+		/**
+		 * Allows loading JSON files that do not contain root braces, as generated with
+		 * {@link JsonGrammar.Builder#bareRootObject(boolean) bareRootObject}.
+		 * @return This Builder for further modification.
+		 */
+		public Builder allowBareRootObject() {
+			allowBareRootObject = true;
+			return this;
+		}
+
 		public Jankson build() {
 			Jankson result = new Jankson(this);
 			result.marshaller = marshaller;
+			result.allowBareRootObject = allowBareRootObject;
 			return result;
 		}
 	}
