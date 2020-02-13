@@ -84,4 +84,30 @@ public class TestCosmetic {
 		Assert.assertEquals(expectedStrict, strict);
 		Assert.assertEquals(expectedRootArray, rootArray);
 	}
+	
+	@Test
+	public void testBareRootObjectIndentWithComment() {
+		String expectedJkson =
+				"/* This is a multiline\n" +
+				"   comment.\n" +
+				"*/\n" +
+				"object: {\n" +
+				"\tfoo: true\n" +
+				"}\n";
+		
+		JsonObject subject = new JsonObject();
+		JsonObject sub = new JsonObject();
+		
+		sub.put("foo", JsonPrimitive.TRUE);
+		
+		subject.put("object", sub, "This is a multiline\ncomment.\n");
+		
+		Assert.assertEquals(expectedJkson, subject.toJson(JsonGrammar.builder()
+				.bareRootObject(true)
+				.printCommas(false)
+				.withComments(true)
+				.printWhitespace(true)
+				.printUnquotedKeys(true)
+				.build()));
+	}
 }

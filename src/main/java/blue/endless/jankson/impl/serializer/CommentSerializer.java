@@ -44,6 +44,7 @@ public class CommentSerializer {
 		print(builder, comment, indent, comments, whitespace);
 	}
 		
+	// Note: Indent may be -1.
 	public static void print(StringBuilder builder, String comment, int indent, boolean comments, boolean whitespace) {
 		if (!comments) return;
 		if (comment==null || comment.trim().isEmpty()) return;
