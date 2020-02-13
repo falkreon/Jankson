@@ -154,7 +154,7 @@ public class JsonArray extends JsonElement implements List<JsonElement>, Iterabl
 	
 	@Override
 	public void toJson(Writer writer, JsonGrammar grammar, int depth) throws IOException {
-		int effectiveDepth = (grammar.bareRootObject) ? Math.max(depth-1,0) : depth;
+		int effectiveDepth = (grammar.bareRootObject) ? depth-1 : depth;
 		//int nextDepth = (grammar.bareRootObject) ? depth-1 : depth; 
 		
 		writer.append("[");

@@ -214,7 +214,7 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 	public void toJson(Writer w, JsonGrammar grammar, int depth) throws IOException {
 		//StringBuilder builder = new StringBuilder();
 		boolean skipBraces = depth==0 && grammar.bareRootObject;
-		int effectiveDepth = (grammar.bareRootObject) ? Math.max(depth-1,0) : depth;
+		int effectiveDepth = (grammar.bareRootObject) ? depth-1 : depth;
 		int nextDepth = (grammar.bareRootObject) ? depth : depth+1; 
 		
 		if (!skipBraces) {
@@ -236,7 +236,7 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 				}
 			}
 			
-			CommentSerializer.print(w, entry.getComment(), Math.max(effectiveDepth,0), grammar);
+			CommentSerializer.print(w, entry.getComment(), effectiveDepth, grammar);
 			
 			boolean quoted = !grammar.printUnquotedKeys;
 			
@@ -256,7 +256,7 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 					w.append(",");
 					if (i<entries.size()-1 && !grammar.printWhitespace) w.append(' ');
 				}
-			} else {
+			} else if (!grammar.printWhitespace) {
 				w.append(" ");
 			}
 			
