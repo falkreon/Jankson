@@ -26,6 +26,7 @@ package blue.endless.jankson;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Objects;
 
@@ -162,6 +163,16 @@ public class JsonPrimitive extends JsonElement {
 		}
 	}
 	
+	public BigDecimal asBigDecimal(BigDecimal defaultValue) {
+		if (value instanceof Number) {
+			return BigDecimal.valueOf(((Number) value).doubleValue());
+		} else if (value instanceof String) {
+			return new BigDecimal((String)value);
+		} else {
+			return defaultValue;
+		}
+	}
+	
 	@Nonnull
 	public String toString() {
 		return toJson();
@@ -248,6 +259,12 @@ public class JsonPrimitive extends JsonElement {
 	public static JsonPrimitive of(@Nonnull BigInteger n) {
 		JsonPrimitive result = new JsonPrimitive();
 		result.value = ((BigInteger)n).toString(16);
+		return result;
+	}
+	
+	public static JsonPrimitive of(@Nonnull BigDecimal n) {
+		JsonPrimitive result = new JsonPrimitive();
+		result.value = n.toString(); //Appropriate for `new BigDecimal(s)`
 		return result;
 	}
 	
