@@ -31,6 +31,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import blue.endless.jankson.annotation.Serializer;
+import blue.endless.jankson.api.SyntaxError;
 
 public class TestSerializer {
 	Jankson jankson;
@@ -88,5 +89,28 @@ public class TestSerializer {
 		
 		String result = obj.toJson(JsonGrammar.builder().printWhitespace(false).printUnquotedKeys(true).build());
 		Assert.assertEquals("{ \"test:key\": null }", result);
+	}
+	
+	/**
+	 * Issue #42: String with russian characters is incorrectly parsed.
+	 * 
+	 * <p>Moved off of a hand-decoding of UTF-8 surrogates onto Reader, which offers a much more robust and future-proof assembly of UTF-8 surrogates into code points.
+	 */
+	
+	@Test
+	public void testCyrillic() {
+		String input =
+				"{\n" + 
+				"  en: \"Play with sound?\",\n" + 
+				"  ru: \"Играть с музыкой?\"\n" + 
+				"}";
+		
+		try {
+			JsonObject obj = Jankson.builder().build().load(input);
+			
+			Assert.assertEquals("Играть с музыкой?", obj.get(String.class, "ru"));
+		} catch (SyntaxError ex) {
+			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+		}
 	}
 }

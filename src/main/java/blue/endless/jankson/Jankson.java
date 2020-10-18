@@ -29,7 +29,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.function.BiFunction;
@@ -81,6 +83,7 @@ public class Jankson {
 		}
 	}
 	
+	/*
 	private static boolean isLowSurrogate(int i) {
 		return (i & 0b1100_0000) == 0b1000_0000;
 	}
@@ -143,10 +146,12 @@ public class Jankson {
 		
 		//we know it's 0b10xx_xxxx down here, so it's an orphaned low surrogate.
 		return BAD_CHARACTER;
-	}
+	}*/
 	
 	@Nonnull
 	public JsonObject load(InputStream in) throws IOException, SyntaxError {
+		InputStreamReader reader = new InputStreamReader(in, StandardCharsets.UTF_8);
+		
 		withheldCodePoint = -1;
 		root = null;
 		
@@ -165,7 +170,8 @@ public class Jankson {
 				if (retries>25) throw new IOException("Parser got stuck near line "+line+" column "+column);
 				processCodePoint(withheldCodePoint);
 			} else {
-				int inByte = getCodePoint(in);
+				//int inByte = getCodePoint(in);
+				int inByte = reader.read();
 				if (inByte==-1) {
 					//Walk up the stack sending EOF to things until either an error occurs or the stack completes
 					while(!contextStack.isEmpty()) {
@@ -217,6 +223,8 @@ public class Jankson {
 	/** Experimental: Parses the supplied InputStream as a JsonElement, which may or may not be an object at the root level */
 	@Nonnull
 	public JsonElement loadElement(InputStream in) throws IOException, SyntaxError {
+		InputStreamReader reader = new InputStreamReader(in, StandardCharsets.UTF_8);
+		
 		withheldCodePoint = -1;
 		rootElement = null;
 		
@@ -235,7 +243,8 @@ public class Jankson {
 				if (retries>25) throw new IOException("Parser got stuck near line "+line+" column "+column);
 				processCodePoint(withheldCodePoint);
 			} else {
-				int inByte = getCodePoint(in);
+				//int inByte = getCodePoint(in);
+				int inByte = reader.read();
 				if (inByte==-1) {
 					//Walk up the stack sending EOF to things until either an error occurs or the stack completes
 					while(!contextStack.isEmpty()) {
