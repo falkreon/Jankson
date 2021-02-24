@@ -48,6 +48,10 @@ if (System.env.BUILD_NUMBER) {
 	versionSuffix = '-'+System.env.BUILD_NUMBER;
 }
 
+tasks.withType(JavaCompile) {
+	options.encoding = "UTF-8"
+}
+
 publishing {
 	publications {
 		mavenPrimary(MavenPublication) {
