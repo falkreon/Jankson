@@ -52,7 +52,13 @@ public class ObjectParserContext implements ParserContext<JsonObject> {
 		if (!openBraceFound) {
 			if (Character.isWhitespace(codePoint)) return true; //We're fine, this is just whitespace
 			if (codePoint=='/' || codePoint=='#') {
-				loader.push(new CommentParserContext(codePoint), (it)->comment=it);
+				loader.push(new CommentParserContext(codePoint), (it)->{
+					if (comment==null) {
+						comment = it;
+					} else {
+						comment = comment + "\n" + it;
+					}
+				});
 				return true;
 			}
 			
@@ -88,7 +94,13 @@ public class ObjectParserContext implements ParserContext<JsonObject> {
 				return true;
 			case '/':
 			case '#':
-				loader.push(new CommentParserContext(codePoint), (it)->comment=it);
+				loader.push(new CommentParserContext(codePoint), (it)->{
+					if (comment==null) {
+						comment = it;
+					} else {
+						comment = comment + "\n" + it;
+					}
+				});
 				return true;
 				
 			//Let's capture some error cases!

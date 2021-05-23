@@ -28,6 +28,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import blue.endless.jankson.api.SyntaxError;
+
 public class TestCosmetic {
 	Jankson jankson;
 	
@@ -102,12 +104,81 @@ public class TestCosmetic {
 		
 		subject.put("object", sub, "This is a multiline\ncomment.\n");
 		
-		Assert.assertEquals(expectedJkson, subject.toJson(JsonGrammar.builder()
+		String result = subject.toJson(JsonGrammar.builder()
 				.bareRootObject(true)
 				.printCommas(false)
 				.withComments(true)
 				.printWhitespace(true)
 				.printUnquotedKeys(true)
-				.build()));
+				.build());
+		
+		Assert.assertEquals(expectedJkson, result);
+	}
+	
+	/**
+	 * Issue #44: Adding comments with 'bareRootObject(true)' messes up indentation
+	 * 
+	 * Makes sure that indentation is correct after a single-line comment under "bare root" output
+	 */
+	@Test
+	public void testBareRootObjectIndentWithSingleLineComment() {
+		JsonGrammar grammar = JsonGrammar.builder().bareRootObject(true).build();
+		JsonObject object = new JsonObject();
+		object.put("first_thing", new JsonPrimitive("First Thing"));
+		object.put("second_thing", new JsonPrimitive("Second Thing"), "This has a comment!");
+		object.put("third_thing", new JsonPrimitive("Third Thing"));
+		
+		String expectedJkson =
+			"\"first_thing\": \"First Thing\",\n"
+			+ "// This has a comment!\n"
+			+ "\"second_thing\": \"Second Thing\",\n"
+			+ "\"third_thing\": \"Third Thing\"\n";
+		
+		Assert.assertEquals(expectedJkson, object.toJson(grammar));
+	}
+	
+	/**
+	 * Issue #36:  Multiline comments sometimes lost in serialization/deserialization cycles
+	 */
+	@Test
+	public void testMultilineCommentsRoundTrip() {
+		JsonObject obj = new JsonObject();
+		JsonPrimitive p = new JsonPrimitive(42);
+		obj.put("thing", p, "this is a multiline\ncomment");
+		
+		String serialized = obj.toJson(JsonGrammar.JSON5);
+		
+		String expectedJkson =
+			"{\n"
+			+ "	/* this is a multiline\n"
+			+ "	   comment\n"
+			+ "	*/\n"
+			+ "	\"thing\": 42,\n"
+			+ "}";
+		
+		Assert.assertEquals(expectedJkson, serialized);
+	}
+	
+	/**
+	 * Further testing for #36
+	 * @throws SyntaxError 
+	 */
+	@Test
+	public void testMultiCommentDeserialize() throws SyntaxError {
+		String source = "{ /* this is a multiline */ /* comment */ \"thing\": 42 }";
+		
+		JsonObject object = Jankson.builder().build().load(source);
+		
+		String reserialized = object.toJson(JsonGrammar.JSON5);
+		
+		String expectedJkson =
+			"{\n"
+			+ "	/* this is a multiline\n"
+			+ "	   comment\n"
+			+ "	*/\n"
+			+ "	\"thing\": 42,\n"
+			+ "}";
+		
+		Assert.assertEquals(expectedJkson, reserialized);
 	}
 }
