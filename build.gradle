@@ -33,6 +33,14 @@ repositories {
 	mavenCentral()
 }
 
+jar {
+    manifest {
+        attributes(
+            "Automatic-Module-Name"       : "jankson"
+		);
+	}
+}
+
 task sourcesJar(type: Jar, dependsOn: classes) {
 	classifier = "sources"
 	from sourceSets.main.allSource
