@@ -76,7 +76,7 @@ repositories {
 }
 
 dependencies {
-	"blue.endless:jankson:1.1.0"
+	"blue.endless:jankson:1.2.1"
 }
 ```
 
