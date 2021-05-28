@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import blue.endless.jankson.api.element.JsonObject;
+
 public class ObjectDocumentEntry implements DocumentEntry, Iterable<DocumentEntry> {
 	protected List<DocumentEntry> entries = new ArrayList<>();
 
@@ -32,6 +34,28 @@ public class ObjectDocumentEntry implements DocumentEntry, Iterable<DocumentEntr
 				
 			}
 		}
+		
+		return null;
+	}
+
+	@Override
+	public boolean isComment() {
+		return false;
+	}
+
+	@Override
+	public CommentDocumentEntry asComment() {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public boolean isJsonElement() {
+		return true;
+	}
+
+	@Override
+	public JsonObject asJsonElement() {
+		//TODO: Deep copy (and possibly cache) this object into a JsonObject
 		
 		return null;
 	}
