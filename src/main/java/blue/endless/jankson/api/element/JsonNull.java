@@ -22,10 +22,12 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson;
+package blue.endless.jankson.api.element;
 
 import java.io.IOException;
 import java.io.Writer;
+
+import blue.endless.jankson.api.JsonGrammar;
 
 public class JsonNull extends JsonElement {
 	public static final JsonNull INSTANCE = new JsonNull();

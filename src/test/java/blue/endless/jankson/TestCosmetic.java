@@ -28,7 +28,12 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import blue.endless.jankson.api.Jankson;
+import blue.endless.jankson.api.JsonGrammar;
 import blue.endless.jankson.api.SyntaxError;
+import blue.endless.jankson.api.element.JsonArray;
+import blue.endless.jankson.api.element.JsonObject;
+import blue.endless.jankson.api.element.JsonPrimitive;
 
 public class TestCosmetic {
 	Jankson jankson;

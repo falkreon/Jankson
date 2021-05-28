@@ -36,12 +36,20 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import blue.endless.jankson.annotation.NonnullByDefault;
-import blue.endless.jankson.annotation.Nullable;
-import blue.endless.jankson.annotation.SerializedName;
+import blue.endless.jankson.api.annotation.NonnullByDefault;
+import blue.endless.jankson.api.annotation.Nullable;
+import blue.endless.jankson.api.annotation.SerializedName;
+import blue.endless.jankson.api.Jankson;
+import blue.endless.jankson.api.JsonGrammar;
 import blue.endless.jankson.api.SyntaxError;
+import blue.endless.jankson.api.annotation.Comment;
+import blue.endless.jankson.api.element.JsonArray;
+import blue.endless.jankson.api.element.JsonElement;
+import blue.endless.jankson.api.element.JsonNull;
+import blue.endless.jankson.api.element.JsonObject;
+import blue.endless.jankson.api.element.JsonPrimitive;
 import blue.endless.jankson.impl.MarshallerImpl;
-import blue.endless.jankson.magic.TypeMagic;
+import blue.endless.jankson.impl.TypeMagic;
 
 public class BasicTests {
 	Jankson jankson;

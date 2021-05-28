@@ -27,7 +27,7 @@ package blue.endless.jankson.impl;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import blue.endless.jankson.JsonElement;
+import blue.endless.jankson.api.element.JsonElement;
 
 /** Holds both a JsonElement and its associated comment, and any other relevant data */
 public class AnnotatedElement {

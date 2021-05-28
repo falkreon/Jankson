@@ -26,13 +26,13 @@ package blue.endless.jankson.impl.serializer;
 
 import java.util.HashMap;
 
-import blue.endless.jankson.JsonArray;
-import blue.endless.jankson.JsonElement;
-import blue.endless.jankson.JsonGrammar;
-import blue.endless.jankson.JsonObject;
-import blue.endless.jankson.JsonPrimitive;
 import blue.endless.jankson.api.DeserializationException;
+import blue.endless.jankson.api.JsonGrammar;
 import blue.endless.jankson.api.Marshaller;
+import blue.endless.jankson.api.element.JsonArray;
+import blue.endless.jankson.api.element.JsonElement;
+import blue.endless.jankson.api.element.JsonObject;
+import blue.endless.jankson.api.element.JsonPrimitive;
 
 /**
  * Stores deserializer functions that produce objects of type &lt;B&gt;

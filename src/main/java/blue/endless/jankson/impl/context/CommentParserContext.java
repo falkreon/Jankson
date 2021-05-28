@@ -22,9 +22,9 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.impl;
+package blue.endless.jankson.impl.context;
 
-import blue.endless.jankson.Jankson;
+import blue.endless.jankson.api.Jankson;
 import blue.endless.jankson.api.SyntaxError;
 
 public class CommentParserContext implements ParserContext<String> {

@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson;
+package blue.endless.jankson.api;
 
 /**
  * Represents a style of json written out, and a set of quirks to parse going in.
@@ -68,7 +68,11 @@ public class JsonGrammar {
 	
 	public boolean hasComments() { return comments; }
 	public boolean shouldOutputWhitespace() { return printWhitespace; }
-	
+	public boolean isBareRootObject() { return bareRootObject; }
+	public boolean shouldPrintCommas() { return printCommas; }
+	public boolean isTrailingCommas() { return printTrailingCommas; }
+	public boolean isBareSpecialNumerics() { return bareSpecialNumerics; }
+	public boolean shouldUnquoteKeys() { return printUnquotedKeys; }
 	
 	
 	public static Builder builder() {

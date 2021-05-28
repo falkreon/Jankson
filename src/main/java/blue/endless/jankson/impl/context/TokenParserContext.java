@@ -22,11 +22,11 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.impl;
+package blue.endless.jankson.impl.context;
 
-import blue.endless.jankson.Jankson;
-import blue.endless.jankson.JsonPrimitive;
+import blue.endless.jankson.api.Jankson;
 import blue.endless.jankson.api.SyntaxError;
+import blue.endless.jankson.api.element.JsonPrimitive;
 
 public class TokenParserContext implements ParserContext<JsonPrimitive> {
 	private String token = "";

@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.annotation;
+package blue.endless.jankson.api.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

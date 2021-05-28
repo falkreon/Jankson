@@ -22,14 +22,25 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.annotation;
+package blue.endless.jankson.api.annotation;
 
-import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 
+import javax.annotation.meta.TypeQualifierNickname;
+
+
+/**
+ * Alias for jsr305 javax.annotation.CheckForNull
+ * 
+ * <p>Values annotated with this element should be treated the same way as Kotlin optional types: null is explicitly
+ * indicated as a valid state, and should be checked before use.
+ */
+@Inherited
+@TypeQualifierNickname
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.METHOD })
-public @interface Deserializer {
+@javax.annotation.CheckForNull
+public @interface Nullable {
+
 }

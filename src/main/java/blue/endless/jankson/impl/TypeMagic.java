@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.magic;
+package blue.endless.jankson.impl;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.GenericArrayType;

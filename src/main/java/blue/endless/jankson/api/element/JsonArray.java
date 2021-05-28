@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson;
+package blue.endless.jankson.api.element;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -36,6 +36,7 @@ import java.util.Objects;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import blue.endless.jankson.api.JsonGrammar;
 import blue.endless.jankson.api.Marshaller;
 import blue.endless.jankson.impl.serializer.CommentSerializer;
 
@@ -154,13 +155,13 @@ public class JsonArray extends JsonElement implements List<JsonElement>, Iterabl
 	
 	@Override
 	public void toJson(Writer writer, JsonGrammar grammar, int depth) throws IOException {
-		int effectiveDepth = (grammar.bareRootObject) ? depth-1 : depth;
+		int effectiveDepth = (grammar.isBareRootObject()) ? depth-1 : depth;
 		//int nextDepth = (grammar.bareRootObject) ? depth-1 : depth; 
 		
 		writer.append("[");
 		
 		if (entries.size()>0) {
-			if (grammar.printWhitespace) {
+			if (grammar.shouldOutputWhitespace()) {
 				writer.append('\n');
 			} else {
 				writer.append(' ');
@@ -170,7 +171,7 @@ public class JsonArray extends JsonElement implements List<JsonElement>, Iterabl
 		for(int i=0; i<entries.size(); i++) {
 			Entry entry = entries.get(i);
 			
-			if (grammar.printWhitespace) {
+			if (grammar.shouldOutputWhitespace()) {
 				for(int j=0; j<effectiveDepth+1; j++) {
 					writer.append("\t");
 				}
@@ -180,22 +181,22 @@ public class JsonArray extends JsonElement implements List<JsonElement>, Iterabl
 			
 			writer.append(entry.value.toJson(grammar, depth+1));
 			
-			if (grammar.printCommas) { 
-				if (i<entries.size()-1 || grammar.printTrailingCommas) {
+			if (grammar.shouldPrintCommas()) { 
+				if (i<entries.size()-1 || grammar.isTrailingCommas()) {
 					writer.append(",");
-					if (i<entries.size()-1 && !grammar.printWhitespace) writer.append(' ');
+					if (i<entries.size()-1 && !grammar.shouldOutputWhitespace()) writer.append(' ');
 				}
 			} else {
 				writer.append(" ");
 			}
 			
-			if (grammar.printWhitespace) {
+			if (grammar.shouldOutputWhitespace()) {
 				writer.append('\n');
 			}
 		}
 		
 		if (entries.size()>0) {
-			if (grammar.printWhitespace && depth>0) {
+			if (grammar.shouldOutputWhitespace() && depth>0) {
 				for(int j=0; j<effectiveDepth; j++) {
 					writer.append("\t");
 				}
@@ -203,7 +204,7 @@ public class JsonArray extends JsonElement implements List<JsonElement>, Iterabl
 		}
 		
 		if (entries.size()>0) {
-			if (!grammar.printWhitespace) writer.append(' ');
+			if (!grammar.shouldOutputWhitespace()) writer.append(' ');
 		}
 		
 		writer.append(']');

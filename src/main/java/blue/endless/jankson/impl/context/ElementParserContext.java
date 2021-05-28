@@ -22,15 +22,16 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.impl;
+package blue.endless.jankson.impl.context;
 
 import java.util.Locale;
 
-import blue.endless.jankson.Jankson;
-import blue.endless.jankson.JsonElement;
-import blue.endless.jankson.JsonNull;
-import blue.endless.jankson.JsonPrimitive;
+import blue.endless.jankson.api.Jankson;
 import blue.endless.jankson.api.SyntaxError;
+import blue.endless.jankson.api.element.JsonElement;
+import blue.endless.jankson.api.element.JsonNull;
+import blue.endless.jankson.api.element.JsonPrimitive;
+import blue.endless.jankson.impl.AnnotatedElement;
 
 public class ElementParserContext implements ParserContext<AnnotatedElement> {
 	String comment = null;

@@ -37,18 +37,17 @@ import java.util.Map;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import blue.endless.jankson.JsonArray;
-import blue.endless.jankson.JsonElement;
-import blue.endless.jankson.JsonGrammar;
-import blue.endless.jankson.JsonNull;
-import blue.endless.jankson.JsonObject;
-import blue.endless.jankson.JsonPrimitive;
-import blue.endless.jankson.annotation.Deserializer;
-import blue.endless.jankson.annotation.SerializedName;
+import blue.endless.jankson.api.annotation.Deserializer;
+import blue.endless.jankson.api.annotation.SerializedName;
 import blue.endless.jankson.api.DeserializationException;
+import blue.endless.jankson.api.JsonGrammar;
+import blue.endless.jankson.api.element.JsonArray;
+import blue.endless.jankson.api.element.JsonElement;
+import blue.endless.jankson.api.element.JsonNull;
+import blue.endless.jankson.api.element.JsonObject;
+import blue.endless.jankson.api.element.JsonPrimitive;
 import blue.endless.jankson.impl.serializer.InternalDeserializerFunction;
 import blue.endless.jankson.impl.serializer.DeserializerFunctionPool;
-import blue.endless.jankson.magic.TypeMagic;
 
 public class POJODeserializer {
 	

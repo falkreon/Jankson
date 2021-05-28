@@ -24,7 +24,6 @@
 
 package blue.endless.jankson.api;
 
-import blue.endless.jankson.api.Marshaller;
 import blue.endless.jankson.impl.serializer.InternalDeserializerFunction;
 
 @FunctionalInterface

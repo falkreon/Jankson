@@ -41,20 +41,19 @@ import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
-import blue.endless.jankson.Comment;
-import blue.endless.jankson.JsonArray;
-import blue.endless.jankson.JsonElement;
-import blue.endless.jankson.JsonNull;
-import blue.endless.jankson.JsonObject;
-import blue.endless.jankson.JsonPrimitive;
-import blue.endless.jankson.annotation.SerializedName;
-import blue.endless.jankson.annotation.Serializer;
+import blue.endless.jankson.api.annotation.SerializedName;
+import blue.endless.jankson.api.annotation.Serializer;
 import blue.endless.jankson.api.DeserializationException;
 import blue.endless.jankson.api.DeserializerFunction;
 import blue.endless.jankson.api.Marshaller;
+import blue.endless.jankson.api.annotation.Comment;
+import blue.endless.jankson.api.element.JsonArray;
+import blue.endless.jankson.api.element.JsonElement;
+import blue.endless.jankson.api.element.JsonNull;
+import blue.endless.jankson.api.element.JsonObject;
+import blue.endless.jankson.api.element.JsonPrimitive;
 import blue.endless.jankson.impl.serializer.DeserializerFunctionPool;
 import blue.endless.jankson.impl.serializer.DeserializerFunctionPool.FunctionMatchFailedException;
-import blue.endless.jankson.magic.TypeMagic;
 
 /**
  * @deprecated For removal; please use {@link blue.endless.jankson.api.Marshaller}

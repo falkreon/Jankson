@@ -22,15 +22,20 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson;
+package blue.endless.jankson.api.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import javax.annotation.Nonnull;
+import javax.annotation.meta.TypeQualifierDefault;
+
+@Nonnull
+@TypeQualifierDefault({ ElementType.METHOD, ElementType.PARAMETER })
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.FIELD)
-public @interface Comment {
-	String value() default "";
+@Target({ ElementType.TYPE, ElementType.PACKAGE })
+public @interface NonnullByDefault {
+
 }

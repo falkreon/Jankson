@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson;
+package blue.endless.jankson.api.element;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -33,6 +33,7 @@ import java.util.Objects;
 import javax.annotation.Nonnull;
 
 import blue.endless.jankson.api.Escaper;
+import blue.endless.jankson.api.JsonGrammar;
 
 public class JsonPrimitive extends JsonElement {
 	/** Convenience instance of json "true". Don't use identity comparison (==) on these! Use equals instead. */
@@ -211,7 +212,7 @@ public class JsonPrimitive extends JsonElement {
 			return;
 		}
 		
-		if (value instanceof Double && grammar.bareSpecialNumerics) {
+		if (value instanceof Double && grammar.isBareSpecialNumerics()) {
 			double d = ((Double)value).doubleValue();
 			if (Double.isNaN(d)) {
 				writer.write("NaN");

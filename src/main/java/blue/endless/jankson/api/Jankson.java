@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson;
+package blue.endless.jankson.api;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -41,14 +41,13 @@ import java.util.function.Supplier;
 
 import javax.annotation.Nonnull;
 
-import blue.endless.jankson.api.DeserializationException;
-import blue.endless.jankson.api.DeserializerFunction;
-import blue.endless.jankson.api.Marshaller;
-import blue.endless.jankson.api.SyntaxError;
+import blue.endless.jankson.api.element.JsonElement;
+import blue.endless.jankson.api.element.JsonNull;
+import blue.endless.jankson.api.element.JsonObject;
 import blue.endless.jankson.impl.AnnotatedElement;
-import blue.endless.jankson.impl.ElementParserContext;
-import blue.endless.jankson.impl.ObjectParserContext;
-import blue.endless.jankson.impl.ParserContext;
+import blue.endless.jankson.impl.context.ElementParserContext;
+import blue.endless.jankson.impl.context.ObjectParserContext;
+import blue.endless.jankson.impl.context.ParserContext;
 
 
 public class Jankson {
@@ -189,7 +188,7 @@ public class Jankson {
 					}
 					if (root==null) {
 						root = new JsonObject();
-						root.marshaller = marshaller;
+						root.setMarshaller(marshaller);
 					}
 					return root;
 				}

@@ -27,7 +27,7 @@ package blue.endless.jankson.impl.serializer;
 import java.io.IOException;
 import java.io.Writer;
 
-import blue.endless.jankson.JsonGrammar;
+import blue.endless.jankson.api.JsonGrammar;
 
 public class CommentSerializer {
 	

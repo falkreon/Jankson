@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson;
+package blue.endless.jankson.api.element;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -40,6 +40,7 @@ import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import blue.endless.jankson.api.JsonGrammar;
 import blue.endless.jankson.api.Marshaller;
 import blue.endless.jankson.impl.serializer.CommentSerializer;
 
@@ -213,14 +214,14 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 	@Override
 	public void toJson(Writer w, JsonGrammar grammar, int depth) throws IOException {
 		//StringBuilder builder = new StringBuilder();
-		boolean skipBraces = depth==0 && grammar.bareRootObject;
-		int effectiveDepth = (grammar.bareRootObject) ? depth-1 : depth;
-		int nextDepth = (grammar.bareRootObject) ? depth : depth+1; 
+		boolean skipBraces = depth==0 && grammar.isBareRootObject();
+		int effectiveDepth = (grammar.isBareRootObject()) ? depth-1 : depth;
+		int nextDepth = (grammar.isBareRootObject()) ? depth : depth+1; 
 		
 		if (!skipBraces) {
 			w.append("{");
 			
-			if (grammar.printWhitespace && entries.size()>0) {
+			if (grammar.shouldOutputWhitespace() && entries.size()>0) {
 				w.append('\n');
 			} else {
 				w.append(' ');
@@ -230,7 +231,7 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 		for(int i=0; i<entries.size(); i++) {
 			Entry entry = entries.get(i);
 			
-			if (grammar.printWhitespace) {
+			if (grammar.shouldOutputWhitespace()) {
 				for(int j=0; j<nextDepth; j++) {
 					w.append("\t");
 				}
@@ -238,7 +239,7 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 			
 			CommentSerializer.print(w, entry.getComment(), effectiveDepth, grammar);
 			
-			boolean quoted = !grammar.printUnquotedKeys;
+			boolean quoted = !grammar.shouldUnquoteKeys();
 			
 			//If it can't be unquoted, quote it anyway
 			if (!CAN_BE_UNQUOTED.test(entry.key)) {
@@ -251,23 +252,23 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 			w.append(": ");
 			w.append(entry.value.toJson(grammar, depth+1));
 			
-			if (grammar.printCommas) { 
-				if (i<entries.size()-1 || grammar.printTrailingCommas) {
+			if (grammar.shouldPrintCommas()) { 
+				if (i<entries.size()-1 || grammar.isTrailingCommas()) {
 					w.append(",");
-					if (i<entries.size()-1 && !grammar.printWhitespace) w.append(' ');
+					if (i<entries.size()-1 && !grammar.shouldOutputWhitespace()) w.append(' ');
 				}
-			} else if (!grammar.printWhitespace) {
+			} else if (!grammar.shouldOutputWhitespace()) {
 				w.append(" ");
 			}
 			
-			if (grammar.printWhitespace) {
+			if (grammar.shouldOutputWhitespace()) {
 				w.append('\n');
 			}
 		}
 		
 		if (!skipBraces) {
 			if (entries.size()>0) {
-				if (grammar.printWhitespace) {
+				if (grammar.shouldOutputWhitespace()) {
 					for(int j=0; j<effectiveDepth; j++) {
 						w.append("\t");
 					}
