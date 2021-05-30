@@ -22,39 +22,24 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.api.document;
+package blue.endless.jankson.api.io;
 
-public class CommentElement implements FormattingElement {
-	protected String value;
-	protected boolean lineEnd;
+public class DeserializationException extends Exception {
+	private static final long serialVersionUID = 8425560848572561283L;
 	
-	public CommentElement(String comment) {
-		value = comment;
+	public DeserializationException() {
+		super();
 	}
 	
-	public String getValue() { return value; }
-	
-	public String setValue(String value) {
-		String result = this.value;
-		this.value = value;
-		return result;
-	}
-	
-	public boolean isLineEnd() {
-		return lineEnd;
-	}
-	
-	public void setLineEnd(boolean lineEnd) {
-		this.lineEnd = lineEnd;
+	public DeserializationException(String message) {
+		super(message);
 	}
 
-	@Override
-	public boolean isComment() {
-		return true;
+	public DeserializationException(String message, Throwable cause) {
+		super(message, cause);
 	}
-
-	@Override
-	public CommentElement asComment() {
-		return this;
+	
+	public DeserializationException(Throwable cause) {
+		super(cause);
 	}
 }

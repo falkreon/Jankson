@@ -27,6 +27,7 @@ package blue.endless.jankson.api;
 import java.lang.reflect.Type;
 
 import blue.endless.jankson.api.element.JsonElement;
+import blue.endless.jankson.api.io.DeserializationException;
 
 public interface Marshaller {
 	/** Turns a java object into its json intermediate representation. */

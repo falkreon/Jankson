@@ -22,24 +22,36 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.api;
+package blue.endless.jankson.api.io;
 
-public class DeserializationException extends Exception {
-	private static final long serialVersionUID = 8425560848572561283L;
-	
-	public DeserializationException() {
-		super();
-	}
-	
-	public DeserializationException(String message) {
-		super(message);
-	}
+import java.util.EnumSet;
 
-	public DeserializationException(String message, Throwable cause) {
-		super(message, cause);
+import blue.endless.jankson.api.Marshaller;
+import blue.endless.jankson.impl.MarshallerImpl;
+
+@SuppressWarnings("deprecation")
+public class DeserializerOptions {
+	private final EnumSet<Hint> hints = EnumSet.noneOf(Hint.class);
+	private final Marshaller marshaller;
+	
+	public DeserializerOptions(Hint... hints) {
+		this.marshaller = MarshallerImpl.getFallback();
 	}
 	
-	public DeserializationException(Throwable cause) {
-		super(cause);
+	public DeserializerOptions(Marshaller marshaller, Hint... hints) {
+		for(Hint hint : hints) this.hints.add(hint);
+		this.marshaller = marshaller;
+	}
+	
+	public boolean hasHint(Hint hint) {
+		return hints.contains(hint);
+	}
+	
+	public Marshaller getMarshaller() {
+		return this.marshaller;
+	}
+	
+	public enum Hint {
+		ALLOW_BARE_ROOTS, ALLOW_UNQUOTED_KEYS;
 	}
 }

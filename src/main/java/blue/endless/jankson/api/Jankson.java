@@ -44,6 +44,7 @@ import javax.annotation.Nonnull;
 import blue.endless.jankson.api.element.JsonElement;
 import blue.endless.jankson.api.element.JsonNull;
 import blue.endless.jankson.api.element.JsonObject;
+import blue.endless.jankson.api.io.DeserializationException;
 import blue.endless.jankson.impl.AnnotatedElement;
 import blue.endless.jankson.impl.context.ParserContext;
 import blue.endless.jankson.impl.context.json.ElementParserContext;

@@ -24,6 +24,7 @@
 
 package blue.endless.jankson.api;
 
+import blue.endless.jankson.api.io.DeserializationException;
 import blue.endless.jankson.impl.serializer.InternalDeserializerFunction;
 
 @FunctionalInterface

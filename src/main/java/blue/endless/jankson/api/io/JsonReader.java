@@ -22,39 +22,28 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.api.document;
+package blue.endless.jankson.api.io;
 
-public class CommentElement implements FormattingElement {
-	protected String value;
-	protected boolean lineEnd;
-	
-	public CommentElement(String comment) {
-		value = comment;
-	}
-	
-	public String getValue() { return value; }
-	
-	public String setValue(String value) {
-		String result = this.value;
-		this.value = value;
-		return result;
-	}
-	
-	public boolean isLineEnd() {
-		return lineEnd;
-	}
-	
-	public void setLineEnd(boolean lineEnd) {
-		this.lineEnd = lineEnd;
-	}
+import java.io.Reader;
 
+import blue.endless.jankson.api.document.JanksonDocument;
+
+public class JsonReader implements DocumentReader {
+	private final Reader source;
+	private final DeserializerOptions options;
+	
+	public JsonReader(Reader source) {
+		this(source, new DeserializerOptions());
+	}
+	
+	public JsonReader(Reader source, DeserializerOptions options) {
+		this.source = source;
+		this.options = options;
+	}
+	
 	@Override
-	public boolean isComment() {
-		return true;
-	}
-
-	@Override
-	public CommentElement asComment() {
-		return this;
+	public JanksonDocument readDocument() {
+		//TODO: Implement
+		return null;
 	}
 }

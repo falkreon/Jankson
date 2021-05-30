@@ -43,7 +43,7 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
-import blue.endless.jankson.api.DeserializationException;
+import blue.endless.jankson.api.io.DeserializationException;
 
 public class TypeMagic {
 	private static Map<Class<?>, Class<?>> concreteClasses = new HashMap<>();
