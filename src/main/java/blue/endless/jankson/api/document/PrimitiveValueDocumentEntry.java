@@ -3,7 +3,20 @@ package blue.endless.jankson.api.document;
 import blue.endless.jankson.api.element.JsonElement;
 
 public class PrimitiveValueDocumentEntry implements DocumentEntry {
-
+	Object value;
+	
+	public PrimitiveValueDocumentEntry(String s) {
+		value = s;
+	}
+	
+	public PrimitiveValueDocumentEntry(long l) {
+		value = l; //force it to be a long and then box it ^_^
+	}
+	
+	public PrimitiveValueDocumentEntry(double d) {
+		value = d; //force it into a double and then box it!
+	}
+	
 	@Override
 	public boolean isComment() {
 		return false;
@@ -25,5 +38,11 @@ public class PrimitiveValueDocumentEntry implements DocumentEntry {
 		
 		return null;
 	}
-
+	
+	public String asString() {
+		if (value==null) return "null";
+		return value.toString();
+	}
+	
+	//TODO: asEverythingElse
 }
