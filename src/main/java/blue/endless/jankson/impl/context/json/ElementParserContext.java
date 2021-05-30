@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.impl.context;
+package blue.endless.jankson.impl.context.json;
 
 import java.util.Locale;
 
@@ -32,6 +32,7 @@ import blue.endless.jankson.api.element.JsonElement;
 import blue.endless.jankson.api.element.JsonNull;
 import blue.endless.jankson.api.element.JsonPrimitive;
 import blue.endless.jankson.impl.AnnotatedElement;
+import blue.endless.jankson.impl.context.ParserContext;
 
 public class ElementParserContext implements ParserContext<AnnotatedElement> {
 	String comment = null;

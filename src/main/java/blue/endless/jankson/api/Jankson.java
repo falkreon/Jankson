@@ -45,9 +45,9 @@ import blue.endless.jankson.api.element.JsonElement;
 import blue.endless.jankson.api.element.JsonNull;
 import blue.endless.jankson.api.element.JsonObject;
 import blue.endless.jankson.impl.AnnotatedElement;
-import blue.endless.jankson.impl.context.ElementParserContext;
-import blue.endless.jankson.impl.context.ObjectParserContext;
 import blue.endless.jankson.impl.context.ParserContext;
+import blue.endless.jankson.impl.context.json.ElementParserContext;
+import blue.endless.jankson.impl.context.json.ObjectParserContext;
 
 
 public class Jankson {
@@ -81,71 +81,6 @@ public class Jankson {
 			return load(in);
 		}
 	}
-	
-	/*
-	private static boolean isLowSurrogate(int i) {
-		return (i & 0b1100_0000) == 0b1000_0000;
-	}
-	
-	private static final int BAD_CHARACTER = 0xFFFD;
-	public int getCodePoint(InputStream in) throws IOException {
-		int i = in.read();
-		if (i==-1) return -1;
-		if ((i & 0b10000000)==0) return i; // \u0000..\u00FF is easy
-		
-		if ((i & 0b1111_1000) == 0b1111_0000) { //Character is 4 UTF-8 code points
-			int codePoint = i & 0b111;
-			
-			i = in.read();
-			if (i==-1) return -1;
-			if (!isLowSurrogate(i)) return BAD_CHARACTER;
-			codePoint <<= 6;
-			codePoint |= (i & 0b0011_1111);
-			
-			i = in.read();
-			if (i==-1) return -1;
-			if (!isLowSurrogate(i)) return BAD_CHARACTER;
-			codePoint <<= 6;
-			codePoint |= (i & 0b0011_1111);
-			
-			i = in.read();
-			if (i==-1) return -1;
-			if (!isLowSurrogate(i)) return BAD_CHARACTER;
-			codePoint <<= 6;
-			codePoint |= (i & 0b0011_1111);
-			
-			return codePoint;
-		} else if ((i & 0b1111_0000) == 0b1110_0000) { //Character is 4 UTF-8 code points
-			int codePoint = i & 0b1111;
-			
-			i = in.read();
-			if (i==-1) return -1;
-			if (!isLowSurrogate(i)) return BAD_CHARACTER;
-			codePoint <<= 6;
-			codePoint |= (i & 0b0011_1111);
-			
-			i = in.read();
-			if (i==-1) return -1;
-			if (!isLowSurrogate(i)) return BAD_CHARACTER;
-			codePoint <<= 6;
-			codePoint |= (i & 0b0011_1111);
-			
-			return codePoint;
-		} else if ((i & 0b1110_0000) == 0b1100_0000) { //Character is 4 UTF-8 code points
-			int codePoint = i & 0b1111;
-			
-			i = in.read();
-			if (i==-1) return -1;
-			if (!isLowSurrogate(i)) return BAD_CHARACTER;
-			codePoint <<= 6;
-			codePoint |= (i & 0b0011_1111);
-			
-			return codePoint;
-		}
-		
-		//we know it's 0b10xx_xxxx down here, so it's an orphaned low surrogate.
-		return BAD_CHARACTER;
-	}*/
 	
 	@Nonnull
 	public JsonObject load(InputStream in) throws IOException, SyntaxError {

@@ -1,12 +1,10 @@
 package blue.endless.jankson.api.document;
 
-import blue.endless.jankson.api.element.JsonElement;
-
-public class CommentDocumentEntry implements DocumentEntry {
+public class CommentElement implements FormattingElement {
 	protected String value;
 	protected boolean lineEnd;
 	
-	public CommentDocumentEntry(String comment) {
+	public CommentElement(String comment) {
 		value = comment;
 	}
 	
@@ -32,18 +30,7 @@ public class CommentDocumentEntry implements DocumentEntry {
 	}
 
 	@Override
-	public CommentDocumentEntry asComment() {
+	public CommentElement asComment() {
 		return this;
 	}
-
-	@Override
-	public boolean isJsonElement() {
-		return false;
-	}
-
-	@Override
-	public JsonElement asJsonElement() {
-		throw new UnsupportedOperationException();
-	}
-	
 }

@@ -22,13 +22,14 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.impl.context;
+package blue.endless.jankson.impl.context.json;
 
 import java.util.Locale;
 
 import blue.endless.jankson.api.Jankson;
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.element.JsonPrimitive;
+import blue.endless.jankson.impl.context.ParserContext;
 
 public class StringParserContext implements ParserContext<JsonPrimitive> {
 	private static final String HEX_DIGITS = "0123456789abcdefABCDEF";

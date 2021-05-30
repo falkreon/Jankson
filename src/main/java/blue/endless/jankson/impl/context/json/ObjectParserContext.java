@@ -22,11 +22,12 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.impl.context;
+package blue.endless.jankson.impl.context.json;
 
 import blue.endless.jankson.api.Jankson;
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.element.JsonObject;
+import blue.endless.jankson.impl.context.ParserContext;
 
 public class ObjectParserContext implements ParserContext<JsonObject> {
 	private JsonObject result = new JsonObject();
