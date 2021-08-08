@@ -33,6 +33,7 @@ build/
 .project
 .settings
 bin/
+.idea/
 
 # gradle
 !gradle-wrapper.jar

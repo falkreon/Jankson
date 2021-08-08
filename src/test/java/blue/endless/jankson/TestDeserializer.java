@@ -33,6 +33,7 @@ import org.junit.Test;
 import blue.endless.jankson.api.annotation.Deserializer;
 import blue.endless.jankson.api.Jankson;
 import blue.endless.jankson.api.JsonGrammar;
+import blue.endless.jankson.api.Marshaller;
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.element.JsonArray;
 import blue.endless.jankson.api.element.JsonElement;
@@ -59,8 +60,9 @@ public class TestDeserializer {
 			return result;
 		}
 		
+		// the unused Marshaller parameter is for testing that it gets recognised properly
 		@Deserializer
-		public static Foo deserialize(JsonArray arr) throws DeserializationException {
+		public static Foo deserialize(JsonArray arr, Marshaller marshaller) throws DeserializationException {
 			if (arr.size()<1 || arr.size()>2) throw new DeserializationException("Array can have either 1 or 2 elements. Found: "+arr.size());
 			Foo result = new Foo();
 			result.value = arr.getString(0, "OOPS");
