@@ -283,7 +283,7 @@ public class POJODeserializer {
 			//return null;
 		} else if (params.length==2) {
 			//if (params[0].getClass().isAssignableFrom(sourceClass)) {
-				if (params[1].getClass().equals(blue.endless.jankson.api.Marshaller.class)) {
+				if (params[1].getType().equals(blue.endless.jankson.api.Marshaller.class)) {
 					return (Object o, blue.endless.jankson.api.Marshaller marshaller)->{
 						try {
 							return (B)m.invoke(null, o, marshaller);
