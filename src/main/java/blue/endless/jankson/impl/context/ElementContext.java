@@ -22,38 +22,30 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.impl.context.toml;
+package blue.endless.jankson.impl.context;
 
 import blue.endless.jankson.api.SyntaxError;
-import blue.endless.jankson.api.element.JsonObject;
 import blue.endless.jankson.api.io.DeserializerOptions;
-import blue.endless.jankson.impl.context.ElementContext;
 
-public class ObjectElementContext implements ElementContext<JsonObject> {
-
-	@Override
-	public boolean consume(char character, int lineNum, int charNum, DeserializerOptions options) throws SyntaxError {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public void eof() throws SyntaxError {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public boolean isComplete() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public JsonObject getResult() throws SyntaxError {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
+public interface ElementContext<T> {
+	/** Consume one codepoint from the stream, and either use it to continue composing the result or to discover that
+	 * the result is complete and processing should stop. Throws a SyntaxError if unexpected or nonsense characters are
+	 * encountered.
+	 */
+	public boolean consume(char character, int lineNum, int charNum, DeserializerOptions options) throws SyntaxError;
 	
+	/** Notifies this context that the file ended while in this context and before isComplete returned true. In
+	 * some contexts, like a single-line comment, this is fine. In most contexts, this should throw a descriptive error.
+	 */
+	public void eof() throws SyntaxError;
+	
+	/** Returns true if the parser has assembled a complete result. After true is returned, no more code points will be
+	 * offered to consume, and getResult will soon be called to retrieve the result.
+	 */
+	public boolean isComplete();
+	
+	/** Gets the result of parsing. Will be called only after isComplete reports true and processing of input has
+	 * ceased.
+	 */
+	public T getResult() throws SyntaxError;
 }

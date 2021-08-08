@@ -22,41 +22,26 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.api.io;
+package blue.endless.jankson.impl.context;
 
-import java.io.Reader;
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.function.Consumer;
 
-import blue.endless.jankson.api.document.DocumentElement;
-import blue.endless.jankson.api.document.JanksonDocument;
-import blue.endless.jankson.api.document.ObjectElement;
-import blue.endless.jankson.impl.context.ParserContext;
+import blue.endless.jankson.api.SyntaxError;
 
-public class JsonReader implements DocumentReader {
-	private final Reader source;
-	private final DeserializerOptions options;
-	private Deque<ParserContext<?>> contextStack = new ArrayDeque<>();
-	private ObjectElement documentRoot = new ObjectElement();
+public class ParserFrame<T> {
+	private ElementContext<T> context;
+	private Consumer<T> consumer;
 	
-	public JsonReader(Reader source) {
-		this(source, new DeserializerOptions());
+	public ParserFrame(ElementContext<T> context, Consumer<T> consumer) {
+		this.context = context;
+		this.consumer = consumer;
 	}
 	
-	public JsonReader(Reader source, DeserializerOptions options) {
-		this.source = source;
-		this.options = options;
-	}
+	public ElementContext<T> context() { return context; }
+	public Consumer<T> consumer() { return consumer; }
 	
-	@Override
-	public JanksonDocument readDocument() {
-		
-		//TODO: Implement
-		return null;
-	}
-	
-	private void pushContext(ParserContext<?> ctx, Consumer<DocumentElement> consumer) {
-		
+	/** Feed the result directly from the context at this entry to its corresponding consumer */
+	public void supply() throws SyntaxError {
+		consumer.accept(context.getResult());
 	}
 }

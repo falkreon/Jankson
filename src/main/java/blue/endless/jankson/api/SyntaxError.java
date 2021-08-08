@@ -36,6 +36,14 @@ public class SyntaxError extends Exception {
 		super(message);
 	}
 	
+	public SyntaxError(String message, int line, int column) {
+		super(message);
+		startLine = line;
+		startColumn = column;
+		this.line = line;
+		this.column = column;
+	}
+	
 	public String getCompleteMessage() {
 		StringBuilder message = new StringBuilder();
 		if (startLine!=-1 && startColumn!=-1) {
