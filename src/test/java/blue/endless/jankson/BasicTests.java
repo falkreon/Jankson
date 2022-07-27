@@ -62,7 +62,7 @@ public class BasicTests {
 	@Test
 	public void testPrimitiveEquality() {
 		Assert.assertEquals("Equal objects should produce equal json primitives", new JsonPrimitive("foo"), new JsonPrimitive(new String("foo"))); //Ensure no interning
-		Assert.assertEquals("Equal objects should produce equal json primitives", new JsonPrimitive(Double.valueOf(42)), new JsonPrimitive(new Double(42)));
+		Assert.assertEquals("Equal objects should produce equal json primitives", new JsonPrimitive(Double.valueOf(42)), new JsonPrimitive(Double.valueOf(42)));
 		
 		Assert.assertNotEquals("Non-Equal objects should produce non-equal json primitives", new JsonPrimitive("foo"), new JsonPrimitive("bar"));
 		Assert.assertNotEquals("Non-Equal objects should produce non-equal json primitives", new JsonPrimitive(42.0), new JsonPrimitive(42.1));
@@ -239,6 +239,7 @@ public class BasicTests {
 		}
 	}
 	
+	@SuppressWarnings("unused")
 	public static class TestObject {
 		private int x = 1;
 		private String y = "Hello";

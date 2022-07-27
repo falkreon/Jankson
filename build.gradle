@@ -11,12 +11,16 @@ buildscript {
 		}
 	}
 	dependencies {
-		classpath "gradle.plugin.net.minecrell:licenser:0.3";
+	//	classpath "gradle.plugin.net.minecrell:licenser:0.3";
 	}
 }
 
+plugins {
+    id 'org.cadixdev.licenser' version '0.6.1'
+}
+
 apply plugin: "java";
-apply plugin: "net.minecrell.licenser";
+//apply plugin: "net.minecrell.licenser";
 apply plugin: "eclipse";
 apply plugin: "maven-publish";
 apply plugin: "signing";
@@ -125,10 +129,8 @@ if (file("private.gradle").exists()) {
 defaultTasks "clean", "build", "sourcesJar";
 
 
-
-
 dependencies {
-	testCompile "junit:junit:4.12";
+	testImplementation "junit:junit:4.12";
 	
 	compileOnly group: "com.google.code.findbugs", name: "jsr305", version: "3.0.2";
 }

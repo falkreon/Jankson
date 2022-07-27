@@ -65,6 +65,7 @@ public class JsonGrammar {
 	protected boolean bareSpecialNumerics = false;
 	protected boolean bareRootObject = false;
 	protected boolean printUnquotedKeys = false;
+	protected CharSequence indent = "\t";
 	
 	public boolean hasComments() { return comments; }
 	public boolean shouldOutputWhitespace() { return printWhitespace; }
@@ -73,7 +74,7 @@ public class JsonGrammar {
 	public boolean isTrailingCommas() { return printTrailingCommas; }
 	public boolean isBareSpecialNumerics() { return bareSpecialNumerics; }
 	public boolean shouldUnquoteKeys() { return printUnquotedKeys; }
-	
+	public CharSequence getIndent() { return indent; }
 	
 	public static Builder builder() {
 		return new Builder();
@@ -142,6 +143,17 @@ public class JsonGrammar {
 		
 		public Builder printUnquotedKeys(boolean unquoted) {
 			grammar.printUnquotedKeys = unquoted;
+			return this;
+		}
+		
+		/**
+		 * When printing JSON, indent using the following characters. These characters will be repeated to create the
+		 * effective indent. The default is one tab ("\t").
+		 * 
+		 * <p>Note: Putting anything besides whitespace here is likely to produce invalid input!
+		 */
+		public Builder withIndent(CharSequence indent) {
+			grammar.indent = indent;
 			return this;
 		}
 		

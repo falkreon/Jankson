@@ -233,7 +233,7 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 			
 			if (grammar.shouldOutputWhitespace()) {
 				for(int j=0; j<nextDepth; j++) {
-					w.append("\t");
+					w.append(grammar.getIndent());
 				}
 			}
 			
@@ -270,7 +270,7 @@ public class JsonObject extends JsonElement implements Map<String, JsonElement> 
 			if (entries.size()>0) {
 				if (grammar.shouldOutputWhitespace()) {
 					for(int j=0; j<effectiveDepth; j++) {
-						w.append("\t");
+						w.append(grammar.getIndent());
 					}
 				} else {
 					w.append(' ');

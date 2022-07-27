@@ -24,8 +24,6 @@
 
 package blue.endless.jankson;
 
-import java.util.regex.Pattern;
-
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -60,6 +58,7 @@ public class TestSerializer {
 	
 	
 	private static class DeclaredSerializerTest {
+		@SuppressWarnings("unused")
 		private String foo = "bar";
 		
 		@Serializer

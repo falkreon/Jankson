@@ -24,8 +24,6 @@
 
 package blue.endless.jankson;
 
-import java.util.regex.Pattern;
-
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -131,6 +129,7 @@ public class TestDeserializer {
 				"\n" + 
 				"}";
 		
+		@SuppressWarnings("unused")
 		Bar obj = jankson.fromJsonCarefully(subject, Bar.class);
 	}
 	

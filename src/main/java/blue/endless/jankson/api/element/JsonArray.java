@@ -173,7 +173,7 @@ public class JsonArray extends JsonElement implements List<JsonElement>, Iterabl
 			
 			if (grammar.shouldOutputWhitespace()) {
 				for(int j=0; j<effectiveDepth+1; j++) {
-					writer.append("\t");
+					writer.append(grammar.getIndent());
 				}
 			}
 			
@@ -198,7 +198,7 @@ public class JsonArray extends JsonElement implements List<JsonElement>, Iterabl
 		if (entries.size()>0) {
 			if (grammar.shouldOutputWhitespace() && depth>0) {
 				for(int j=0; j<effectiveDepth; j++) {
-					writer.append("\t");
+					writer.append(grammar.getIndent());
 				}
 			}
 		}
