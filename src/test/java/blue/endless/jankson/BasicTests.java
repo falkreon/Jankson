@@ -51,6 +51,7 @@ import blue.endless.jankson.api.element.JsonPrimitive;
 import blue.endless.jankson.impl.MarshallerImpl;
 import blue.endless.jankson.impl.TypeMagic;
 
+@SuppressWarnings("deprecation")
 public class BasicTests {
 	Jankson jankson;
 	
