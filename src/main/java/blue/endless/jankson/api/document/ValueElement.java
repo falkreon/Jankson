@@ -26,7 +26,12 @@ package blue.endless.jankson.api.document;
 
 public interface ValueElement extends DocumentElement {
 	@Override
-	default boolean isValueEntry() {
+	default boolean isValueElement() {
 		return true;
+	}
+	
+	@Override
+	default ValueElement asValueElement() {
+		return this;
 	}
 }

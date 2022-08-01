@@ -36,7 +36,7 @@ public class ArrayElement extends AbstractList<DocumentElement> implements Value
 	protected List<DocumentElement> entries = new ArrayList<>();
 	
 	@Override
-	public ValueElement asValueEntry() {
+	public ValueElement asValueElement() {
 		return this;
 	}
 	

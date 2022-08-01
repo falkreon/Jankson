@@ -40,7 +40,7 @@ public class PrimitiveValueElement implements ValueElement {
 	}
 	
 	@Override
-	public ValueElement asValueEntry() {
+	public ValueElement asValueElement() {
 		//TODO: Convert this document node into a JsonPrimitive or JsonNull
 		
 		return null;

@@ -24,40 +24,19 @@
 
 package blue.endless.jankson.api.document;
 
-public class CommentElement implements FormattingElement {
-	protected String value;
-	//protected boolean lineEnd;
-	protected CommentType commentType;
+public enum CommentType {
+	/**
+	 * These are comments which start with two slashes, and continue until the end of the line.
+	 */
+	LINE_END,
 	
-	public CommentElement(String comment) {
-		value = comment;
-		commentType = CommentType.MULTILINE;
-	}
+	/**
+	 * These are comments which start with a forward slash and an asterisk, and continue until an asterisk and forward slash.
+	 */
+	MULTILINE,
 	
-	public CommentElement(String comment, CommentType commentType) {
-		value = comment;
-		this.commentType = commentType;
-	}
-	
-	public String getValue() { return value; }
-	
-	public String setValue(String value) {
-		String result = this.value;
-		this.value = value;
-		return result;
-	}
-	
-	public CommentType getCommentType() {
-		return commentType;
-	}
-	
-	@Override
-	public boolean isCommentElement() {
-		return true;
-	}
-
-	@Override
-	public CommentElement asCommentElement() {
-		return this;
-	}
+	/**
+	 * These are comments which start with a forward slash and two asterisks, commonly used for documentation.
+	 */
+	DOC;
 }

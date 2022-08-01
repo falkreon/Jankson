@@ -24,9 +24,21 @@
 
 package blue.endless.jankson.api.document;
 
+/**
+ * Represents a Document or part of a Document. Elements can be one of three types: Comment, Value, or Formatting.
+ * 
+ * <p>CommentElements are comments. They could be single-line or multi-line, and if single-line may occur at the end
+ * of an object or key-value pair.
+ * 
+ * <p>ValueElements are anything semantic - key-value pairs, objects, arrays, and primitives.
+ * 
+ * <p>FormattingElements, at this moment, are line breaks.
+ */
 public interface DocumentElement {
-	default boolean isComment() { return false; }
-	default CommentElement asComment() { throw new UnsupportedOperationException(); }
-	default boolean isValueEntry() { return false; }
-	default ValueElement asValueEntry() { throw new UnsupportedOperationException(); }
+	default boolean isCommentElement() { return false; }
+	default CommentElement asCommentElement() { throw new UnsupportedOperationException(); }
+	default boolean isValueElement() { return false; }
+	default ValueElement asValueElement() { throw new UnsupportedOperationException(); }
+	default boolean isFormattingElement() { return false; }
+	default FormattingElement asFormattingElement() { throw new UnsupportedOperationException(); }
 }

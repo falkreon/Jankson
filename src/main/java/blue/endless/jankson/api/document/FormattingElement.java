@@ -25,5 +25,15 @@
 package blue.endless.jankson.api.document;
 
 public interface FormattingElement extends DocumentElement {
+	@Override
+	default boolean isFormattingElement() {
+		return true;
+	}
+	
+	@Override
+	default FormattingElement asFormattingElement() {
+		return this;
+	}
+	
 	public static FormattingElement LINE_BREAK = new FormattingElement() {};
 }

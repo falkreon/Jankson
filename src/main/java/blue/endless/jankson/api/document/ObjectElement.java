@@ -85,8 +85,7 @@ public class ObjectElement implements ValueElement {
 	}
 	
 	public void setCommentAfter(String comment) {
-		commentAfter = new CommentElement(comment);
-		commentAfter.setLineEnd(true);
+		commentAfter = new CommentElement(comment, CommentType.LINE_END);
 	}
 	
 	public void setCommentAfter(CommentElement comment) {
@@ -95,22 +94,22 @@ public class ObjectElement implements ValueElement {
 	}
 
 	@Override
-	public boolean isComment() {
+	public boolean isCommentElement() {
 		return false;
 	}
 
 	@Override
-	public CommentElement asComment() {
+	public CommentElement asCommentElement() {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public boolean isValueEntry() {
+	public boolean isValueElement() {
 		return true;
 	}
 
 	@Override
-	public ValueElement asValueEntry() {
+	public ValueElement asValueElement() {
 		return this;
 	}
 }
