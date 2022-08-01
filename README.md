@@ -1,6 +1,9 @@
 # Jankson
 JSON / HJSON parser and preprocessor which preserves ordering and comments
 
+
+Official Discord: https://discord.gg/tV6FYXE8QH
+
 ## Json Quirks
 
 The full set of JSON5 quirks are supported:
