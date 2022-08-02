@@ -24,8 +24,12 @@
 
 package blue.endless.jankson.api.document;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class PrimitiveValueElement implements ValueElement {
-	Object value;
+	protected List<DocumentElement> preamble = new ArrayList<>();
+	protected Object value;
 	
 	public PrimitiveValueElement(String s) {
 		value = s;
@@ -37,6 +41,11 @@ public class PrimitiveValueElement implements ValueElement {
 	
 	public PrimitiveValueElement(double d) {
 		value = d; //force it into a double and then box it!
+	}
+	
+	@Override
+	public List<DocumentElement> getPreamble() {
+		return preamble;
 	}
 	
 	@Override

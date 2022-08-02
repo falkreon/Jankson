@@ -27,13 +27,16 @@ package blue.endless.jankson.api.document;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
-
-import blue.endless.jankson.api.document.view.ArrayElementValueView;
+import java.util.stream.Stream;
 
 public class ArrayElement extends AbstractList<DocumentElement> implements ValueElement {
-	protected CommentElement commentBefore;
-	protected CommentElement commentAfter;
+	protected List<DocumentElement> preamble = new ArrayList<>();
 	protected List<DocumentElement> entries = new ArrayList<>();
+	
+	@Override
+	public List<DocumentElement> getPreamble() {
+		return preamble;
+	}
 	
 	@Override
 	public ValueElement asValueElement() {
@@ -41,12 +44,12 @@ public class ArrayElement extends AbstractList<DocumentElement> implements Value
 	}
 	
 	/**
-	 * Gets a purely-semantic view of this element, ignoring comments and formatting. This can act surprisingly for
-	 * inserts, removals, and clears, so be sure that this is really what you want! The returned view is "live", and
-	 * will reflect any future changes to the original Document.
+	 * Gets a purely-semantic view of this element's contents, ignoring comments and formatting.
 	 */
-	public List<ValueElement> getValueView() {
-		return new ArrayElementValueView(this);
+	public Stream<ValueElement> valueStream() {
+		return stream()
+			.filter(ValueElement.class::isInstance)
+			.map(ValueElement.class::cast);
 	}
 	
 	//extends AbstractList<DocumentElement> {

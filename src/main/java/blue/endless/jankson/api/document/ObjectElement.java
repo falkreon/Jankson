@@ -30,9 +30,13 @@ import java.util.List;
 import javax.annotation.Nullable;
 
 public class ObjectElement implements ValueElement {
-	protected CommentElement commentBefore = null;
-	protected CommentElement commentAfter = null;
+	protected List<DocumentElement> preamble = new ArrayList<>();
 	protected List<DocumentElement> entries = new ArrayList<>();
+	
+	@Override
+	public List<DocumentElement> getPreamble() {
+		return preamble;
+	}
 	
 	@Nullable
 	public ValueElement get(String key) {
@@ -66,50 +70,5 @@ public class ObjectElement implements ValueElement {
 		//No matching KeyValueDocumentEntry. Add one at the end of the object's sub-document
 		entries.add(new KeyValuePairElement(key, value));
 		return null;
-	}
-	
-	public CommentElement commentBefore() {
-		return commentBefore;
-	}
-	
-	public CommentElement commentAfter() {
-		return commentAfter;
-	}
-	
-	public void setCommentBefore(String comment) {
-		commentBefore = new CommentElement(comment);
-	}
-	
-	public void setCommentBefore(CommentElement comment) {
-		commentBefore = comment;
-	}
-	
-	public void setCommentAfter(String comment) {
-		commentAfter = new CommentElement(comment, CommentType.LINE_END);
-	}
-	
-	public void setCommentAfter(CommentElement comment) {
-		commentAfter = comment;
-		//Possibly force comment as a lineEndComment but for now assume user knows what they're doing
-	}
-
-	@Override
-	public boolean isCommentElement() {
-		return false;
-	}
-
-	@Override
-	public CommentElement asCommentElement() {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public boolean isValueElement() {
-		return true;
-	}
-
-	@Override
-	public ValueElement asValueElement() {
-		return this;
 	}
 }

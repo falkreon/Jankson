@@ -24,7 +24,25 @@
 
 package blue.endless.jankson.api.document;
 
+import java.util.List;
+
 public interface ValueElement extends DocumentElement {
+	/**
+	 * If there is a comment before this element which satisfies certain conditions, returns a List containing the
+	 * comment and any non-semantic elements between the comment and this ValueElement. The conditions follow:
+	 * <ul>
+	 *   <li>The comment must precede this ValueElement
+	 *   <li>There must be no ValueElements between the comment and this ValueElement
+	 *   <li>The comment must be in the same "scope" (i.e. it must be within the same container which contains this
+	 *       ValueElement, and must not be in any additional containers that this ValueElement is not in)
+	 * </ul>
+	 * 
+	 * <p>Note that this is an editable list; however, undefined and undesirable behavior will result if you insert a
+	 * ValueElement in here.
+	 */
+	//TODO: Find a good typesafe way to exclude ValueElements from this list
+	public List<DocumentElement> getPreamble();
+	
 	@Override
 	default boolean isValueElement() {
 		return true;
