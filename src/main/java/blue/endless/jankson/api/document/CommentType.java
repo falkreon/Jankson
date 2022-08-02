@@ -31,6 +31,11 @@ public enum CommentType {
 	LINE_END,
 	
 	/**
+	 * These are line-end comments which start with an octothorpe ('#') instead of two slashes.
+	 */
+	OCTOTHORPE,
+	
+	/**
 	 * These are comments which start with a forward slash and an asterisk, and continue until an asterisk and forward slash.
 	 */
 	MULTILINE,

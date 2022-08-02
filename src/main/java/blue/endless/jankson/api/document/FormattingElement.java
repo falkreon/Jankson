@@ -24,16 +24,33 @@
 
 package blue.endless.jankson.api.document;
 
-public interface FormattingElement extends DocumentElement {
+public class FormattingElement implements DocumentElement {
+	public static FormattingElement LINE_BREAK = new FormattingElement("\n");
+	//TODO: Should we have additional elements such as INDENT and SPACE?
+	
+	private String representation;
+	
+	private FormattingElement(String representation) {
+		this.representation = representation;
+	}
+	
+	public String asString() {
+		return representation;
+	}
+	
 	@Override
-	default boolean isFormattingElement() {
+	public boolean isFormattingElement() {
 		return true;
 	}
 	
 	@Override
-	default FormattingElement asFormattingElement() {
+	public FormattingElement asFormattingElement() {
 		return this;
 	}
 	
-	public static FormattingElement LINE_BREAK = new FormattingElement() {};
+	@Override
+	public FormattingElement clone() {
+		//Because formatting elements are singletons, cloning them just returns the same references to the singleton
+		return this;
+	}
 }

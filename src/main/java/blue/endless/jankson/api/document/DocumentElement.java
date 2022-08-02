@@ -34,11 +34,12 @@ package blue.endless.jankson.api.document;
  * 
  * <p>FormattingElements, at this moment, are line breaks.
  */
-public interface DocumentElement {
+public interface DocumentElement extends Cloneable {
 	default boolean isCommentElement() { return false; }
 	default CommentElement asCommentElement() { throw new UnsupportedOperationException(); }
 	default boolean isValueElement() { return false; }
 	default ValueElement asValueElement() { throw new UnsupportedOperationException(); }
 	default boolean isFormattingElement() { return false; }
 	default FormattingElement asFormattingElement() { throw new UnsupportedOperationException(); }
+	public DocumentElement clone();
 }
