@@ -53,4 +53,13 @@ public class FormattingElement implements NonValueElement {
 		//Because formatting elements are singletons, cloning them just returns the same references to the singleton
 		return this;
 	}
+	
+	public boolean isDefault() {
+		return true;
+	}
+	
+	@Override
+	public void setDefault(boolean isDefault) {
+		//Ignore. Formatting is always considered default.
+	}
 }

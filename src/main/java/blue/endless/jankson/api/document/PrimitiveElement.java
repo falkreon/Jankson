@@ -32,6 +32,7 @@ import java.util.List;
 public class PrimitiveElement implements ValueElement {
 	public static PrimitiveElement NULL = new PrimitiveElement(null);
 	
+	protected boolean isDefault = false;
 	protected List<NonValueElement> preamble = new ArrayList<>();
 	protected Object value;
 	protected List<NonValueElement> epilogue = new ArrayList<>();
@@ -137,6 +138,8 @@ public class PrimitiveElement implements ValueElement {
 			result.epilogue.add(elem.clone());
 		}
 		
+		result.isDefault = isDefault;
+		
 		return result;
 	}
 	
@@ -169,5 +172,15 @@ public class PrimitiveElement implements ValueElement {
 	public static PrimitiveElement of(BigDecimal value) {
 		if (value==null) return NULL;
 		return new PrimitiveElement(value.toString());
+	}
+	
+	@Override
+	public boolean isDefault() {
+		return isDefault;
+	}
+	
+	@Override
+	public void setDefault(boolean isDefault) {
+		this.isDefault = isDefault;
 	}
 }

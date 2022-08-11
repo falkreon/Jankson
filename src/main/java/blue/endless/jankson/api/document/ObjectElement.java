@@ -30,6 +30,7 @@ import java.util.List;
 import javax.annotation.Nullable;
 
 public class ObjectElement implements ValueElement {
+	protected boolean isDefault = false;
 	protected List<NonValueElement> preamble = new ArrayList<>();
 	protected List<KeyValuePairElement> entries = new ArrayList<>();
 	protected List<NonValueElement> footer = new ArrayList<>();
@@ -127,6 +128,18 @@ public class ObjectElement implements ValueElement {
 			result.epilogue.add(elem.clone());
 		}
 		
+		result.isDefault = isDefault;
+		
 		return result;
+	}
+	
+	@Override
+	public boolean isDefault() {
+		return isDefault;
+	}
+	
+	@Override
+	public void setDefault(boolean isDefault) {
+		this.isDefault = isDefault;
 	}
 }

@@ -41,5 +41,22 @@ public interface DocumentElement extends Cloneable {
 	default ValueElement asValueElement() { throw new UnsupportedOperationException(); }
 	default boolean isFormattingElement() { return false; }
 	default FormattingElement asFormattingElement() { throw new UnsupportedOperationException(); }
+	
+	/**
+	 * Makes a deep copy of this DocumentElement, formatting and all, and returns it.
+	 */
 	public DocumentElement clone();
+	
+	/**
+	 * Gets whether this DocumentElement has been marked as a default value. Default values are typically identical to
+	 * the equivalent entry in some reference object (such as a default config).
+	 */
+	public boolean isDefault();
+	
+	/**
+	 * Marks this DocumentElement as default (or non-default) to indicate whether this value matches some equivalent
+	 * entry in a reference object (such as a default config).
+	 * @param isDefault true to mark this element as default; false to mark this element as non-default.
+	 */
+	public void setDefault(boolean isDefault);
 }

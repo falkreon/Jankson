@@ -25,6 +25,7 @@
 package blue.endless.jankson.api.document;
 
 public class CommentElement implements NonValueElement {
+	protected boolean isDefault = false;
 	protected String value;
 	protected CommentType commentType;
 	
@@ -64,6 +65,17 @@ public class CommentElement implements NonValueElement {
 		CommentElement result = new CommentElement(this.value);
 		result.value = this.value;
 		result.commentType = this.commentType;
+		result.isDefault = isDefault;
 		return result;
+	}
+	
+	@Override
+	public boolean isDefault() {
+		return isDefault;
+	}
+	
+	@Override
+	public void setDefault(boolean isDefault) {
+		this.isDefault = isDefault;
 	}
 }

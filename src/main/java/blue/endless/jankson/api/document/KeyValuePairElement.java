@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class KeyValuePairElement implements DocumentElement {
+	protected boolean isDefault = false;
 	protected List<NonValueElement> preamble = new ArrayList<>();
 	protected String key;
 	protected List<NonValueElement> intermission = new ArrayList<>();
@@ -93,7 +94,17 @@ public class KeyValuePairElement implements DocumentElement {
 	
 	public KeyValuePairElement clone() {
 		KeyValuePairElement result = new KeyValuePairElement(this.key, (ValueElement) this.value.clone());
-		
+		result.isDefault = isDefault;
 		return result;
+	}
+	
+	@Override
+	public boolean isDefault() {
+		return isDefault;
+	}
+	
+	@Override
+	public void setDefault(boolean isDefault) {
+		this.isDefault = isDefault;
 	}
 }
