@@ -24,46 +24,10 @@
 
 package blue.endless.jankson.api.document;
 
-public class CommentElement implements NonValueElement {
-	protected String value;
-	protected CommentType commentType;
-	
-	public CommentElement(String comment) {
-		value = comment;
-		commentType = CommentType.MULTILINE;
-	}
-	
-	public CommentElement(String comment, CommentType commentType) {
-		value = comment;
-		this.commentType = commentType;
-	}
-	
-	public String getValue() { return value; }
-	
-	public String setValue(String value) {
-		String result = this.value;
-		this.value = value;
-		return result;
-	}
-	
-	public CommentType getCommentType() {
-		return commentType;
-	}
-	
+/**
+ * Tagging interface for elements which are not value elements.
+ */
+public interface NonValueElement extends DocumentElement {
 	@Override
-	public boolean isCommentElement() {
-		return true;
-	}
-
-	@Override
-	public CommentElement asCommentElement() {
-		return this;
-	}
-	
-	public CommentElement clone() {
-		CommentElement result = new CommentElement(this.value);
-		result.value = this.value;
-		result.commentType = this.commentType;
-		return result;
-	}
+	NonValueElement clone();
 }

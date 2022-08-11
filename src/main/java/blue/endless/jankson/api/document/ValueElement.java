@@ -28,20 +28,15 @@ import java.util.List;
 
 public interface ValueElement extends DocumentElement {
 	/**
-	 * If there is a comment before this element which satisfies certain conditions, returns a List containing the
-	 * comment and any non-semantic elements between the comment and this ValueElement. The conditions follow:
-	 * <ul>
-	 *   <li>The comment must precede this ValueElement
-	 *   <li>There must be no ValueElements between the comment and this ValueElement
-	 *   <li>The comment must be in the same "scope" (i.e. it must be within the same container which contains this
-	 *       ValueElement, and must not be in any additional containers that this ValueElement is not in)
-	 * </ul>
-	 * 
-	 * <p>Note that this is an editable list; however, undefined and undesirable behavior will result if you insert a
-	 * ValueElement in here.
+	 * Returns any NonValueElements between this ValueElement and the one preceding it, excluding any which occur on
+	 * the same line as the preceding ValueElement (its epilogue). In other words, all the comments and such above this value.
 	 */
-	//TODO: Find a good typesafe way to exclude ValueElements from this list
-	public List<DocumentElement> getPreamble();
+	public List<NonValueElement> getPreamble();
+	/**
+	 * Returns any NonValueElements after this ValueElement, on the same line as the last line this ValueElement occupies.
+	 * In other words, trailing comments and such on the same line as this value.
+	 */
+	public List<NonValueElement> getEpilogue();
 	
 	@Override
 	default boolean isValueElement() {
@@ -52,4 +47,27 @@ public interface ValueElement extends DocumentElement {
 	default ValueElement asValueElement() {
 		return this;
 	}
+	
+	/**
+	 * Strips all formatting elements and comments from this ValueElement. This is a shallow operation; wrapped values
+	 * may retain their formatting.
+	 * @return this object.
+	 */
+	public default ValueElement stripFormatting() {
+		getPreamble().clear();
+		getEpilogue().clear();
+		
+		return this;
+	}
+	
+	/**
+	 * Recursively strips all formatting elements and comments from this ValueElement and any child ValueElements.
+	 * @return this object.
+	 */
+	public default ValueElement stripAllFormatting() {
+		return stripFormatting();
+	}
+	
+	@Override
+	ValueElement clone();
 }

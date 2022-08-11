@@ -32,20 +32,26 @@ import java.util.List;
 public class PrimitiveElement implements ValueElement {
 	public static PrimitiveElement NULL = new PrimitiveElement(null);
 	
-	protected List<DocumentElement> preamble = new ArrayList<>();
+	protected List<NonValueElement> preamble = new ArrayList<>();
 	protected Object value;
+	protected List<NonValueElement> epilogue = new ArrayList<>();
 	
 	private PrimitiveElement(Object o) {
 		value = o;
 	}
 	
 	@Override
-	public List<DocumentElement> getPreamble() {
+	public List<NonValueElement> getPreamble() {
 		return preamble;
 	}
 	
 	public Object getValue() {
 		return value;
+	}
+	
+	@Override
+	public List<NonValueElement> getEpilogue() {
+		return epilogue;
 	}
 	
 	public String asString() {
@@ -124,8 +130,11 @@ public class PrimitiveElement implements ValueElement {
 		if (this==NULL) return this;
 		
 		PrimitiveElement result = new PrimitiveElement(this.value);
-		for(DocumentElement elem : preamble) {
+		for(NonValueElement elem : preamble) {
 			result.preamble.add(elem.clone());
+		}
+		for(NonValueElement elem : epilogue) {
+			result.epilogue.add(elem.clone());
 		}
 		
 		return result;

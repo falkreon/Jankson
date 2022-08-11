@@ -24,7 +24,7 @@
 
 package blue.endless.jankson.api.document;
 
-public class FormattingElement implements DocumentElement {
+public class FormattingElement implements NonValueElement {
 	public static FormattingElement LINE_BREAK = new FormattingElement("\n");
 	//TODO: Should we have additional elements such as INDENT and SPACE?
 	

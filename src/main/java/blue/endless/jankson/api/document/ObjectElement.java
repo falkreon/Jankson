@@ -30,12 +30,26 @@ import java.util.List;
 import javax.annotation.Nullable;
 
 public class ObjectElement implements ValueElement {
-	protected List<DocumentElement> preamble = new ArrayList<>();
-	protected List<DocumentElement> entries = new ArrayList<>();
+	protected List<NonValueElement> preamble = new ArrayList<>();
+	protected List<KeyValuePairElement> entries = new ArrayList<>();
+	protected List<NonValueElement> footer = new ArrayList<>();
+	protected List<NonValueElement> epilogue = new ArrayList<>();
 	
 	@Override
-	public List<DocumentElement> getPreamble() {
+	public List<NonValueElement> getPreamble() {
 		return preamble;
+	}
+	
+	/**
+	 * Gets NonValueElements following the last key-value pair in this ObjectElement
+	 */
+	public List<NonValueElement> getFooter() {
+		return footer;
+	}
+	
+	@Override
+	public List<NonValueElement> getEpilogue() {
+		return epilogue;
 	}
 	
 	@Nullable
@@ -72,7 +86,47 @@ public class ObjectElement implements ValueElement {
 		return null;
 	}
 	
+	@Override
+	public ValueElement stripFormatting() {
+		preamble.clear();
+		footer.clear();
+		epilogue.clear();
+		
+		return this;
+	}
+	
+	@Override
+	public ObjectElement stripAllFormatting() {
+		preamble.clear();
+		
+		for(KeyValuePairElement elem : entries) {
+			elem.stripAllFormatting();
+		}
+		
+		footer.clear();
+		epilogue.clear();
+		
+		return this;
+	}
+	
 	public ObjectElement clone() {
-		return null; //TODO: Stub
+		ObjectElement result = new ObjectElement();
+		for(NonValueElement elem : preamble) {
+			result.preamble.add(elem.clone());
+		}
+		
+		for(KeyValuePairElement elem : entries) {
+			result.entries.add(elem.clone());
+		}
+		
+		for(NonValueElement elem : footer) {
+			result.footer.add(elem.clone());
+		}
+		
+		for(NonValueElement elem : epilogue) {
+			result.epilogue.add(elem.clone());
+		}
+		
+		return result;
 	}
 }

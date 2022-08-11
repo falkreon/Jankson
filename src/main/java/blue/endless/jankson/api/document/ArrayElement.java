@@ -27,15 +27,28 @@ package blue.endless.jankson.api.document;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
 
-public class ArrayElement extends AbstractList<DocumentElement> implements ValueElement {
-	protected List<DocumentElement> preamble = new ArrayList<>();
-	protected List<DocumentElement> entries = new ArrayList<>();
+public class ArrayElement extends AbstractList<ValueElement> implements ValueElement {
+	protected List<NonValueElement> preamble = new ArrayList<>();
+	protected List<ValueElement> entries = new ArrayList<>();
+	protected List<NonValueElement> footer = new ArrayList<>();
+	protected List<NonValueElement> epilogue = new ArrayList<>();
 	
 	@Override
-	public List<DocumentElement> getPreamble() {
+	public List<NonValueElement> getPreamble() {
 		return preamble;
+	}
+	
+	/**
+	 * Gets NonValueElements following the last ValueElement in this ObjectElement
+	 */
+	public List<NonValueElement> getFooter() {
+		return footer;
+	}
+	
+	@Override
+	public List<NonValueElement> getEpilogue() {
+		return epilogue;
 	}
 	
 	@Override
@@ -43,19 +56,10 @@ public class ArrayElement extends AbstractList<DocumentElement> implements Value
 		return this;
 	}
 	
-	/**
-	 * Gets a purely-semantic view of this element's contents, ignoring comments and formatting.
-	 */
-	public Stream<ValueElement> valueStream() {
-		return stream()
-			.filter(ValueElement.class::isInstance)
-			.map(ValueElement.class::cast);
-	}
-	
-	//extends AbstractList<DocumentElement> {
+	//extends AbstractList<ValueElement> {
 	
 		@Override
-		public DocumentElement get(int index) {
+		public ValueElement get(int index) {
 			return entries.get(index);
 		}
 	
@@ -65,25 +69,64 @@ public class ArrayElement extends AbstractList<DocumentElement> implements Value
 		}
 		
 		@Override
-		public DocumentElement set(int index, DocumentElement element) {
+		public ValueElement set(int index, ValueElement element) {
 			return entries.set(index, element);
 		}
 		
 		@Override
-		public void add(int index, DocumentElement element) {
+		public void add(int index, ValueElement element) {
 			entries.add(index, element);
 		}
 		
 		@Override
-		public DocumentElement remove(int index) {
+		public ValueElement remove(int index) {
 			return entries.remove(index);
 		}
 	
 	//}
 	
+	@Override
+	public ValueElement stripFormatting() {
+		preamble.clear();
+		footer.clear();
+		epilogue.clear();
+		
+		return this;
+	}
+	
+	@Override
+	public ValueElement stripAllFormatting() {
+		preamble.clear();
+		
+		for(ValueElement elem : entries) {
+			elem.stripAllFormatting();
+		}
+		
+		footer.clear();
+		epilogue.clear();
+		
+		return this;
+	}
 		
 	public ArrayElement clone() {
-		//TODO: Stub
-		return null;
+		ArrayElement result = new ArrayElement();
+		
+		for(NonValueElement elem : preamble) {
+			result.preamble.add(elem.clone());
+		}
+		
+		for(ValueElement elem : entries) {
+			result.entries.add(elem.clone());
+		}
+		
+		for(NonValueElement elem : footer) {
+			result.footer.add(elem.clone());
+		}
+		
+		for(NonValueElement elem : epilogue) {
+			result.epilogue.add(elem.clone());
+		}
+		
+		return result;
 	}
 }

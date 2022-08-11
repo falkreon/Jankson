@@ -28,49 +28,71 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class KeyValuePairElement implements DocumentElement {
-	protected CommentElement commentBefore = null;
-	protected CommentElement commentAfter = null;
-	//protected List<DocumentElement> entries = new ArrayList<>();
+	protected List<NonValueElement> preamble = new ArrayList<>();
 	protected String key;
-	protected ValueElement valueEntry;
+	protected List<NonValueElement> intermission = new ArrayList<>();
+	protected ValueElement value;
 	
 	public KeyValuePairElement(String key, ValueElement value) {
 		this.key = key;
 		//entries.add(value);
-		valueEntry = value;
+		this.value = value;
 	}
 	
-	public KeyValuePairElement(String key, DocumentElement value, String comment) {
-		commentBefore = new CommentElement(comment);
+	public List<NonValueElement> getPreamble() {
+		return preamble;
 	}
 	
 	public String getKey() {
 		return key;
 	}
 	
+	/**
+	 * Gets NonValueElements after the key, but before the colon that separates the key and value. Should be left empty
+	 * if possible.
+	 */
+	public List<NonValueElement> getIntermission() {
+		return intermission;
+	}
+	
 	public ValueElement getValue() {
-		return valueEntry;
+		return value;
 	}
 	
 	public DocumentElement setValue(ValueElement value) {
-		ValueElement result = valueEntry;
-		/*
-		for(int i=0; i<entries.size(); i++) {
-			if (valueEntry==entries.get(i)) { //Because of this, keeping valueEntry and entries consistent is VERY IMPORTANT
-				entries.set(i, value);
-				valueEntry = value;
-				return result;
-			}
-		}*/
+		ValueElement result = value;
+		this.value = value;
+		return result;
+	}
+	
+	/**
+	 * Clears out any non-semantic data such as comments or FormatElements attached to this KeyValuePairElement. Values
+	 * may retain their formatting.
+	 * @return this object.
+	 */
+	public KeyValuePairElement stripFormatting() {
+		preamble.clear();
+		intermission.clear();
 		
-		//No existing value entry?!?
-		//entries.add(value);
-		valueEntry = value;
-		return null;
+		return this;
+	}
+	
+	/**
+	 * Clears out any non semantic data such as comments or FormatElements attached to this KeyValuePairElement *and*
+	 * its value. No comments will remain.
+	 * @return this object.
+	 */
+	public KeyValuePairElement stripAllFormatting() {
+		preamble.clear();
+		intermission.clear();
+		value.getPreamble().clear();
+		value.getEpilogue().clear();
+		
+		return this;
 	}
 	
 	public KeyValuePairElement clone() {
-		KeyValuePairElement result = new KeyValuePairElement(this.key, (ValueElement) this.valueEntry.clone());
+		KeyValuePairElement result = new KeyValuePairElement(this.key, (ValueElement) this.value.clone());
 		
 		return result;
 	}
