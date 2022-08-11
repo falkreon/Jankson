@@ -30,13 +30,13 @@ import java.util.List;
 public class KeyValuePairElement implements DocumentElement {
 	protected CommentElement commentBefore = null;
 	protected CommentElement commentAfter = null;
-	protected List<DocumentElement> entries = new ArrayList<>();
+	//protected List<DocumentElement> entries = new ArrayList<>();
 	protected String key;
 	protected ValueElement valueEntry;
 	
 	public KeyValuePairElement(String key, ValueElement value) {
 		this.key = key;
-		entries.add(value);
+		//entries.add(value);
 		valueEntry = value;
 	}
 	
@@ -54,17 +54,24 @@ public class KeyValuePairElement implements DocumentElement {
 	
 	public DocumentElement setValue(ValueElement value) {
 		ValueElement result = valueEntry;
+		/*
 		for(int i=0; i<entries.size(); i++) {
 			if (valueEntry==entries.get(i)) { //Because of this, keeping valueEntry and entries consistent is VERY IMPORTANT
 				entries.set(i, value);
 				valueEntry = value;
 				return result;
 			}
-		}
+		}*/
 		
 		//No existing value entry?!?
-		entries.add(value);
+		//entries.add(value);
 		valueEntry = value;
 		return null;
+	}
+	
+	public KeyValuePairElement clone() {
+		KeyValuePairElement result = new KeyValuePairElement(this.key, (ValueElement) this.valueEntry.clone());
+		
+		return result;
 	}
 }

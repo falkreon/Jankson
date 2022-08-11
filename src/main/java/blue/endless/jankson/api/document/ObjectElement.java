@@ -71,4 +71,8 @@ public class ObjectElement implements ValueElement {
 		entries.add(new KeyValuePairElement(key, value));
 		return null;
 	}
+	
+	public ObjectElement clone() {
+		return null; //TODO: Stub
+	}
 }

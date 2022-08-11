@@ -24,7 +24,7 @@
 
 package blue.endless.jankson.api.document;
 
-public class CommentElement implements FormattingElement {
+public class CommentElement implements DocumentElement {
 	protected String value;
 	//protected boolean lineEnd;
 	protected CommentType commentType;
@@ -59,5 +59,12 @@ public class CommentElement implements FormattingElement {
 	@Override
 	public CommentElement asCommentElement() {
 		return this;
+	}
+	
+	public CommentElement clone() {
+		CommentElement result = new CommentElement(this.value);
+		result.value = this.value;
+		result.commentType = this.commentType;
+		return result;
 	}
 }

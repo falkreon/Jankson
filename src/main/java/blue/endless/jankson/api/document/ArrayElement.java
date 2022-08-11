@@ -81,4 +81,9 @@ public class ArrayElement extends AbstractList<DocumentElement> implements Value
 	
 	//}
 	
+		
+	public ArrayElement clone() {
+		//TODO: Stub
+		return null;
+	}
 }
