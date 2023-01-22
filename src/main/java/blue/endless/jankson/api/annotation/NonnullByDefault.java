@@ -32,6 +32,10 @@ import java.lang.annotation.Target;
 import javax.annotation.Nonnull;
 import javax.annotation.meta.TypeQualifierDefault;
 
+/**
+ * @deprecated Use {@link javax.annotation.Nonnull}
+ */
+@Deprecated(forRemoval=true)
 @Nonnull
 @TypeQualifierDefault({ ElementType.METHOD, ElementType.PARAMETER })
 @Retention(RetentionPolicy.RUNTIME)

@@ -24,7 +24,10 @@
 
 package blue.endless.jankson.impl;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -38,9 +41,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 
+import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import blue.endless.jankson.api.io.DeserializationException;
@@ -218,5 +224,80 @@ public class TypeMagic {
 	@SuppressWarnings("unchecked")
 	public static <T> T shoehorn(Object o) {
 		return (T) o;
+	}
+	
+	
+	
+	public static Optional<Field> getField(Type type, String fieldName) {
+		try {
+			return Optional.of(type.getClass().getDeclaredField(fieldName));
+		} catch (NoSuchFieldException | SecurityException e) {
+			// 👻
+		}
+		
+		try {
+			return Optional.of(type.getClass().getField(fieldName));
+		} catch (NoSuchFieldException | SecurityException e) {
+			// 👻
+		}
+		
+		return Optional.empty();
+	}
+	
+	public static enum Nullity {
+		NULLABLE,
+		NON_NULLABLE,
+		UNKNOWN;
+		
+		public boolean isNullable() {
+			return this==NULLABLE || this==UNKNOWN;
+		}
+	}
+	
+	private static final String[] NONNULL_ANNOTATIONS = {
+		"NonNull",
+		"Nonnull",
+		"NotNull",
+	};
+	
+	private static final String[] NULLABLE_ANNOTATIONS = {
+		"Nullable",
+		"CheckForNull",
+	};
+	
+	/**
+	 * Examines the annotations on a method or field for clues about its nullity.
+	 * @param o The method or field to inspect
+	 * @return NULLABLE if the value can definitely be null. NON_NULLABLE if null is definitely not allowed.
+	 *         UNKNOWN if there do not appear to be any explicit rules defined.
+	 */
+	public static Nullity getNullity(AccessibleObject o) {
+		//See https://github.com/google/guava/issues/2960 for rationale for using SimpleNames instead of a longer list of FQNs.
+		
+		for(Annotation a : o.getAnnotations()) {
+			//Is it a known nullable annotation?
+			String simpleName = a.getClass().getSimpleName();
+			for(String s : NONNULL_ANNOTATIONS) {
+				if (s.equals(simpleName)) return Nullity.NON_NULLABLE;
+			}
+			
+			//Is it a known nonnull annotation?
+			for(String s : NULLABLE_ANNOTATIONS) {
+				if (s.equals(simpleName)) return Nullity.NULLABLE;
+			}
+		}
+		
+		//Indirect annotations are more or less a bust.
+		//Not directly annotated. Is it indirectly annotated?
+		/*
+		Class<?> enclosingType = f.getDeclaringClass();
+		for(Annotation a : enclosingType.getAnnotations()) {
+			String simpleName = a.getClass().getSimpleName();
+			for(String s : INDIRECT_NONNULL_ANNOTATIONS) {
+				if (s.equals(simpleName)) return Nullity.NON_NULLABLE;
+			}
+		}*/
+		
+		return Nullity.UNKNOWN;
 	}
 }

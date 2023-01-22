@@ -34,9 +34,9 @@ import javax.annotation.meta.TypeQualifierNickname;
 /**
  * Alias for jsr305 javax.annotation.CheckForNull
  * 
- * <p>Values annotated with this element should be treated the same way as Kotlin optional types: null is explicitly
- * indicated as a valid state, and should be checked before use.
+ * @deprecated use {@link javax.annotation.CheckForNull} instead
  */
+@Deprecated(forRemoval=true)
 @Inherited
 @TypeQualifierNickname
 @Retention(RetentionPolicy.RUNTIME)
