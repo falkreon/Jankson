@@ -24,22 +24,42 @@
 
 package blue.endless.jankson.api.io;
 
-public class DeserializationException extends Exception {
-	private static final long serialVersionUID = 8425560848572561283L;
-	
-	public DeserializationException() {
-		super();
-	}
-	
-	public DeserializationException(String message) {
-		super(message);
-	}
+import java.util.EnumSet;
 
-	public DeserializationException(String message, Throwable cause) {
-		super(message, cause);
+import blue.endless.jankson.api.Marshaller;
+import blue.endless.jankson.impl.MarshallerImpl;
+
+@SuppressWarnings("deprecation")
+public class JsonReaderOptions {
+	private final EnumSet<Hint> hints = EnumSet.noneOf(Hint.class);
+	private final Marshaller marshaller;
+	
+	public JsonReaderOptions(Hint... hints) {
+		this.marshaller = MarshallerImpl.getFallback();
 	}
 	
-	public DeserializationException(Throwable cause) {
-		super(cause);
+	public JsonReaderOptions(Marshaller marshaller, Hint... hints) {
+		for(Hint hint : hints) this.hints.add(hint);
+		this.marshaller = marshaller;
+	}
+	
+	public boolean hasHint(Hint hint) {
+		return hints.contains(hint);
+	}
+	
+	public Marshaller getMarshaller() {
+		return this.marshaller;
+	}
+	
+	public enum Hint {
+		/** Allow the root object of a document to omit its delimiters / braces */
+		ALLOW_BARE_ROOT_OBJECT,
+		/** Allow keys in key value pairs to occur without quotes */
+		ALLOW_UNQUOTED_KEYS,
+		/** This is the HOCON behavior of combining objects declared on the same key. Will have no effect during granular
+		 * JsonReader access. */
+		MERGE_DUPLICATE_OBJECTS,
+		/** This is the HOCON behavior of allowing equals ('=') to replace colons between keys and values */
+		ALLOW_KEY_EQUALS_VALUE;
 	}
 }

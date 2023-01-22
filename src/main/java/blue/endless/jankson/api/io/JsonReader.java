@@ -27,36 +27,29 @@ package blue.endless.jankson.api.io;
 import java.io.Reader;
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.function.Consumer;
 
-import blue.endless.jankson.api.document.DocumentElement;
-import blue.endless.jankson.api.document.JanksonDocument;
-import blue.endless.jankson.api.document.ObjectElement;
+import blue.endless.jankson.api.element.JsonElement;
 import blue.endless.jankson.impl.context.ParserContext;
 
-public class JsonReader implements DocumentReader {
+public class JsonReader {
 	private final Reader source;
-	private final DeserializerOptions options;
+	private final JsonReaderOptions options;
 	private Deque<ParserContext<?>> contextStack = new ArrayDeque<>();
-	private ObjectElement documentRoot = new ObjectElement();
 	
 	public JsonReader(Reader source) {
-		this(source, new DeserializerOptions());
+		this(source, new JsonReaderOptions());
 	}
 	
-	public JsonReader(Reader source, DeserializerOptions options) {
+	public JsonReader(Reader source, JsonReaderOptions options) {
 		this.source = source;
 		this.options = options;
 	}
 	
-	@Override
-	public JanksonDocument readDocument() {
-		
-		//TODO: Implement
-		return null;
+	public JsonElement getValue() {
+		throw new IllegalStateException("No value is available at this location.");
 	}
 	
-	private void pushContext(ParserContext<?> ctx, Consumer<DocumentElement> consumer) {
-		
+	public ElementType next() {
+		return ElementType.OBJECT_END;
 	}
 }

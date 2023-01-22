@@ -49,7 +49,7 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import blue.endless.jankson.api.io.DeserializationException;
+import blue.endless.jankson.api.io.JsonIOException;
 
 public class TypeMagic {
 	private static Map<Class<?>, Class<?>> concreteClasses = new HashMap<>();
@@ -159,7 +159,7 @@ public class TypeMagic {
 		}
 	}
 	
-	public static <U> U createAndCastCarefully(Type t) throws DeserializationException {
+	public static <U> U createAndCastCarefully(Type t) throws JsonIOException {
 		return createAndCast(classForType(t));
 	}
 	
@@ -172,7 +172,7 @@ public class TypeMagic {
 	 */
 	@SuppressWarnings("unchecked")
 	@Nullable
-	public static <U> U createAndCast(Class<U> t, boolean failFast) throws DeserializationException {
+	public static <U> U createAndCast(Class<U> t, boolean failFast) throws JsonIOException {
 		if (t.isInterface()) {
 			Class<?> substitute = concreteClasses.get(t);
 			if (substitute!=null) try {
@@ -193,7 +193,7 @@ public class TypeMagic {
 				noArg = t.getDeclaredConstructor();
 			} catch (Throwable ex3) {
 				if (failFast) {
-					throw new DeserializationException("Class "+t.getCanonicalName()+" doesn't have a no-arg constructor, so an instance can't be created.");
+					throw new JsonIOException("Class "+t.getCanonicalName()+" doesn't have a no-arg constructor, so an instance can't be created.");
 				}
 				return null;
 			}
@@ -207,7 +207,7 @@ public class TypeMagic {
 			return u;
 		} catch (Throwable ex) {
 			if (failFast) {
-				throw new DeserializationException("An error occurred while creating an object.", ex);
+				throw new JsonIOException("An error occurred while creating an object.", ex);
 			}
 			return null;
 		}

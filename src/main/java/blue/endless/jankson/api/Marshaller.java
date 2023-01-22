@@ -27,7 +27,7 @@ package blue.endless.jankson.api;
 import java.lang.reflect.Type;
 
 import blue.endless.jankson.api.element.JsonElement;
-import blue.endless.jankson.api.io.DeserializationException;
+import blue.endless.jankson.api.io.JsonIOException;
 
 public interface Marshaller {
 	/** Turns a java object into its json intermediate representation. */
@@ -65,7 +65,7 @@ public interface Marshaller {
 	 * @param elem  json intermediate representation of the data to be unpacked.
 	 * @param <E>   The type of the object to create and deserialize
 	 * @return      A new object of the provided class that represents the data in the json provided.
-	 * @throws DeserializationException if any problems are encountered unpacking the data.
+	 * @throws JsonIOException if any problems are encountered unpacking the data.
 	 */
-	<E> E marshallCarefully(Class<E> clazz, JsonElement elem) throws DeserializationException;
+	<E> E marshallCarefully(Class<E> clazz, JsonElement elem) throws JsonIOException;
 }

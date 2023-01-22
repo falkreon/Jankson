@@ -24,41 +24,24 @@
 
 package blue.endless.jankson.api.io;
 
-import java.util.EnumSet;
+import java.io.IOException;
 
-import blue.endless.jankson.api.Marshaller;
-import blue.endless.jankson.impl.MarshallerImpl;
+public class JsonIOException extends IOException {
+	private static final long serialVersionUID = 8425560848572561283L;
+	
+	public JsonIOException() {
+		super();
+	}
+	
+	public JsonIOException(String message) {
+		super(message);
+	}
 
-@SuppressWarnings("deprecation")
-public class DeserializerOptions {
-	private final EnumSet<Hint> hints = EnumSet.noneOf(Hint.class);
-	private final Marshaller marshaller;
-	
-	public DeserializerOptions(Hint... hints) {
-		this.marshaller = MarshallerImpl.getFallback();
+	public JsonIOException(String message, Throwable cause) {
+		super(message, cause);
 	}
 	
-	public DeserializerOptions(Marshaller marshaller, Hint... hints) {
-		for(Hint hint : hints) this.hints.add(hint);
-		this.marshaller = marshaller;
-	}
-	
-	public boolean hasHint(Hint hint) {
-		return hints.contains(hint);
-	}
-	
-	public Marshaller getMarshaller() {
-		return this.marshaller;
-	}
-	
-	public enum Hint {
-		/** Allow the root object of a document to omit its delimiters / braces */
-		ALLOW_BARE_ROOTS,
-		/** Allow keys in key value pairs to occur without quotes */
-		ALLOW_UNQUOTED_KEYS,
-		/** This is the HOCON behavior of combining objects declared on the same key */
-		MERGE_DUPLICATE_OBJECTS,
-		/** This is the HOCON behavior of allowing equals ('=') to replace colons between keys and values */
-		ALLOW_KEY_EQUALS_VALUE;
+	public JsonIOException(Throwable cause) {
+		super(cause);
 	}
 }

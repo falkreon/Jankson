@@ -26,13 +26,13 @@ package blue.endless.jankson.impl.context.toml;
 
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.element.JsonObject;
-import blue.endless.jankson.api.io.DeserializerOptions;
+import blue.endless.jankson.api.io.JsonReaderOptions;
 import blue.endless.jankson.impl.context.ElementContext;
 
 public class ObjectElementContext implements ElementContext<JsonObject> {
 
 	@Override
-	public boolean consume(char character, int lineNum, int charNum, DeserializerOptions options) throws SyntaxError {
+	public boolean consume(char character, int lineNum, int charNum, JsonReaderOptions options) throws SyntaxError {
 		// TODO Auto-generated method stub
 		return false;
 	}

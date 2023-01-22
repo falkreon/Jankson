@@ -32,7 +32,7 @@ import blue.endless.jankson.api.element.JsonArray;
 import blue.endless.jankson.api.element.JsonElement;
 import blue.endless.jankson.api.element.JsonObject;
 import blue.endless.jankson.api.element.JsonPrimitive;
-import blue.endless.jankson.api.io.DeserializationException;
+import blue.endless.jankson.api.io.JsonIOException;
 
 /**
  * Stores deserializer functions that produce objects of type &lt;B&gt;
@@ -53,7 +53,7 @@ public class DeserializerFunctionPool<B> {
 		return (InternalDeserializerFunction<B>)values.get(sourceClass);
 	}
 	
-	public B apply(JsonElement elem, Marshaller marshaller) throws DeserializationException, FunctionMatchFailedException {
+	public B apply(JsonElement elem, Marshaller marshaller) throws JsonIOException, FunctionMatchFailedException {
 		InternalDeserializerFunction<B> selected = null;
 		
 		//This whole block is pretty ugly but there's a very particular selection order

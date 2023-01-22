@@ -37,7 +37,7 @@ import blue.endless.jankson.api.element.JsonArray;
 import blue.endless.jankson.api.element.JsonElement;
 import blue.endless.jankson.api.element.JsonObject;
 import blue.endless.jankson.api.element.JsonPrimitive;
-import blue.endless.jankson.api.io.DeserializationException;
+import blue.endless.jankson.api.io.JsonIOException;
 
 public class TestDeserializer {
 	Jankson jankson;
@@ -60,8 +60,8 @@ public class TestDeserializer {
 		
 		// the unused Marshaller parameter is for testing that it gets recognised properly
 		@Deserializer
-		public static Foo deserialize(JsonArray arr, Marshaller marshaller) throws DeserializationException {
-			if (arr.size()<1 || arr.size()>2) throw new DeserializationException("Array can have either 1 or 2 elements. Found: "+arr.size());
+		public static Foo deserialize(JsonArray arr, Marshaller marshaller) throws JsonIOException {
+			if (arr.size()<1 || arr.size()>2) throw new JsonIOException("Array can have either 1 or 2 elements. Found: "+arr.size());
 			Foo result = new Foo();
 			result.value = arr.getString(0, "OOPS");
 			if (arr.size()>1) result.opt = arr.getString(1, "OOPS");
@@ -80,7 +80,7 @@ public class TestDeserializer {
 	 * Make sure that various kinds of self-described deserializers are working alongside each other
 	 */
 	@Test
-	public void testBasicFeatures() throws DeserializationException {
+	public void testBasicFeatures() throws JsonIOException {
 		String subject =
 				"{\n" + 
 				"	\"stringDeserializer\": \"test\",\n" + 
@@ -115,8 +115,8 @@ public class TestDeserializer {
 	/**
 	 * Just to be clear: If we can't unpack a key for any reason, Carefully should throw an error.
 	 */
-	@Test(expected = DeserializationException.class)
-	public void ensureErrorOnMissingDeserializer() throws SyntaxError, DeserializationException {
+	@Test(expected = JsonIOException.class)
+	public void ensureErrorOnMissingDeserializer() throws SyntaxError, JsonIOException {
 		String subject =
 				"{\n" + 
 				"	\"stringDeserializer\": \"test\",\n" + 
@@ -210,7 +210,7 @@ public class TestDeserializer {
 	}
 
 	@Test
-	public void testOmitRootBraces() throws DeserializationException {
+	public void testOmitRootBraces() throws JsonIOException {
 		String subject =
 				"\"stringDeserializer\": \"test\",\n" +
 				"\"arrayDeserializer\": [ \"someValue\", \"someOptValue\" ],\n" +

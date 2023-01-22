@@ -51,7 +51,7 @@ import blue.endless.jankson.api.element.JsonElement;
 import blue.endless.jankson.api.element.JsonNull;
 import blue.endless.jankson.api.element.JsonObject;
 import blue.endless.jankson.api.element.JsonPrimitive;
-import blue.endless.jankson.api.io.DeserializationException;
+import blue.endless.jankson.api.io.JsonIOException;
 import blue.endless.jankson.impl.serializer.DeserializerFunctionPool;
 import blue.endless.jankson.impl.serializer.DeserializerFunctionPool.FunctionMatchFailedException;
 
@@ -186,13 +186,13 @@ public class MarshallerImpl implements blue.endless.jankson.api.Marshaller {
 		}
 	}
 	
-	public <T> T marshallCarefully(Class<T> clazz, JsonElement elem) throws DeserializationException {
+	public <T> T marshallCarefully(Class<T> clazz, JsonElement elem) throws JsonIOException {
 		return marshall(clazz, elem, true);
 	}
 	
 	@SuppressWarnings("unchecked")
 	@Nullable
-	public <T> T marshall(Class<T> clazz, JsonElement elem, boolean failFast) throws DeserializationException {
+	public <T> T marshall(Class<T> clazz, JsonElement elem, boolean failFast) throws JsonIOException {
 		if (elem==null) return null;
 		if (elem==JsonNull.INSTANCE) return null;
 		if (clazz.isAssignableFrom(elem.getClass())) return (T)elem; //Already the correct type
@@ -239,7 +239,7 @@ public class MarshallerImpl implements blue.endless.jankson.api.Marshaller {
 			}
 			if (elem instanceof JsonNull) return (T)"null";
 			
-			if (failFast) throw new DeserializationException("Encountered unexpected JsonElement type while deserializing to string: "+elem.getClass().getCanonicalName());
+			if (failFast) throw new JsonIOException("Encountered unexpected JsonElement type while deserializing to string: "+elem.getClass().getCanonicalName());
 			return null;
 		}
 		
@@ -248,15 +248,15 @@ public class MarshallerImpl implements blue.endless.jankson.api.Marshaller {
 			if (func!=null) {
 				return (T)func.apply(((JsonPrimitive)elem).getValue());
 			} else {
-				if (failFast) throw new DeserializationException("Don't know how to unpack value '"+elem.toString()+"' into target type '"+clazz.getCanonicalName()+"'");
+				if (failFast) throw new JsonIOException("Don't know how to unpack value '"+elem.toString()+"' into target type '"+clazz.getCanonicalName()+"'");
 				return null;
 			}
 		} else if (elem instanceof JsonObject) {
 			
 			
-			if (clazz.isPrimitive()) throw new DeserializationException("Can't marshall json object into primitive type "+clazz.getCanonicalName());
+			if (clazz.isPrimitive()) throw new JsonIOException("Can't marshall json object into primitive type "+clazz.getCanonicalName());
 			if (JsonPrimitive.class.isAssignableFrom(clazz)) {
-				if (failFast) throw new DeserializationException("Can't marshall json object into a json primitive");
+				if (failFast) throw new JsonIOException("Can't marshall json object into a json primitive");
 				return null;
 			}
 			

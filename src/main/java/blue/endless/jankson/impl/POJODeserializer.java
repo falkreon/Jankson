@@ -45,7 +45,7 @@ import blue.endless.jankson.api.element.JsonElement;
 import blue.endless.jankson.api.element.JsonNull;
 import blue.endless.jankson.api.element.JsonObject;
 import blue.endless.jankson.api.element.JsonPrimitive;
-import blue.endless.jankson.api.io.DeserializationException;
+import blue.endless.jankson.api.io.JsonIOException;
 import blue.endless.jankson.impl.serializer.InternalDeserializerFunction;
 import blue.endless.jankson.impl.serializer.DeserializerFunctionPool;
 
@@ -59,7 +59,7 @@ public class POJODeserializer {
 		}
 	}
 	
-	public static void unpackObject(Object target, JsonObject source, boolean failFast) throws DeserializationException {
+	public static void unpackObject(Object target, JsonObject source, boolean failFast) throws JsonIOException {
 		//if (o.getClass().getTypeParameters().length>0) throw new DeserializationException("Can't safely deserialize generic types!");
 		//well, let's try anyway and see if we run into problems.
 		
@@ -81,11 +81,11 @@ public class POJODeserializer {
 		}
 		
 		if (!work.isEmpty() && failFast) {
-			throw new DeserializationException("There was data that couldn't be applied to the destination object: "+work.toJson(JsonGrammar.STRICT));
+			throw new JsonIOException("There was data that couldn't be applied to the destination object: "+work.toJson(JsonGrammar.STRICT));
 		}
 	}
 	
-	public static void unpackField(Object parent, Field f, JsonObject source, boolean failFast) throws DeserializationException {
+	public static void unpackField(Object parent, Field f, JsonObject source, boolean failFast) throws JsonIOException {
 		String fieldName = f.getName();
 		SerializedName nameAnnotation = f.getAnnotation(SerializedName.class);
 		if (nameAnnotation!=null) fieldName = nameAnnotation.value();
@@ -100,13 +100,13 @@ public class POJODeserializer {
 					f.set(parent, null);
 					if (!accessible) f.setAccessible(false);
 				} catch (IllegalArgumentException | IllegalAccessException ex) {
-					if (failFast) throw new DeserializationException("Couldn't set field \""+f.getName()+"\" of class \""+parent.getClass().getCanonicalName()+"\"", ex);
+					if (failFast) throw new JsonIOException("Couldn't set field \""+f.getName()+"\" of class \""+parent.getClass().getCanonicalName()+"\"", ex);
 				}
 			} else {
 				try {
 					unpackFieldData(parent, f, elem, source.getMarshaller());
 				} catch (Throwable t) {
-					if (failFast) throw new DeserializationException("There was a problem unpacking field "+f.getName()+" of class "+parent.getClass().getCanonicalName(), t);
+					if (failFast) throw new JsonIOException("There was a problem unpacking field "+f.getName()+" of class "+parent.getClass().getCanonicalName(), t);
 				}
 			}
 		}
@@ -214,8 +214,8 @@ public class POJODeserializer {
 				Collection.class.isAssignableFrom(clazz);
 	}
 	
-	public static void unpackMap(Map<Object, Object> map, Type keyType, Type valueType, JsonElement elem, blue.endless.jankson.api.Marshaller marshaller) throws DeserializationException {
-		if (!(elem instanceof JsonObject)) throw new DeserializationException("Cannot deserialize a "+elem.getClass().getSimpleName()+" into a Map - expected a JsonObject!");
+	public static void unpackMap(Map<Object, Object> map, Type keyType, Type valueType, JsonElement elem, blue.endless.jankson.api.Marshaller marshaller) throws JsonIOException {
+		if (!(elem instanceof JsonObject)) throw new JsonIOException("Cannot deserialize a "+elem.getClass().getSimpleName()+" into a Map - expected a JsonObject!");
 		
 		//Class<?> keyClass = TypeMagic.classForType(keyType);
 		//Class<?> valueClass = TypeMagic.classForType(valueType);
@@ -229,8 +229,8 @@ public class POJODeserializer {
 		}
 	}
 	
-	public static void unpackCollection(Collection<Object> collection, Type elementType, JsonElement elem, blue.endless.jankson.api.Marshaller marshaller) throws DeserializationException {
-		if (!(elem instanceof JsonArray)) throw new DeserializationException("Cannot deserialize a "+elem.getClass().getSimpleName()+" into a Set - expected a JsonArray!");
+	public static void unpackCollection(Collection<Object> collection, Type elementType, JsonElement elem, blue.endless.jankson.api.Marshaller marshaller) throws JsonIOException {
+		if (!(elem instanceof JsonArray)) throw new JsonIOException("Cannot deserialize a "+elem.getClass().getSimpleName()+" into a Set - expected a JsonArray!");
 		
 		JsonArray array = (JsonArray)elem;
 		for(JsonElement arrayElem : array) {
@@ -275,7 +275,7 @@ public class POJODeserializer {
 					try {
 						return (B)m.invoke(null, o);
 					} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
-						throw new DeserializationException(ex);
+						throw new JsonIOException(ex);
 					}
 				};
 			//}
@@ -287,7 +287,7 @@ public class POJODeserializer {
 						try {
 							return (B)m.invoke(null, o, marshaller);
 						} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
-							throw new DeserializationException(ex);
+							throw new JsonIOException(ex);
 						}
 					};
 				}

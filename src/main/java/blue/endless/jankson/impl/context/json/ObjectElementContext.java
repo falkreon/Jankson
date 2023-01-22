@@ -26,12 +26,10 @@ package blue.endless.jankson.impl.context.json;
 
 import java.util.Arrays;
 
-import blue.endless.jankson.api.Jankson;
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.document.ObjectElement;
-import blue.endless.jankson.api.io.DeserializerOptions;
+import blue.endless.jankson.api.io.JsonReaderOptions;
 import blue.endless.jankson.impl.context.ElementContext;
-import blue.endless.jankson.impl.context.ParserContext;
 
 public class ObjectElementContext implements ElementContext<ObjectElement> {
 	/**
@@ -66,8 +64,8 @@ public class ObjectElementContext implements ElementContext<ObjectElement> {
 	}
 	
 	@Override
-	public boolean consume(char codePoint, int line, int column, DeserializerOptions options) throws SyntaxError {
-		if (!openBraced & !options.hasHint(DeserializerOptions.Hint.ALLOW_BARE_ROOTS)) {
+	public boolean consume(char codePoint, int line, int column, JsonReaderOptions options) throws SyntaxError {
+		if (!openBraced & !options.hasHint(JsonReaderOptions.Hint.ALLOW_BARE_ROOT_OBJECT)) {
 			//We can only accept whitespace, comments, and open braces.
 			if (codePoint=='{') {
 				openBraced = true;
