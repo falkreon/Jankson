@@ -24,6 +24,10 @@
 
 package blue.endless.jankson.api.document;
 
+import java.io.IOException;
+
+import blue.endless.jankson.api.io.StructuredDataWriter;
+
 /**
  * Represents a Document or part of a Document. Elements can be one of three types: Comment, Value, or Formatting.
  * 
@@ -59,4 +63,6 @@ public interface DocumentElement extends Cloneable {
 	 * @param isDefault true to mark this element as default; false to mark this element as non-default.
 	 */
 	public void setDefault(boolean isDefault);
+	
+	public void write(StructuredDataWriter writer) throws IOException;
 }

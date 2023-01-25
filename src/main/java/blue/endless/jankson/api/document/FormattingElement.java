@@ -24,6 +24,10 @@
 
 package blue.endless.jankson.api.document;
 
+import java.io.IOException;
+
+import blue.endless.jankson.api.io.StructuredDataWriter;
+
 public class FormattingElement implements NonValueElement {
 	public static FormattingElement LINE_BREAK = new FormattingElement("\n");
 	//TODO: Should we have additional elements such as INDENT and SPACE?
@@ -61,5 +65,10 @@ public class FormattingElement implements NonValueElement {
 	@Override
 	public void setDefault(boolean isDefault) {
 		//Ignore. Formatting is always considered default.
+	}
+	
+	@Override
+	public void write(StructuredDataWriter writer) throws IOException {
+		writer.writeWhitespace(representation);
 	}
 }

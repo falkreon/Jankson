@@ -24,10 +24,13 @@
 
 package blue.endless.jankson.api.document;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+
+import blue.endless.jankson.api.io.StructuredDataWriter;
 
 public class PrimitiveElement implements ValueElement {
 	public static PrimitiveElement NULL = new PrimitiveElement(null);
@@ -182,5 +185,25 @@ public class PrimitiveElement implements ValueElement {
 	@Override
 	public void setDefault(boolean isDefault) {
 		this.isDefault = isDefault;
+	}
+	
+	@Override
+	public void write(StructuredDataWriter writer) throws IOException {
+		
+		for(NonValueElement elem : preamble) elem.write(writer);
+		
+		if (value==null) writer.writeNullLiteral(); //Or throw an error if this!=NULL
+		
+		if (value instanceof Boolean b) {
+			writer.writeBooleanLiteral(b);
+		} else if (value instanceof Long l) {
+			writer.writeLongLiteral(l);
+		} else if (value instanceof Double d) {
+			writer.writeDoubleLiteral(d);
+		} else if (value instanceof String s) {
+			writer.writeStringLiteral(s);
+		}
+		
+		for(NonValueElement elem : epilogue) elem.write(writer);
 	}
 }

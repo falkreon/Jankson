@@ -24,9 +24,12 @@
 
 package blue.endless.jankson.api.document;
 
+import java.io.IOException;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
+
+import blue.endless.jankson.api.io.StructuredDataWriter;
 
 public class ArrayElement extends AbstractList<ValueElement> implements ValueElement {
 	protected boolean isDefault = false;
@@ -141,5 +144,10 @@ public class ArrayElement extends AbstractList<ValueElement> implements ValueEle
 	@Override
 	public void setDefault(boolean isDefault) {
 		this.isDefault = isDefault;
+	}
+	
+	@Override
+	public void write(StructuredDataWriter writer) throws IOException {
+		
 	}
 }

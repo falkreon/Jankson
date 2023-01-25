@@ -24,6 +24,10 @@
 
 package blue.endless.jankson.api.document;
 
+import java.io.IOException;
+
+import blue.endless.jankson.api.io.StructuredDataWriter;
+
 public class CommentElement implements NonValueElement {
 	protected boolean isDefault = false;
 	protected String value;
@@ -77,5 +81,10 @@ public class CommentElement implements NonValueElement {
 	@Override
 	public void setDefault(boolean isDefault) {
 		this.isDefault = isDefault;
+	}
+	
+	@Override
+	public void write(StructuredDataWriter writer) throws IOException {
+		//TODO: Implement
 	}
 }

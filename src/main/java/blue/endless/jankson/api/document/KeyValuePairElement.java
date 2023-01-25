@@ -24,8 +24,11 @@
 
 package blue.endless.jankson.api.document;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import blue.endless.jankson.api.io.StructuredDataWriter;
 
 public class KeyValuePairElement implements DocumentElement {
 	protected boolean isDefault = false;
@@ -106,5 +109,18 @@ public class KeyValuePairElement implements DocumentElement {
 	@Override
 	public void setDefault(boolean isDefault) {
 		this.isDefault = isDefault;
+	}
+	
+	@Override
+	public void write(StructuredDataWriter writer) throws IOException {
+		for(NonValueElement elem : preamble) elem.write(writer);
+		
+		writer.writeKey(key);
+		
+		for(NonValueElement elem : intermission) elem.write(writer);
+		
+		writer.startValue();
+		
+		value.write(writer);
 	}
 }

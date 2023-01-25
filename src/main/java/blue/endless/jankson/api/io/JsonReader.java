@@ -28,13 +28,17 @@ import java.io.Reader;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
-import blue.endless.jankson.api.element.JsonElement;
+import javax.annotation.Nullable;
+
+import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.impl.context.ParserContext;
 
 public class JsonReader {
 	private final Reader source;
 	private final JsonReaderOptions options;
 	private Deque<ParserContext<?>> contextStack = new ArrayDeque<>();
+	private ElementType cur = ElementType.WHITESPACE;
+	private PrimitiveElement value = PrimitiveElement.NULL;
 	
 	public JsonReader(Reader source) {
 		this(source, new JsonReaderOptions());
@@ -45,11 +49,25 @@ public class JsonReader {
 		this.options = options;
 	}
 	
-	public JsonElement getValue() {
-		throw new IllegalStateException("No value is available at this location.");
+	/**
+	 * Gets the value at this location in the document.
+	 * @return the value of the element we just parsed, if it has a value. Otherwise, PrimitiveElement.NULL.
+	 */
+	public PrimitiveElement getValue() {
+		return (value==null) ? PrimitiveElement.NULL : value;
+	}
+	
+	/**
+	 * Advance one character and adjust the parser state.
+	 * @return an ElementType if we're ready to pause and give the API user some information.
+	 */
+	private @Nullable ElementType advance() {
+		return null;
 	}
 	
 	public ElementType next() {
+		
+		
 		return ElementType.OBJECT_END;
 	}
 }

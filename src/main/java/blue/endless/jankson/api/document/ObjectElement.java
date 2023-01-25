@@ -24,10 +24,13 @@
 
 package blue.endless.jankson.api.document;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.annotation.Nullable;
+
+import blue.endless.jankson.api.io.StructuredDataWriter;
 
 public class ObjectElement implements ValueElement {
 	protected boolean isDefault = false;
@@ -141,5 +144,26 @@ public class ObjectElement implements ValueElement {
 	@Override
 	public void setDefault(boolean isDefault) {
 		this.isDefault = isDefault;
+	}
+	
+	public void write(StructuredDataWriter writer) throws IOException {
+		for(NonValueElement elem : preamble) elem.write(writer);
+		
+		writer.writeObjectStart();
+		
+		for(int i=0; i<entries.size(); i++) {
+			KeyValuePairElement elem = entries.get(i);
+			writer.writeKey(elem.getKey());
+			writer.startValue();
+			elem.write(writer);
+			
+			if (i<entries.size()-1) writer.nextValue();
+		}
+		
+		for(NonValueElement elem : footer) elem.write(writer);
+		
+		writer.writeObjectEnd();
+		
+		for(NonValueElement elem : epilogue) elem.write(writer);
 	}
 }
