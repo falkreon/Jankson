@@ -15,7 +15,7 @@ public interface StructuredDataWriter {
 	/**
 	 * If we have just written a key and zero or more comments, emit the delimiter between keys and values and prepare the state to write the corresponding value.
 	 */
-	public void startValue() throws IOException;
+	public void writeKeyValueDelimiter() throws IOException;
 	
 	/**
 	 * Writes the delimiter between values in lists or the delimiter between key-value pairs in objects.

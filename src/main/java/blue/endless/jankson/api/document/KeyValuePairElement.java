@@ -27,10 +27,11 @@ package blue.endless.jankson.api.document;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import blue.endless.jankson.api.io.StructuredDataWriter;
 
-public class KeyValuePairElement implements DocumentElement {
+public class KeyValuePairElement implements DocumentElement, Map.Entry<String, ValueElement> {
 	protected boolean isDefault = false;
 	protected List<NonValueElement> preamble = new ArrayList<>();
 	protected String key;
@@ -47,6 +48,7 @@ public class KeyValuePairElement implements DocumentElement {
 		return preamble;
 	}
 	
+	@Override
 	public String getKey() {
 		return key;
 	}
@@ -59,11 +61,12 @@ public class KeyValuePairElement implements DocumentElement {
 		return intermission;
 	}
 	
+	@Override
 	public ValueElement getValue() {
 		return value;
 	}
 	
-	public DocumentElement setValue(ValueElement value) {
+	public ValueElement setValue(ValueElement value) {
 		ValueElement result = value;
 		this.value = value;
 		return result;
@@ -119,7 +122,7 @@ public class KeyValuePairElement implements DocumentElement {
 		
 		for(NonValueElement elem : intermission) elem.write(writer);
 		
-		writer.startValue();
+		writer.writeKeyValueDelimiter();
 		
 		value.write(writer);
 	}

@@ -26,13 +26,18 @@ package blue.endless.jankson.api.document;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 import javax.annotation.Nullable;
 
 import blue.endless.jankson.api.io.StructuredDataWriter;
 
-public class ObjectElement implements ValueElement {
+public class ObjectElement implements ValueElement, Map<String, ValueElement> {
 	protected boolean isDefault = false;
 	protected List<NonValueElement> preamble = new ArrayList<>();
 	protected List<KeyValuePairElement> entries = new ArrayList<>();
@@ -56,38 +61,8 @@ public class ObjectElement implements ValueElement {
 		return epilogue;
 	}
 	
-	@Nullable
-	public ValueElement get(String key) {
-		for(DocumentElement entry : entries) {
-			if (entry instanceof KeyValuePairElement) {
-				if (((KeyValuePairElement) entry).getKey().equals(key)) {
-					return ((KeyValuePairElement) entry).getValue();
-				}
-			}
-		}
-		
-		return null;
-	}
-	
-	public DocumentElement put(String key, ValueElement value) {
-		//Validate
-		if (
-				value instanceof KeyValuePairElement ||
-				value instanceof CommentElement) throw new IllegalArgumentException();
-		
-		for(DocumentElement entry : entries) {
-			if (entry instanceof KeyValuePairElement) {
-				KeyValuePairElement pair = (KeyValuePairElement) entry;
-				
-				if (pair.getKey().equals(key)) {
-					return pair.setValue(value);
-				}
-			}
-		}
-		
-		//No matching KeyValueDocumentEntry. Add one at the end of the object's sub-document
-		entries.add(new KeyValuePairElement(key, value));
-		return null;
+	public void add(KeyValuePairElement entry) {
+		entries.add(entry);
 	}
 	
 	@Override
@@ -153,8 +128,6 @@ public class ObjectElement implements ValueElement {
 		
 		for(int i=0; i<entries.size(); i++) {
 			KeyValuePairElement elem = entries.get(i);
-			writer.writeKey(elem.getKey());
-			writer.startValue();
 			elem.write(writer);
 			
 			if (i<entries.size()-1) writer.nextValue();
@@ -166,4 +139,133 @@ public class ObjectElement implements ValueElement {
 		
 		for(NonValueElement elem : epilogue) elem.write(writer);
 	}
+	
+	//implements Map {
+		@Override
+		public int size() {
+			return entries.size();
+		}
+		
+		@Override
+		public boolean isEmpty() {
+			return entries.isEmpty();
+		}
+		
+		@Override
+		public boolean containsKey(Object key) {
+			for(KeyValuePairElement elem : entries) {
+				if (elem.getKey().equals(key)) return true;
+			}
+			
+			return false;
+		}
+		
+		@Override
+		public boolean containsValue(Object value) {
+			for(KeyValuePairElement elem : entries) {
+				if (Objects.equals(elem.getValue(), value)) return true;
+			}
+			
+			return false;
+		}
+		
+		@Nullable
+		@Override
+		public ValueElement get(Object key) {
+			for(KeyValuePairElement entry : entries) {
+				if (entry.getKey().equals(key)) {
+					return entry.getValue();
+				}
+			}
+			
+			return null;
+		}
+		
+		@Nullable
+		@Override
+		public ValueElement put(String key, ValueElement value) {
+			//Validate
+			if (
+					value instanceof KeyValuePairElement ||
+					value instanceof CommentElement) throw new IllegalArgumentException();
+			
+			for(DocumentElement entry : entries) {
+				if (entry instanceof KeyValuePairElement pair) {
+					
+					if (pair.getKey().equals(key)) {
+						return pair.setValue(value);
+					}
+				}
+			}
+			
+			//No matching KeyValueDocumentEntry. Add one at the end of the object's sub-document
+			entries.add(new KeyValuePairElement(key, value));
+			return null;
+		}
+		
+		@Override
+		public ValueElement remove(Object key) {
+			KeyValuePairElement found = null;
+			for(KeyValuePairElement entry : entries) {
+				if (entry.getKey().equals(key)) {
+					found = entry;
+					break;
+				}
+			}
+			
+			if (found!=null) {
+				entries.remove(found);
+				return found.getValue();
+			} else {
+				return null;
+			}
+		}
+		
+		@Override
+		public void putAll(Map<? extends String, ? extends ValueElement> map) {
+			for(Map.Entry<? extends String, ? extends ValueElement> entry : map.entrySet()) {
+				this.put(entry.getKey(), entry.getValue());
+			}
+		}
+		
+		@Override
+		public Collection<ValueElement> values() {
+			//TODO: This isn't quite right; it's supposed to be a collection *view* into this Map.
+			ArrayList<ValueElement> result = new ArrayList<>();
+			for(KeyValuePairElement entry : entries) {
+				result.add(entry.getValue());
+			}
+			
+			return result;
+		}
+		
+		@Override
+		public Set<Entry<String, ValueElement>> entrySet() {
+			//TODO: This isn't quite right; it's supposed to be a collection *view* into this Map.
+			//We use a LinkedHashSet here to preserve ordering even though the API discourages this.
+			LinkedHashSet<Entry<String, ValueElement>> result = new LinkedHashSet<>();
+			for(KeyValuePairElement entry : entries) {
+				result.add(entry);
+			}
+			
+			return result;
+		}
+		
+		@Override
+		public void clear() {
+			entries.clear();
+		}
+		
+		@Override
+		public Set<String> keySet() {
+			//TODO: This isn't quite right; it's supposed to be a collection *view* into this Map.
+			//We use a LinkedHashSet here to preserve ordering even though the API discourages this.
+			LinkedHashSet<String> result = new LinkedHashSet<>();
+			for(KeyValuePairElement entry : entries) {
+				result.add(entry.getKey());
+			}
+			
+			return result;
+		}
+	//}
 }
