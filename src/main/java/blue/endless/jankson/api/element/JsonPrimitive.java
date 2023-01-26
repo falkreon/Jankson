@@ -35,6 +35,7 @@ import javax.annotation.Nonnull;
 import blue.endless.jankson.api.Escaper;
 import blue.endless.jankson.api.JsonGrammar;
 
+@Deprecated
 public class JsonPrimitive extends JsonElement {
 	/** Convenience instance of json "true". Don't use identity comparison (==) on these! Use equals instead. */
 	public static JsonPrimitive TRUE = new JsonPrimitive(Boolean.TRUE);

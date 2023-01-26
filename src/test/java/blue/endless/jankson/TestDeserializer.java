@@ -24,11 +24,12 @@
 
 package blue.endless.jankson;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import blue.endless.jankson.api.annotation.Deserializer;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import blue.endless.jankson.api.Jankson;
 import blue.endless.jankson.api.JsonGrammar;
 import blue.endless.jankson.api.Marshaller;
@@ -42,7 +43,7 @@ import blue.endless.jankson.api.io.JsonIOException;
 public class TestDeserializer {
 	Jankson jankson;
 	
-	@Before
+	@BeforeEach
 	public void setup() {
 		jankson = Jankson.builder().build();
 	}
@@ -96,26 +97,26 @@ public class TestDeserializer {
 		try {
 			Bar obj = jankson.fromJson(subject, Bar.class);
 			
-			Assert.assertNotNull(obj.stringDeserializer);
-			Assert.assertNotNull(obj.arrayDeserializer);
-			Assert.assertNotNull(obj.unmappedDeserializer);
-			Assert.assertNotNull(obj.defaultDeserializer);
+			Assertions.assertNotNull(obj.stringDeserializer);
+			Assertions.assertNotNull(obj.arrayDeserializer);
+			Assertions.assertNotNull(obj.unmappedDeserializer);
+			Assertions.assertNotNull(obj.defaultDeserializer);
 			
-			Assert.assertEquals("test", obj.stringDeserializer.value);
-			Assert.assertEquals("someValue", obj.arrayDeserializer.value);
-			Assert.assertEquals("someOptValue", obj.arrayDeserializer.opt);
-			Assert.assertEquals("", obj.unmappedDeserializer.value);
-			Assert.assertEquals("someValue", obj.defaultDeserializer.value);
-			Assert.assertEquals("someOptValue", obj.defaultDeserializer.opt);
+			Assertions.assertEquals("test", obj.stringDeserializer.value);
+			Assertions.assertEquals("someValue", obj.arrayDeserializer.value);
+			Assertions.assertEquals("someOptValue", obj.arrayDeserializer.opt);
+			Assertions.assertEquals("", obj.unmappedDeserializer.value);
+			Assertions.assertEquals("someValue", obj.defaultDeserializer.value);
+			Assertions.assertEquals("someOptValue", obj.defaultDeserializer.opt);
 		} catch (SyntaxError ex) {
-			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 	}
 	
 	/**
 	 * Just to be clear: If we can't unpack a key for any reason, Carefully should throw an error.
 	 */
-	@Test(expected = JsonIOException.class)
+	@Test
 	public void ensureErrorOnMissingDeserializer() throws SyntaxError, JsonIOException {
 		String subject =
 				"{\n" + 
@@ -129,8 +130,10 @@ public class TestDeserializer {
 				"\n" + 
 				"}";
 		
-		@SuppressWarnings("unused")
-		Bar obj = jankson.fromJsonCarefully(subject, Bar.class);
+		Assertions.assertThrows(
+				JsonIOException.class,
+				()->jankson.fromJsonCarefully(subject, Bar.class)
+				);
 	}
 	
 	public static class Baz {
@@ -155,15 +158,15 @@ public class TestDeserializer {
 			JsonElement a = result.get("a");
 			JsonElement b = result.get("b");
 			JsonElement c = result.get("c");
-			Assert.assertTrue("'Infinity' parses to a JsonPrimitive", a instanceof JsonPrimitive);
-			Assert.assertTrue("'-Infinity' parses to a JsonPrimitive", b instanceof JsonPrimitive);
-			Assert.assertTrue("'NaN' parses to a JsonPrimitive", c instanceof JsonPrimitive);
+			Assertions.assertTrue(a instanceof JsonPrimitive, "'Infinity' parses to a JsonPrimitive");
+			Assertions.assertTrue(b instanceof JsonPrimitive, "'-Infinity' parses to a JsonPrimitive");
+			Assertions.assertTrue(c instanceof JsonPrimitive, "'NaN' parses to a JsonPrimitive");
 			
-			Assert.assertEquals(Double.POSITIVE_INFINITY, ((JsonPrimitive)a).asDouble(-1), 1);
-			Assert.assertEquals(Double.NEGATIVE_INFINITY, ((JsonPrimitive)b).asDouble(-1), 1);
-			Assert.assertEquals(Double.NaN, ((JsonPrimitive)c).asDouble(-1), 1);
+			Assertions.assertEquals(Double.POSITIVE_INFINITY, ((JsonPrimitive)a).asDouble(-1), 1);
+			Assertions.assertEquals(Double.NEGATIVE_INFINITY, ((JsonPrimitive)b).asDouble(-1), 1);
+			Assertions.assertEquals(Double.NaN, ((JsonPrimitive)c).asDouble(-1), 1);
 		} catch (SyntaxError ex) {
-			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 	}
 	
@@ -174,9 +177,9 @@ public class TestDeserializer {
 	public void testLoadElementNonnull() throws SyntaxError {
 		Object x;
 		x = jankson.loadElement("1");
-		Assert.assertTrue("'1' must be a JsonPrimitive", x instanceof JsonPrimitive);
+		Assertions.assertTrue(x instanceof JsonPrimitive, "'1' must be a JsonPrimitive");
 		x = jankson.loadElement("[1]");
-		Assert.assertTrue("'[1]' must be a jsonArray", x instanceof JsonArray);
+		Assertions.assertTrue(x instanceof JsonArray, "'[1]' must be a jsonArray");
 	}
 	
 	/**
@@ -187,10 +190,10 @@ public class TestDeserializer {
 	@Test
 	public void testUnicodeEscapes() throws SyntaxError {
 		String example = "{ \"test\": \"\\u003C0\" }";
-		Assert.assertEquals("Unicode escapes must be parsed correctly.", "\"<0\"", jankson.load(example).get("test").toJson());
+		Assertions.assertEquals("\"<0\"", jankson.load(example).get("test").toJson(), "Unicode escapes must be parsed correctly.");
 		
 		String slightlyUnescaped = ((JsonPrimitive)jankson.load("{'test': \"\\uu003C\" }").get("test")).asString();
-		Assert.assertEquals("Unicode escapes which are themselves escaped must be unescaped exactly one level.", "\\u003c", slightlyUnescaped); //implied here is that hex digit case MUST be lost
+		Assertions.assertEquals("\\u003c", slightlyUnescaped, "Unicode escapes which are themselves escaped must be unescaped exactly one level."); //implied here is that hex digit case MUST be lost
 	}
 	
 	/**
@@ -206,7 +209,7 @@ public class TestDeserializer {
 		
 		JsonObject recyc = jankson.load(obj.toJson(JsonGrammar.JSON5));
 		
-		Assert.assertEquals(obj.toJson(JsonGrammar.JSON5), recyc.toJson(JsonGrammar.JSON5));
+		Assertions.assertEquals(obj.toJson(JsonGrammar.JSON5), recyc.toJson(JsonGrammar.JSON5));
 	}
 
 	@Test
@@ -223,23 +226,23 @@ public class TestDeserializer {
 		try {
 			Bar obj = Jankson.builder().allowBareRootObject().build().fromJson(subject, Bar.class);
 
-			Assert.assertNotNull(obj.stringDeserializer);
-			Assert.assertNotNull(obj.arrayDeserializer);
-			Assert.assertNotNull(obj.unmappedDeserializer);
-			Assert.assertNotNull(obj.defaultDeserializer);
+			Assertions.assertNotNull(obj.stringDeserializer);
+			Assertions.assertNotNull(obj.arrayDeserializer);
+			Assertions.assertNotNull(obj.unmappedDeserializer);
+			Assertions.assertNotNull(obj.defaultDeserializer);
 
-			Assert.assertEquals("test", obj.stringDeserializer.value);
-			Assert.assertEquals("someValue", obj.arrayDeserializer.value);
-			Assert.assertEquals("someOptValue", obj.arrayDeserializer.opt);
-			Assert.assertEquals("", obj.unmappedDeserializer.value);
-			Assert.assertEquals("someValue", obj.defaultDeserializer.value);
-			Assert.assertEquals("someOptValue", obj.defaultDeserializer.opt);
+			Assertions.assertEquals("test", obj.stringDeserializer.value);
+			Assertions.assertEquals("someValue", obj.arrayDeserializer.value);
+			Assertions.assertEquals("someOptValue", obj.arrayDeserializer.opt);
+			Assertions.assertEquals("", obj.unmappedDeserializer.value);
+			Assertions.assertEquals("someValue", obj.defaultDeserializer.value);
+			Assertions.assertEquals("someOptValue", obj.defaultDeserializer.opt);
 		} catch (SyntaxError ex) {
-			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 		try {
 			Jankson.builder().build().fromJson(subject, Bar.class);
-			Assert.fail("Should not successfully load bare root object without enabling option");
+			Assertions.fail("Should not successfully load bare root object without enabling option");
 		} catch (SyntaxError ex) {
 		}
 	}

@@ -44,6 +44,7 @@ import blue.endless.jankson.api.JsonGrammar;
 import blue.endless.jankson.api.Marshaller;
 import blue.endless.jankson.impl.serializer.CommentSerializer;
 
+@Deprecated
 public class JsonObject extends JsonElement implements Map<String, JsonElement> {
 	/** This pattern matches JsonObject keys that are permitted to appear unquoted */
 	private static final Predicate<String> CAN_BE_UNQUOTED = Pattern.compile("^[a-zA-Z0-9]+$").asPredicate();

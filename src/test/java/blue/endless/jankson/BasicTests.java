@@ -32,12 +32,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
 
-import blue.endless.jankson.api.annotation.NonnullByDefault;
-import blue.endless.jankson.api.annotation.Nullable;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import blue.endless.jankson.api.annotation.SerializedName;
 import blue.endless.jankson.api.Jankson;
 import blue.endless.jankson.api.JsonGrammar;
@@ -55,20 +56,20 @@ import blue.endless.jankson.impl.TypeMagic;
 public class BasicTests {
 	Jankson jankson;
 	
-	@Before
+	@BeforeEach
 	public void setup() {
 		jankson = Jankson.builder().build();
 	}
 	
 	@Test
 	public void testPrimitiveEquality() {
-		Assert.assertEquals("Equal objects should produce equal json primitives", new JsonPrimitive("foo"), new JsonPrimitive(new String("foo"))); //Ensure no interning
-		Assert.assertEquals("Equal objects should produce equal json primitives", new JsonPrimitive(Double.valueOf(42)), new JsonPrimitive(Double.valueOf(42)));
+		Assertions.assertEquals(new JsonPrimitive("foo"), new JsonPrimitive(new String("foo")), "Equal objects should produce equal json primitives"); //Ensure no interning
+		Assertions.assertEquals(new JsonPrimitive(Double.valueOf(42)), new JsonPrimitive(Double.valueOf(42)), "Equal objects should produce equal json primitives");
 		
-		Assert.assertNotEquals("Non-Equal objects should produce non-equal json primitives", new JsonPrimitive("foo"), new JsonPrimitive("bar"));
-		Assert.assertNotEquals("Non-Equal objects should produce non-equal json primitives", new JsonPrimitive(42.0), new JsonPrimitive(42.1));
+		Assertions.assertNotEquals(new JsonPrimitive("foo"), new JsonPrimitive("bar"), "Non-Equal objects should produce non-equal json primitives");
+		Assertions.assertNotEquals(new JsonPrimitive(42.0), new JsonPrimitive(42.1), "Non-Equal objects should produce non-equal json primitives");
 		
-		Assert.assertNotEquals("Intended quirk behavior: 42.0 != 42", new JsonPrimitive(Double.valueOf(42)), Long.valueOf(42));
+		Assertions.assertNotEquals(new JsonPrimitive(Double.valueOf(42)), Long.valueOf(42), "Intended quirk behavior: 42.0 != 42");
 	}
 	
 	
@@ -79,13 +80,13 @@ public class BasicTests {
 		try {
 			JsonObject after = jankson.load(before);
 			
-			Assert.assertTrue("Object should contain two keys", after.keySet().size()==2);
-			Assert.assertTrue("Object should contain mapping 'foo': 'bar'", after.get("foo").equals(new JsonPrimitive("bar")));
-			Assert.assertTrue("Object should contain mapping 'baz': 'bux'", after.get("baz").equals(new JsonPrimitive("bux")));
-			Assert.assertNull("Object shouldn't contain keys that weren't defined", after.get("bar"));
+			Assertions.assertTrue(after.keySet().size()==2, "Object should contain two keys");
+			Assertions.assertTrue(after.get("foo").equals(new JsonPrimitive("bar")), "Object should contain mapping 'foo': 'bar'");
+			Assertions.assertTrue(after.get("baz").equals(new JsonPrimitive("bux")), "Object should contain mapping 'baz': 'bux'");
+			Assertions.assertNull(after.get("bar"), "Object shouldn't contain keys that weren't defined");
 			
 		} catch (SyntaxError ex) {
-			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 	}
 	
@@ -96,18 +97,18 @@ public class BasicTests {
 		try {
 			JsonObject after = jankson.load(before);
 			
-			Assert.assertTrue("Object should contain 8 keys", after.keySet().size()==8);
-			Assert.assertTrue("Object should contain mapping 'a': 'hello'", after.get("a").equals(new JsonPrimitive("hello")));
-			Assert.assertTrue("Object should contain mapping 'b': 42", after.get("b").equals(new JsonPrimitive(Long.valueOf(42))));
-			Assert.assertTrue("Object should contain mapping 'c': 42.0", after.get("c").equals(new JsonPrimitive(Double.valueOf(42.0))));
-			Assert.assertTrue("Object should contain mapping 'd': {}", after.get("d").equals(new JsonObject()));
-			Assert.assertTrue("Object should contain mapping 'e': []", after.get("e").equals(new JsonArray()));
-			Assert.assertTrue("Object should contain mapping 'f': true", after.get("f").equals(new JsonPrimitive(Boolean.TRUE)));
-			Assert.assertTrue("Object should contain mapping 'g': false", after.get("g").equals(new JsonPrimitive(Boolean.FALSE)));
-			Assert.assertTrue("Object should contain mapping 'h': null", after.get("h").equals(JsonNull.INSTANCE));
+			Assertions.assertTrue(after.keySet().size()==8, "Object should contain 8 keys");
+			Assertions.assertTrue(after.get("a").equals(new JsonPrimitive("hello")), "Object should contain mapping 'a': 'hello'");
+			Assertions.assertTrue(after.get("b").equals(new JsonPrimitive(Long.valueOf(42))), "Object should contain mapping 'b': 42");
+			Assertions.assertTrue(after.get("c").equals(new JsonPrimitive(Double.valueOf(42.0))), "Object should contain mapping 'c': 42.0");
+			Assertions.assertTrue(after.get("d").equals(new JsonObject()), "Object should contain mapping 'd': {}");
+			Assertions.assertTrue(after.get("e").equals(new JsonArray()), "Object should contain mapping 'e': []");
+			Assertions.assertTrue(after.get("f").equals(new JsonPrimitive(Boolean.TRUE)), "Object should contain mapping 'f': true");
+			Assertions.assertTrue(after.get("g").equals(new JsonPrimitive(Boolean.FALSE)), "Object should contain mapping 'g': false");
+			Assertions.assertTrue(after.get("h").equals(JsonNull.INSTANCE), "Object should contain mapping 'h': null");
 			
 		} catch (SyntaxError ex) {
-			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 	}
 	
@@ -118,23 +119,23 @@ public class BasicTests {
 		try {
 			JsonObject after = jankson.load(before);
 			
-			Assert.assertTrue("Object should contain one key", after.keySet().size()==1);
+			Assertions.assertTrue(after.keySet().size()==1, "Object should contain one key");
 			
 			JsonArray array = after.recursiveGet(JsonArray.class, "a");
-			Assert.assertNotNull("Recursive get of just 'a' should obtain an array.", array);
-			Assert.assertEquals("Array should contain all declared elements and no more.", 8, array.size());
+			Assertions.assertNotNull(array, "Recursive get of just 'a' should obtain an array.");
+			Assertions.assertEquals(8, array.size(), "Array should contain all declared elements and no more.");
 			
-			Assert.assertEquals("Array should contain 'hello' at position 0", new JsonPrimitive("hello"), array.get(0));
-			Assert.assertEquals("Array should contain 42 at position 1", new JsonPrimitive(Long.valueOf(42)), array.get(1));
-			Assert.assertEquals("Array should contain 42.0 at position 2", new JsonPrimitive(Double.valueOf(42)), array.get(2));
-			Assert.assertEquals("Array should contain {} at position 3", new JsonObject(), array.get(3));
-			Assert.assertEquals("Array should contain [] at position 4", new JsonArray(), array.get(4));
-			Assert.assertEquals("Array should contain true at position 5", new JsonPrimitive(Boolean.TRUE), array.get(5));
-			Assert.assertEquals("Array should contain false at position 6", new JsonPrimitive(Boolean.FALSE), array.get(6));
-			Assert.assertEquals("Array should contain null at position 7", JsonNull.INSTANCE, array.get(7));
+			Assertions.assertEquals(new JsonPrimitive("hello"), array.get(0), "Array should contain 'hello' at position 0");
+			Assertions.assertEquals(new JsonPrimitive(Long.valueOf(42)), array.get(1), "Array should contain 42 at position 1");
+			Assertions.assertEquals(new JsonPrimitive(Double.valueOf(42)), array.get(2),"Array should contain 42.0 at position 2");
+			Assertions.assertEquals(new JsonObject(), array.get(3), "Array should contain {} at position 3");
+			Assertions.assertEquals(new JsonArray(), array.get(4), "Array should contain [] at position 4");
+			Assertions.assertEquals(new JsonPrimitive(Boolean.TRUE), array.get(5), "Array should contain true at position 5");
+			Assertions.assertEquals(new JsonPrimitive(Boolean.FALSE), array.get(6), "Array should contain false at position 6");
+			Assertions.assertEquals(JsonNull.INSTANCE, array.get(7), "Array should contain null at position 7");
 			
 		} catch (SyntaxError ex) {
-			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 	}
 	
@@ -144,20 +145,20 @@ public class BasicTests {
 			String before = "{ /* Hello World */ 'foo': true }";
 			JsonObject after = jankson.load(before);
 			
-			Assert.assertEquals("Comment should be parsed and attributed to child 'foo'", "Hello World", after.getComment("foo"));
+			Assertions.assertEquals("Hello World", after.getComment("foo"), "Comment should be parsed and attributed to child 'foo'");
 			
 			before = "{ /*Hello World */ 'foo': true }";
 			after = jankson.load(before);
 			
-			Assert.assertEquals("Comment should still be parsed and attributed to child 'foo'", "Hello World", after.getComment("foo"));
+			Assertions.assertEquals("Hello World", after.getComment("foo"), "Comment should still be parsed and attributed to child 'foo'");
 			
 			before = "{ //\tHello World \n 'foo': true }";
 			after = jankson.load(before);
 			
-			Assert.assertEquals("Single-line comment should be parsed and attributed to child 'foo'", "Hello World", after.getComment("foo"));
+			Assertions.assertEquals("Hello World", after.getComment("foo"), "Single-line comment should be parsed and attributed to child 'foo'");
 			
 		} catch (SyntaxError ex) {
-			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 	}
 	
@@ -168,16 +169,16 @@ public class BasicTests {
 			JsonObject parsed = jankson.load(subject);
 			JsonPrimitive prim = parsed.recursiveGet(JsonPrimitive.class, "a.a.a.a.a.a.a.a");
 			
-			Assert.assertEquals(new JsonPrimitive("Hello"), prim);
+			Assertions.assertEquals(new JsonPrimitive("Hello"), prim);
 			
 			JsonPrimitive notPrim = parsed.recursiveGet(JsonPrimitive.class, "a.a.a.a.a.a.a.a.a");
-			Assert.assertNull(notPrim);
+			Assertions.assertNull(notPrim);
 			
 			notPrim = parsed.recursiveGet(JsonPrimitive.class, "a.a.a.a.a.a.a");
-			Assert.assertNull(notPrim);
+			Assertions.assertNull(notPrim);
 			
 		} catch (SyntaxError ex) {
-			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 	}
 	
@@ -186,19 +187,20 @@ public class BasicTests {
 		try {
 			String subject = "{ a: { a: { a: 'Hello' } } }";
 			String stringResult = jankson.load(subject).recursiveGet(String.class, "a.a.a");
-			Assert.assertEquals("Should get the String 'Hello' back", "Hello", stringResult);
+			Assertions.assertEquals("Hello", stringResult, "Should get the String 'Hello' back");
 			
 			subject = "{ a: { a: { a: 42 } } }";
 			Integer intResult = jankson.load(subject).recursiveGet(Integer.class, "a.a.a");
-			Assert.assertEquals("Should get the Integer 42 back", Integer.valueOf(42), intResult);
+			Assertions.assertEquals(Integer.valueOf(42), intResult, "Should get the Integer 42 back");
 			
-			Assert.assertEquals("Should get the Double 42 back", Double.valueOf(42), 
-					jankson.load(subject).recursiveGet(Double.class, "a.a.a"));
+			Assertions.assertEquals(Double.valueOf(42), 
+					jankson.load(subject).recursiveGet(Double.class, "a.a.a"),
+					"Should get the Double 42 back");
 			
 			
 			
 		} catch (SyntaxError ex) {
-			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 	}
 	
@@ -212,9 +214,9 @@ public class BasicTests {
 			String subjectTwo = "{ b: 12 }";
 			JsonObject parsedTwo = jankson.load(subjectTwo);
 			
-			Assert.assertNull(parsedTwo.get("a"));
+			Assertions.assertNull(parsedTwo.get("a"));
 		} catch (SyntaxError ex) {
-			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 	}
 	
@@ -224,19 +226,19 @@ public class BasicTests {
 			String subject = "{ mods: [{name: 'alf' version:'1.12.2_v143.6'} {name:'bux', version:false}]}";
 			JsonObject parsed = jankson.load(subject);
 			
-			Assert.assertNotNull(parsed);
-			Assert.assertNotNull(parsed.get("mods"));
+			Assertions.assertNotNull(parsed);
+			Assertions.assertNotNull(parsed.get("mods"));
 			
-			Assert.assertEquals(JsonArray.class, parsed.get("mods").getClass());
+			Assertions.assertEquals(JsonArray.class, parsed.get("mods").getClass());
 			
 			JsonArray mods = parsed.recursiveGet(JsonArray.class, "mods");
-			Assert.assertEquals(2, mods.size());
+			Assertions.assertEquals(2, mods.size());
 			
 			//TODO: Add more marshalling logic to arrays
 			//JsonElement alfMod = mods.get(0);
 			
 		} catch (SyntaxError ex) {
-			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 	}
 	
@@ -250,17 +252,17 @@ public class BasicTests {
 	public void testArraySerialization() {
 		int[] intArray = new int[] {3, 2, 1};
 		String serializedIntArray = MarshallerImpl.getFallback().serialize(intArray).toString();
-		Assert.assertEquals("[ 3, 2, 1 ]", serializedIntArray);
+		Assertions.assertEquals("[ 3, 2, 1 ]", serializedIntArray);
 		
 		Void[] voidArray = new Void[] {null, null}; //Yes, I realize this is black magic. We *must not* simply break at the first sign of black magic.
 		String serializedVoidArray = MarshallerImpl.getFallback().serialize(voidArray).toString();
-		Assert.assertEquals("[ null, null ]", serializedVoidArray);
+		Assertions.assertEquals("[ null, null ]", serializedVoidArray);
 		
 		List<Double[]> doubleArrayList = new ArrayList<Double[]>();
 		doubleArrayList.add(new Double[] {1.0, 2.0, 3.0});
 		doubleArrayList.add(new Double[] {4.0, 5.0});
 		String serializedDoubleArrayList = MarshallerImpl.getFallback().serialize(doubleArrayList).toString();
-		Assert.assertEquals("[ [ 1.0, 2.0, 3.0 ], [ 4.0, 5.0 ] ]", serializedDoubleArrayList);
+		Assertions.assertEquals("[ [ 1.0, 2.0, 3.0 ], [ 4.0, 5.0 ] ]", serializedDoubleArrayList);
 	}
 	
 	@Test
@@ -269,10 +271,10 @@ public class BasicTests {
 		intHashMap.put("foo", 1);
 		intHashMap.put("bar", 2);
 		JsonElement serialized = MarshallerImpl.getFallback().serialize(intHashMap);
-		Assert.assertTrue(serialized instanceof JsonObject);
+		Assertions.assertTrue(serialized instanceof JsonObject);
 		JsonObject obj = (JsonObject)serialized;
-		Assert.assertEquals(new JsonPrimitive(1L), obj.get("foo"));
-		Assert.assertEquals(new JsonPrimitive(2L), obj.get("bar"));
+		Assertions.assertEquals(new JsonPrimitive(1L), obj.get("foo"));
+		Assertions.assertEquals(new JsonPrimitive(2L), obj.get("bar"));
 	}
 	
 	private static class CommentedClass {
@@ -284,7 +286,7 @@ public class BasicTests {
 	public void testSerializedComments() {
 		CommentedClass commented = new CommentedClass();
 		String serialized = MarshallerImpl.getFallback().serialize(commented).toJson(true, false, 0);
-		Assert.assertEquals("{ /* This is a comment. */ \"foo\": \"what?\" }", serialized);
+		Assertions.assertEquals("{ /* This is a comment. */ \"foo\": \"what?\" }", serialized);
 	}
 	
 	private enum ExampleEnum {
@@ -298,7 +300,7 @@ public class BasicTests {
 	public void testSerializeEnums() {
 		String serialized = MarshallerImpl.getFallback().serialize(ExampleEnum.CAT).toJson();
 		
-		Assert.assertEquals("\"CAT\"", serialized);
+		Assertions.assertEquals("\"CAT\"", serialized);
 	}
 	
 	@Test
@@ -308,10 +310,10 @@ public class BasicTests {
 			JsonObject deserialized = jankson.load(serialized);
 			
 			ExampleEnum recovered = deserialized.get(ExampleEnum.class, "aProperty");
-			Assert.assertEquals(ExampleEnum.DAY, recovered);
+			Assertions.assertEquals(ExampleEnum.DAY, recovered);
 			
 		} catch (SyntaxError ex) {
-			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 	}
 	
@@ -338,10 +340,10 @@ public class BasicTests {
 			String expected = "{ \"c\": \"test\", \"d\": { \"f\": \"test\" }, \"h\": [ 2, 3 ] }";
 			
 			String actual = baseObj.getDelta(defaultObj).toJson();
-			Assert.assertEquals(expected, actual);
+			Assertions.assertEquals(expected, actual);
 			
 		} catch (SyntaxError ex) {
-			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 	}
 	
@@ -350,11 +352,11 @@ public class BasicTests {
 		try {
 			JsonObject subject = jankson.load("{ a: [1, 2, 3, 4] }");
 			int[] maybe = subject.get(int[].class, "a");
-			Assert.assertNotNull(maybe);
-			Assert.assertArrayEquals(new int[] {1,2,3,4}, maybe);
+			Assertions.assertNotNull(maybe);
+			Assertions.assertArrayEquals(new int[] {1,2,3,4}, maybe);
 			
 		} catch (SyntaxError ex) {
-			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 	}
 	
@@ -391,9 +393,9 @@ public class BasicTests {
 			String serialized = subject.toJson();
 			JsonObject result = jankson.load(serialized);
 			
-			Assert.assertEquals(subject, result);
+			Assertions.assertEquals(subject, result);
 		} catch (SyntaxError ex) {
-			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 	}
 	
@@ -403,9 +405,9 @@ public class BasicTests {
 		String expected = "a\tb\nc\\";
 		try {
 			JsonObject unpacked = jankson.load(subject);
-			Assert.assertEquals(expected, unpacked.get(String.class, "foo"));
+			Assertions.assertEquals(expected, unpacked.get(String.class, "foo"));
 		} catch (SyntaxError ex) {
-			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 	}
 	
@@ -417,7 +419,7 @@ public class BasicTests {
 		subject.put("foo", new JsonPrimitive(inputString));
 		String actual = subject.toJson(false, false);
 		
-		Assert.assertEquals(expected, actual);
+		Assertions.assertEquals(expected, actual);
 	}
 	/*
 	@Test
@@ -463,12 +465,12 @@ public class BasicTests {
 		try {
 			JsonObject parsed = jankson.load(subject);
 			
-			Assert.assertEquals(Integer.valueOf(-1), parsed.get(Integer.class, "foo"));
+			Assertions.assertEquals(Integer.valueOf(-1), parsed.get(Integer.class, "foo"));
 			int[] array = parsed.get(int[].class, "bar");
-			Assert.assertArrayEquals(new int[] {-1, -3}, array);
+			Assertions.assertArrayEquals(new int[] {-1, -3}, array);
 			
 		} catch (SyntaxError ex) {
-			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 		
 	}
@@ -505,7 +507,7 @@ public class BasicTests {
 				"	]\n" + 
 				"}";
 		
-		Assert.assertEquals(expected, actual);
+		Assertions.assertEquals(expected, actual);
 	}
 	
 	@Test
@@ -520,7 +522,7 @@ public class BasicTests {
 				"	\"baz\": \"bux\",\n" + //Trailing commas are emitted in JSON5 grammar
 				"}";
 		
-		Assert.assertEquals(expected, actual);
+		Assertions.assertEquals(expected, actual);
 	}
 	
 	@Test
@@ -536,7 +538,7 @@ public class BasicTests {
 				"	\"foo\": \"bar\",\n" + //Again, trailing comma per JSON5
 				"}";
 		
-		Assert.assertEquals(expected, actual);
+		Assertions.assertEquals(expected, actual);
 	}
 	
 	@Test
@@ -552,7 +554,7 @@ public class BasicTests {
 				"	\"foo\",\n" + //Trailing comma per JSON5
 				"]";
 		
-		Assert.assertEquals(expected, actual);
+		Assertions.assertEquals(expected, actual);
 	}
 	
 	private static class TestClass {
@@ -580,9 +582,9 @@ public class BasicTests {
 			String serialized = "{ \"strings\": [ \"a\", \"b\", \"c\" ], \"scripts\": { \"arabic\": \"ARABIC\" }, \"queue\": [ \"FUN\" ] }";
 			JsonObject subject = jankson.load(serialized);
 			TestClass object = jankson.fromJson(subject, TestClass.class);
-			Assert.assertEquals("Reserialized form must match original serialized form.", serialized, jankson.toJson(object).toString());
+			Assertions.assertEquals(serialized, jankson.toJson(object).toString(), "Reserialized form must match original serialized form.");
 		} catch (SyntaxError ex) {
-			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 	}
 	
@@ -629,18 +631,18 @@ public class BasicTests {
 		GenericArrayContainer<String> container = new GenericArrayContainer<>();
 		Type genericArrayType = container.getClass().getFields()[0].getGenericType();
 		Class<?> genericArrayClass = TypeMagic.classForType(genericArrayType);
-		Assert.assertEquals("Recovered generic array type should be Object[].", Object[].class, genericArrayClass);
+		Assertions.assertEquals(Object[].class, genericArrayClass, "Recovered generic array type should be Object[].");
 		
 		Type intArrayType = container.getClass().getFields()[1].getGenericType();
 		Class<?> intArrayClass = TypeMagic.classForType(intArrayType);
-		Assert.assertEquals("Recovered array type should be int[].", int[].class, intArrayClass);
+		Assertions.assertEquals(int[].class, intArrayClass, "Recovered array type should be int[].");
 		
 		Type wildcardType = container.getClass().getMethods()[0].getGenericReturnType();
 		Class<?> wildcardArrayClass = TypeMagic.classForType(wildcardType);
-		Assert.assertEquals("Recovered wildcard array type should be Object[].", Object[].class, wildcardArrayClass);
+		Assertions.assertEquals(Object[].class, wildcardArrayClass, "Recovered wildcard array type should be Object[].");
 	}
 	
-	@NonnullByDefault
+	@ParametersAreNonnullByDefault
 	private static class NullContainer {
 		@Nullable
 		public String nullable = "";
@@ -655,10 +657,10 @@ public class BasicTests {
 		try {
 			NullContainer subject = jankson.fromJson(serialized, NullContainer.class);
 			
-			Assert.assertNull(subject.nullable);
-			Assert.assertNotNull(subject.nonnull);
+			Assertions.assertNull(subject.nullable);
+			Assertions.assertNotNull(subject.nonnull);
 		} catch (SyntaxError ex) {
-			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 		
 	}
@@ -670,11 +672,11 @@ public class BasicTests {
 		try {
 			JsonObject subject = jankson.load(serialized);
 			JsonElement parsed = subject.get("a-multiline-string");
-			Assert.assertTrue("String element should be a JsonPrimitive.", parsed instanceof JsonPrimitive); //not the test
-			Assert.assertEquals("Multiline String should parse to well-known result.", "foobar", ((JsonPrimitive)parsed).getValue().toString());
+			Assertions.assertTrue(parsed instanceof JsonPrimitive, "String element should be a JsonPrimitive."); //not the test
+			Assertions.assertEquals("foobar", ((JsonPrimitive)parsed).getValue().toString(), "Multiline String should parse to well-known result.");
 			
 		} catch (SyntaxError ex) {
-			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 	}
 	
@@ -699,26 +701,26 @@ public class BasicTests {
 		
 		try {
 			JsonObject subject = jankson.load(serialized);
-			Assert.assertEquals("\"and you can quote me on that\"", subject.get("unquoted").toString());
-			Assert.assertEquals("\"I can use \\\"double quotes\\\" here\"", subject.get("singleQuotes").toString());
-			Assert.assertEquals("\"Look, Mom! No \\\\n's!\"", subject.get("lineBreaks").toString());
-			Assert.assertEquals(Long.toString(0xdecaf), subject.get("hexadecimal").toString());
+			Assertions.assertEquals("\"and you can quote me on that\"", subject.get("unquoted").toString());
+			Assertions.assertEquals("\"I can use \\\"double quotes\\\" here\"", subject.get("singleQuotes").toString());
+			Assertions.assertEquals("\"Look, Mom! No \\\\n's!\"", subject.get("lineBreaks").toString());
+			Assertions.assertEquals(Long.toString(0xdecaf), subject.get("hexadecimal").toString());
 			//Floating point gets a little hairy, so let's use floating point comparison for this
 			double leading = (Double) ((JsonPrimitive)subject.get("leadingDecimalPoint")).getValue();
 			double trailing = (Double) ((JsonPrimitive)subject.get("andTrailing")).getValue();
 			
-			Assert.assertEquals(0.8675309, leading, 0.00000001);
-			Assert.assertEquals(8675309.0, trailing, 0.00000001);
+			Assertions.assertEquals(0.8675309, leading, 0.00000001);
+			Assertions.assertEquals(8675309.0, trailing, 0.00000001);
 			
 			long positiveSign = (Long) ((JsonPrimitive)subject.get("positiveSign")).getValue();
-			Assert.assertEquals(1L, positiveSign);
+			Assertions.assertEquals(1L, positiveSign);
 			
-			Assert.assertEquals("\"in objects\"", subject.get("trailingComma").toString());
-			Assert.assertEquals("[ \"arrays\" ]", subject.get("andIn").toString());
+			Assertions.assertEquals("\"in objects\"", subject.get("trailingComma").toString());
+			Assertions.assertEquals("[ \"arrays\" ]", subject.get("andIn").toString());
 			
-			Assert.assertEquals("\"with JSON\"", subject.get("backwardsCompatible").toString());
+			Assertions.assertEquals("\"with JSON\"", subject.get("backwardsCompatible").toString());
 		} catch (SyntaxError ex) {
-			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 	}
 	
@@ -729,9 +731,9 @@ public class BasicTests {
 		try {
 			JsonObject subject = jankson.load(arrayDuplicates);
 			
-			Assert.assertEquals(arrayDuplicates, subject.toJson(false, false));
+			Assertions.assertEquals(arrayDuplicates, subject.toJson(false, false));
 		} catch (SyntaxError ex) {
-			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 	}
 	
@@ -744,14 +746,14 @@ public class BasicTests {
 	@Test
 	public void preventStaticAccess() {
 		JsonElement elem = jankson.toJson(new StaticAccess());
-		Assert.assertEquals("{ \"bar\": 4 }", elem.toJson(false, false));
+		Assertions.assertEquals("{ \"bar\": 4 }", elem.toJson(false, false));
 		
 		try {
 			JsonObject subject = jankson.load("{ \"foo\": 1 }");
 			StaticAccess deserialized = jankson.fromJson("{ \"foo\": 1 }", StaticAccess.class);
-			Assert.assertEquals(8, StaticAccess.foo);
+			Assertions.assertEquals(8, StaticAccess.foo);
 		} catch (SyntaxError ex) {
-			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 	}
 	
@@ -778,7 +780,7 @@ public class BasicTests {
 		JsonElement serialized = jankson.toJson(subject);
 		
 		NestedObjectOuter unpacked = jankson.fromJson((JsonObject)serialized, NestedObjectOuter.class);
-		Assert.assertNotNull(unpacked.getInner());
+		Assertions.assertNotNull(unpacked.getInner());
 	}
 	
 	private static class ElementContainerClass {
@@ -800,19 +802,19 @@ public class BasicTests {
 		}).build();
 		try {
 			JsonObject obj = adaptedJankson.load("{ 'enclosed': [ {'a': 'foo' } ] }");
-			Assert.assertEquals(obj.getMarshaller(), adaptedJankson.getMarshaller());
-			Assert.assertEquals(((JsonArray)obj.get("enclosed")).getMarshaller(), adaptedJankson.getMarshaller());
+			Assertions.assertEquals(obj.getMarshaller(), adaptedJankson.getMarshaller());
+			Assertions.assertEquals(((JsonArray)obj.get("enclosed")).getMarshaller(), adaptedJankson.getMarshaller());
 			ElementClass test = adaptedJankson.getMarshaller().marshall(ElementClass.class, ((JsonArray)obj.get("enclosed")).get(0));
-			Assert.assertEquals("ADAPTER RAN", test.a);
+			Assertions.assertEquals("ADAPTER RAN", test.a);
 			
 			ElementContainerClass result = adaptedJankson.getMarshaller().marshall(ElementContainerClass.class, obj);
 			
 			//EnclosingAdaptedClass result = adaptedJankson.fromJson("{ 'enclosed': [ {'a': 'foo' } ] }", EnclosingAdaptedClass.class);
 			
 			
-			Assert.assertEquals("ADAPTER RAN", result.enclosed.get(0).a);
+			Assertions.assertEquals("ADAPTER RAN", result.enclosed.get(0).a);
 		} catch (SyntaxError ex) {
-			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 		//Assert.assertTrue(adapterRan);
 	}
@@ -829,7 +831,7 @@ public class BasicTests {
 		try {
 			JsonObject result = jankson.load(subject);
 		} catch (SyntaxError ex) {
-			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 	}
 	
@@ -849,12 +851,12 @@ public class BasicTests {
 				"}";
 		try {
 			NameTest object = jankson.fromJson(subject, NameTest.class);
-			Assert.assertEquals(31, object.fooBar);
+			Assertions.assertEquals(31, object.fooBar);
 			
 			String out = jankson.toJson(object).toJson(JsonGrammar.JSON5);
-			Assert.assertEquals(subject, out);
+			Assertions.assertEquals(subject, out);
 		} catch (SyntaxError ex) {
-			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 	}
 	
@@ -871,10 +873,10 @@ public class BasicTests {
 			String foo_bar = obj.get(String.class, "foo_bar");
 			String baz = obj.get(String.class, "~");
 			
-			Assert.assertEquals("~", foo_bar);
-			Assert.assertEquals("bux", baz);
+			Assertions.assertEquals("~", foo_bar);
+			Assertions.assertEquals("bux", baz);
 		} catch (SyntaxError ex) {
-			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 	}
 	
@@ -898,7 +900,7 @@ public class BasicTests {
 		
 		String actual = obj.toJson(JsonGrammar.JSON5);
 		
-		Assert.assertEquals(expected, actual);
+		Assertions.assertEquals(expected, actual);
 	}
 	
 	/**
@@ -927,7 +929,7 @@ public class BasicTests {
 				"}\n";
 		
 		String actual = obj.toJson(BARE);
-		Assert.assertEquals(expected, actual);
+		Assertions.assertEquals(expected, actual);
 	}
 	
 	/**
@@ -957,6 +959,6 @@ public class BasicTests {
 				"	}\n" +
 				"}";
 		String actual = obj.toJson(UNQUOTED);
-		Assert.assertEquals(expected, actual);
+		Assertions.assertEquals(expected, actual);
 	}
 }

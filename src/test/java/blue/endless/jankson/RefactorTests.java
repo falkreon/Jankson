@@ -3,7 +3,7 @@ package blue.endless.jankson;
 import java.io.IOException;
 import java.io.StringWriter;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import blue.endless.jankson.api.document.FormattingElement;
 import blue.endless.jankson.api.document.KeyValuePairElement;

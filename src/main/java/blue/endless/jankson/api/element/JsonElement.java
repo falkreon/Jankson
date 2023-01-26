@@ -31,6 +31,7 @@ import java.io.Writer;
 import blue.endless.jankson.api.JsonGrammar;
 
 /** Tagging class for Json objects, arrays, and primitives */
+@Deprecated
 public abstract class JsonElement implements Cloneable {
 	public abstract JsonElement clone();
 	public String toJson() {

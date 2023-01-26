@@ -29,6 +29,7 @@ import java.io.Writer;
 
 import blue.endless.jankson.api.JsonGrammar;
 
+@Deprecated
 public class JsonNull extends JsonElement {
 	public static final JsonNull INSTANCE = new JsonNull();
 	private JsonNull() {}

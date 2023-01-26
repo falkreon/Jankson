@@ -41,6 +41,7 @@ import blue.endless.jankson.api.Marshaller;
 import blue.endless.jankson.impl.serializer.CommentSerializer;
 
 @SuppressWarnings("deprecation")
+@Deprecated
 public class JsonArray extends JsonElement implements List<JsonElement>, Iterable<JsonElement> {
 	private List<Entry> entries = new ArrayList<>();
 	protected Marshaller marshaller = blue.endless.jankson.impl.MarshallerImpl.getFallback();

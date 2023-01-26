@@ -24,9 +24,9 @@
 
 package blue.endless.jankson;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import blue.endless.jankson.api.Jankson;
 import blue.endless.jankson.api.JsonGrammar;
@@ -38,7 +38,7 @@ import blue.endless.jankson.api.element.JsonPrimitive;
 public class TestCosmetic {
 	Jankson jankson;
 	
-	@Before
+	@BeforeEach
 	public void setup() {
 		jankson = Jankson.builder().build();
 	}
@@ -87,9 +87,9 @@ public class TestCosmetic {
 		String strict = subject.toJson(JsonGrammar.STRICT);
 		String rootArray = nonEmptyArr.toJson(JsonGrammar.JSON5);
 		
-		Assert.assertEquals(expectedJson5, json5);
-		Assert.assertEquals(expectedStrict, strict);
-		Assert.assertEquals(expectedRootArray, rootArray);
+		Assertions.assertEquals(expectedJson5, json5);
+		Assertions.assertEquals(expectedStrict, strict);
+		Assertions.assertEquals(expectedRootArray, rootArray);
 	}
 	
 	@Test
@@ -117,7 +117,7 @@ public class TestCosmetic {
 				.printUnquotedKeys(true)
 				.build());
 		
-		Assert.assertEquals(expectedJkson, result);
+		Assertions.assertEquals(expectedJkson, result);
 	}
 	
 	/**
@@ -139,7 +139,7 @@ public class TestCosmetic {
 			+ "\"second_thing\": \"Second Thing\",\n"
 			+ "\"third_thing\": \"Third Thing\"\n";
 		
-		Assert.assertEquals(expectedJkson, object.toJson(grammar));
+		Assertions.assertEquals(expectedJkson, object.toJson(grammar));
 	}
 	
 	/**
@@ -161,7 +161,7 @@ public class TestCosmetic {
 			+ "	\"thing\": 42,\n"
 			+ "}";
 		
-		Assert.assertEquals(expectedJkson, serialized);
+		Assertions.assertEquals(expectedJkson, serialized);
 	}
 	
 	/**
@@ -184,6 +184,6 @@ public class TestCosmetic {
 			+ "	\"thing\": 42,\n"
 			+ "}";
 		
-		Assert.assertEquals(expectedJkson, reserialized);
+		Assertions.assertEquals(expectedJkson, reserialized);
 	}
 }

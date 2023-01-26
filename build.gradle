@@ -26,7 +26,7 @@ apply plugin: "signing";
 
 group = "blue.endless";
 archivesBaseName = "Jankson";
-version = "2.0.0";
+version = "2.0.0-alpha";
 
 sourceCompatibility = 1.17;
 targetCompatibility = 1.17;
@@ -128,7 +128,9 @@ defaultTasks "clean", "build", "sourcesJar";
 
 
 dependencies {
-	testImplementation "junit:junit:4.12";
+	testImplementation(platform('org.junit:junit-bom:5.9.2'))
+	testImplementation('org.junit.jupiter:junit-jupiter')
+	//testImplementation "junit:junit:4.12";
 	
 	compileOnly group: "com.google.code.findbugs", name: "jsr305", version: "3.0.2";
 }

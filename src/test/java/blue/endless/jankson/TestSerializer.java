@@ -24,11 +24,12 @@
 
 package blue.endless.jankson;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import blue.endless.jankson.api.annotation.Serializer;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import blue.endless.jankson.api.Jankson;
 import blue.endless.jankson.api.JsonGrammar;
 import blue.endless.jankson.api.SyntaxError;
@@ -40,7 +41,7 @@ import blue.endless.jankson.api.element.JsonPrimitive;
 public class TestSerializer {
 	Jankson jankson;
 	
-	@Before
+	@BeforeEach
 	public void setup() {
 		jankson = Jankson.builder().build();
 	}
@@ -53,7 +54,7 @@ public class TestSerializer {
 	public void testUnicodeEscapes() {
 		String smileyFace = String.valueOf(Character.toChars(0x1F600));
 		String result = new JsonPrimitive(smileyFace).toString();
-		Assert.assertEquals("\"\\ud83d\\ude00\"", result);
+		Assertions.assertEquals("\"\\ud83d\\ude00\"", result);
 	}
 	
 	
@@ -70,7 +71,7 @@ public class TestSerializer {
 	@Test
 	public void testInternalSerializer() {
 		JsonElement elem = jankson.toJson(new DeclaredSerializerTest());
-		Assert.assertEquals("42", elem.toJson());
+		Assertions.assertEquals("42", elem.toJson());
 	}
 	
 	/**
@@ -83,7 +84,7 @@ public class TestSerializer {
 		
 		JsonGrammar grammar = JsonGrammar.builder().bareSpecialNumerics(true).printWhitespace(false).build();
 		
-		Assert.assertEquals("{ \"foo\": 42.0 }", subject.toJson(grammar));
+		Assertions.assertEquals("{ \"foo\": 42.0 }", subject.toJson(grammar));
 	}
 	
 	/** Issues #26 and #38 - ':' isn't force-quoted in object keys */
@@ -93,7 +94,7 @@ public class TestSerializer {
 		obj.put("test:key", JsonNull.INSTANCE);
 		
 		String result = obj.toJson(JsonGrammar.builder().printWhitespace(false).printUnquotedKeys(true).build());
-		Assert.assertEquals("{ \"test:key\": null }", result);
+		Assertions.assertEquals("{ \"test:key\": null }", result);
 	}
 	
 	/**
@@ -113,9 +114,9 @@ public class TestSerializer {
 		try {
 			JsonObject obj = Jankson.builder().build().load(input);
 			
-			Assert.assertEquals("Играть с музыкой?", obj.get(String.class, "ru"));
+			Assertions.assertEquals("Играть с музыкой?", obj.get(String.class, "ru"));
 		} catch (SyntaxError ex) {
-			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 	}
 }
