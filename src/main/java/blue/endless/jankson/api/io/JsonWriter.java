@@ -2,16 +2,11 @@ package blue.endless.jankson.api.io;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.Iterator;
 
 import blue.endless.jankson.api.document.CommentType;
+import blue.endless.jankson.impl.io.AbstractStructuredDataWriter;
 
-public class JsonWriter implements StructuredDataWriter {
-	private Writer dest;
-	private Deque<State> context = new ArrayDeque<>();
-	private boolean rootWritten = false;
+public class JsonWriter extends AbstractStructuredDataWriter {
 	private final JsonWriterOptions options;
 	private int indentLevel = 0;
 	
@@ -20,8 +15,7 @@ public class JsonWriter implements StructuredDataWriter {
 	}
 	
 	public JsonWriter(Writer destination, JsonWriterOptions options) {
-		this.dest = destination;
-		context.push(State.ROOT);
+		super(destination);
 		this.options = options;
 	}
 
@@ -51,7 +45,8 @@ public class JsonWriter implements StructuredDataWriter {
 		if (quoted) {
 			dest.write("\" ");
 		}
-		context.push(State.DICTIONARY_BEFORE_DELIMITER);
+		
+		keyWritten();
 	}
 
 	@Override
@@ -63,8 +58,8 @@ public class JsonWriter implements StructuredDataWriter {
 		} else {
 			dest.write(": ");
 		}
-		context.pop();
-		context.push(State.DICTIONARY_BEFORE_VALUE);
+		
+		keyValueDelimiterWritten();
 	}
 
 	@Override
@@ -75,18 +70,18 @@ public class JsonWriter implements StructuredDataWriter {
 		} else {
 			dest.write(" ");
 		}
-		context.pop();
+		nextValueWritten();
 	}
 
 	@Override
 	public void writeObjectStart() throws IOException {
 		assertValue();
-		if (context.peek()==State.ROOT && options.get(JsonWriterOptions.Hint.BARE_ROOT_OBJECT)) {
+		if (peek()==State.ROOT && options.get(JsonWriterOptions.Hint.BARE_ROOT_OBJECT)) {
 			//Do not write the brace, and do not increase the indent level.
 		} else {
 			dest.write("{ ");
 		}
-		context.push(State.DICTIONARY);
+		objectStarted();
 	}
 
 	@Override
@@ -99,27 +94,21 @@ public class JsonWriter implements StructuredDataWriter {
 			dest.write(" }");
 		}
 		
-		while(context.pop() != State.DICTIONARY); //remove any state back to DICTIONARY
-		
-		valueWritten();
+		objectEndWritten();
 	}
 
 	@Override
 	public void writeArrayStart() throws IOException {
 		assertValue();
-		
 		dest.write("[ ");
-		context.push(State.ARRAY);
+		arrayStarted();
 	}
 
 	@Override
 	public void writeArrayEnd() throws IOException {
 		assertArrayEnd();
-		
 		dest.write(" ]");
-		context.pop();
-		
-		valueWritten();
+		arrayEndWritten();
 	}
 
 	@Override
@@ -159,128 +148,5 @@ public class JsonWriter implements StructuredDataWriter {
 		assertValue();
 		dest.write("null");
 		valueWritten();
-	}
-	
-	/**
-	 * Checks to see if it's okay to write an object key.
-	 */
-	protected void assertKey() {
-		State peek = context.peek();
-		if (peek!=State.DICTIONARY) throw new IllegalStateException("Attempting to write a key at an invalid location. (State is "+peek+")");
-	}
-	
-	/**
-	 * Checks to see if it's okay to write the colon between a key and a value.
-	 */
-	protected void assertKeyValueDelimiter() {
-		State peek = context.peek();
-		if (peek!=State.DICTIONARY_BEFORE_DELIMITER) throw new IllegalStateException("Attempting to write a key-value delimiter at an invalid location. (State is "+peek+")");
-	}
-	
-	/**
-	 * Checks to see if it's okay to write a value.
-	 */
-	protected void assertValue() {
-		State peek = context.peek();
-		if (peek == State.ROOT && rootWritten) throw new IllegalStateException("Cannot write multiple values to the document root.");
-		
-		if (peek == State.ROOT || peek == State.ARRAY || peek == State.DICTIONARY_BEFORE_VALUE) return;
-		throw new IllegalStateException("Attempting to write a value at an invalid location. (State is "+peek+")");
-	}
-	
-	protected void assertNextValue() {
-		State peek = context.peek();
-		if (peek == State.DICTIONARY_BEFORE_COMMA || peek == State.ARRAY_BEFORE_COMMA) return;
-		throw new IllegalStateException("Attempting to write a comma between values at an invalid location. (State is "+peek+")");
-	}
-	
-	protected void assertObjectEnd() {
-		State peek = context.peek();
-		if (peek == State.DICTIONARY || peek == State.DICTIONARY_BEFORE_COMMA) return;
-		throw new IllegalStateException("Attempting to end an object-end in an invalid location. (State is "+peek+")");
-	}
-	
-	protected void assertArrayEnd() {
-		State peek = context.peek();
-		if (peek == State.ARRAY) return;
-		throw new IllegalStateException("Attempting to end an array-end in an invalid location. (State is "+peek+")");
-	}
-	
-	/**
-	 * Perform any state transition that needs to happen when a value has been written.
-	 */
-	protected void valueWritten() {
-		State peek = context.peek();
-		if (peek == State.ROOT) {
-			rootWritten = true;
-		} else if (peek == State.ARRAY) {
-			context.push(State.ARRAY_BEFORE_COMMA);
-		} else if (peek == State.DICTIONARY_BEFORE_VALUE) {
-			context.pop();
-			context.push(State.DICTIONARY_BEFORE_COMMA);
-		} else {
-			throw new IllegalStateException("A value was just written but the writer state has become invalid. (State stack: "+context.toString()+")");
-		}
-	}
-	
-	private boolean isWritingRoot() {
-		Iterator<State> iter = context.iterator();
-		State a = (iter.hasNext()) ? iter.next() : State.ROOT;
-		State b = (iter.hasNext()) ? iter.next() : State.ROOT;
-		State c = (iter.hasNext()) ? iter.next() : State.ROOT;
-		
-		if (a==State.ROOT) return true;
-		
-		if (a==State.DICTIONARY && b==State.ROOT) return true;
-		if (a==State.DICTIONARY_BEFORE_COMMA     && b==State.DICTIONARY && c==State.ROOT) return true;
-		if (a==State.DICTIONARY_BEFORE_DELIMITER && b==State.DICTIONARY && c==State.ROOT) return true;
-		if (a==State.DICTIONARY_BEFORE_VALUE     && b==State.DICTIONARY && c==State.ROOT) return true;
-		
-		if (a==State.ARRAY && b==State.ROOT) return true;
-		if (a==State.ARRAY_BEFORE_COMMA && b==State.ROOT) return true;
-		
-		return false;
-	}
-	
-	private static enum State {
-		/**
-		 * Only "root-approved" values can be written here. Depending on settings, this may disallow things like String
-		 * literals. If an object is started here, settings may direct its braces to be omitted.
-		 */
-		ROOT,
-		
-		/**
-		 * This is an array, and if this is the top element of the context stack, nothing has been written yet. Any
-		 * valid value can be written with a writeXLiteral method, objectStart, or arrayStart.
-		 */
-		ARRAY,
-		
-		/**
-		 * The only things valid to write here are nextValue or arrayEnd.
-		 */
-		ARRAY_BEFORE_COMMA,
-		
-		/**
-		 * This is a json object or other dictionary/map. The valid actions here are objectEnd and writeKey.
-		 */
-		DICTIONARY,
-		
-		/**
-		 * We're writing an object, and have written a key. We are waiting for the delimiter to be written and that is
-		 * the only valid action.
-		 */
-		DICTIONARY_BEFORE_DELIMITER,
-		
-		/**
-		 * We're writing an object and have written a key and delimiter. Any valid value is accepted using
-		 * writeXLiteral, objectStart, or arrayStart.
-		 */
-		DICTIONARY_BEFORE_VALUE,
-		
-		/**
-		 * We're writing an object and have written the key, delimiter, and value. Valid actions here are nextValue or
-		 * objectEnd.
-		 */
-		DICTIONARY_BEFORE_COMMA;
 	}
 }
