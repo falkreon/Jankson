@@ -53,6 +53,9 @@ public class StringValueParser implements ValueParser {
 		int ch = reader.read();
 		
 		while(ch!=openQuote) {
+			if (ch==-1) throw new SyntaxError("Unmatched quote on a String value.");
+			if (ch=='\n') throw new SyntaxError("Unescaped newline in a String value.");
+			
 			if (ch=='\\') {
 				readEscapeSequence(reader, result);
 			} else {
@@ -60,7 +63,6 @@ public class StringValueParser implements ValueParser {
 			}
 			
 			ch = reader.read();
-			if (ch==-1) throw new SyntaxError("Unmatched quote on a String value.");
 		}
 		
 		return result.toString();

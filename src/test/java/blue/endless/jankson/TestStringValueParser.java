@@ -172,4 +172,15 @@ public class TestStringValueParser {
 		Assertions.assertTrue(parser.canRead(r));
 		Assertions.assertEquals("ab", parser.read(r));
 	}
+	
+	// Other stuff
+	
+	@Test
+	public void testUnescapedNewlineNotAllowed() throws IOException, SyntaxError {
+		LookaheadCodePointReader r = new LookaheadCodePointReader(new StringReader("\"stuff\n\"")); // "stuff(newline)"
+		StringValueParser parser = new StringValueParser();
+		
+		Assertions.assertTrue(parser.canRead(r));
+		Assertions.assertThrows(SyntaxError.class, ()->parser.read(r));
+	}
 }

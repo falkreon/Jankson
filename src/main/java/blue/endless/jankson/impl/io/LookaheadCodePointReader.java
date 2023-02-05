@@ -60,7 +60,7 @@ public class LookaheadCodePointReader implements CodePointReader, Lookahead {
 		for(int i=0; i<resultLength; i++) {
 			int ptOfs = (ofs + i) % lookahead.length;
 			int point = lookahead[ptOfs];
-			result.append(Character.toString(point));
+			result.appendCodePoint(point);
 		}
 		
 		return result.toString();
