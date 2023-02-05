@@ -133,6 +133,7 @@ dependencies {
 	//testImplementation "junit:junit:4.12";
 	
 	compileOnly group: "com.google.code.findbugs", name: "jsr305", version: "3.0.2";
+	testImplementation group: "com.google.code.findbugs", name: "jsr305", version: "3.0.2";
 }
 
 signing {

@@ -1,3 +1,27 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2018-2022 Falkreon (Isaac Ellingson)
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package blue.endless.jankson.impl.io.context;
 
 import java.io.IOException;
@@ -31,10 +55,12 @@ public class StringValueParser implements ValueParser {
 		while(ch!=openQuote) {
 			if (ch=='\\') {
 				readEscapeSequence(reader, result);
+			} else {
+				result.appendCodePoint(ch);
 			}
 			
-			result.appendCodePoint(ch);
 			ch = reader.read();
+			if (ch==-1) throw new SyntaxError("Unmatched quote on a String value.");
 		}
 		
 		return result.toString();
@@ -64,10 +90,10 @@ public class StringValueParser implements ValueParser {
 				out.append('\t');
 				break;
 			case 'v':
-				out.append(0x000B); //vertical tab
+				out.appendCodePoint(0x000B); //vertical tab
 				break;
 			case '0':
-				out.append(0x0000); //null. TODO: Should this be forbidden? I super don't like seeing these in Strings.
+				out.appendCodePoint(0x0000); //null. TODO: Should this be forbidden? I super don't like seeing these in Strings.
 				break;
 			case '"':
 				out.append('"');
