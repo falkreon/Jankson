@@ -24,18 +24,17 @@
 
 package blue.endless.jankson.api.io;
 
+import java.io.IOException;
 import java.io.Reader;
 
-import javax.annotation.Nullable;
-
-import blue.endless.jankson.api.document.PrimitiveElement;
+import blue.endless.jankson.api.SyntaxError;
+import blue.endless.jankson.api.document.CommentElement;
+import blue.endless.jankson.api.document.CommentType;
+import blue.endless.jankson.api.io.JsonReaderOptions.Hint;
 import blue.endless.jankson.impl.io.AbstractStructuredDataReader;
 
 public class JsonReader extends AbstractStructuredDataReader {
-private final JsonReaderOptions options;
-	
-	private ElementType cur = ElementType.WHITESPACE;
-	private PrimitiveElement value = PrimitiveElement.NULL;
+	private final JsonReaderOptions options;
 	
 	public JsonReader(Reader source) {
 		this(source, new JsonReaderOptions());
@@ -46,26 +45,90 @@ private final JsonReaderOptions options;
 		this.options = options;
 	}
 	
-	/**
-	 * Gets the value at this location in the document.
-	 * @return the value of the element we just parsed, if it has a value. Otherwise, PrimitiveElement.NULL.
-	 */
-	public PrimitiveElement getValue() {
-		return (value==null) ? PrimitiveElement.NULL : value;
-	}
-	
-	/**
-	 * Advance one character and adjust the parser state.
-	 * @return an ElementType if we're ready to pause and give the API user some information.
-	 */
-	private @Nullable ElementType advance() {
-		return null;
-	}
-	
 	@Override
-	public ElementType next() {
-		
-		
-		return ElementType.OBJECT_END;
+	protected void nextCharacter() throws IOException, SyntaxError {
+		ReaderState state = peekState();
+		switch(state) {
+			case ROOT:
+				if (options.hasHint(Hint.ALLOW_BARE_ROOT_OBJECT)) {
+					//We need to provisionally read until we hit either an opening brace, an opening bracket, something
+					//which looks like a string, or something that looks like a bare token
+					skipNonBreakingWhitespace();
+					
+				} else {
+					
+					skipNonBreakingWhitespace();
+					int ch = src.peek();
+					if (ch=='{') {
+						src.read(); //Discard brace
+						this.pushState(ReaderState.OBJECT);
+						this.enqueueOutput(ElementType.OBJECT_START);
+					} else if (ch=='[') {
+						src.read(); //Discard bracket
+						this.pushState(ReaderState.ARRAY);
+						this.enqueueOutput(ElementType.ARRAY_START);
+					} else if (ch=='/') {
+						String commentStarter = src.peekString(2);
+						if (commentStarter.equals("//")) {
+							src.read(); //Discard slashes
+							src.read();
+							
+							StringBuilder sb = new StringBuilder();
+							ch = src.read();
+							while(ch!='\n' && ch!=-1) {
+								sb.appendCodePoint(ch);
+								ch = src.read();
+							}
+							String commentText = sb.toString();
+							this.setLatestValue(new CommentElement(commentText, CommentType.LINE_END));
+							this.enqueueOutput(ElementType.COMMENT);
+						} else if (commentStarter.equals("/*")) {
+							//This is a multiline comment - but if the first character is an additional asterisk, omit
+							//that too and log this as a doc comment
+						}
+						
+					} else if (ch=='#') {
+						//Read until line end
+						src.read(); //Discard octothorpe
+						
+						StringBuilder sb = new StringBuilder();
+						ch = src.read();
+						while(ch!='\n' && ch!=-1) {
+							sb.appendCodePoint(ch);
+							ch = src.read();
+						}
+						String commentText = sb.toString();
+						this.setLatestValue(new CommentElement(commentText, CommentType.OCTOTHORPE));
+						this.enqueueOutput(ElementType.COMMENT);
+					}
+				}
+				break;
+			case OBJECT: {
+				skipNonBreakingWhitespace();
+				int ch = src.peek();
+				//TODO: List of forbidden characters
+				if (ch=='}') {
+					this.popState();
+					this.enqueueOutput(ElementType.OBJECT_END);
+				} else if (ch=='\n') {
+					this.enqueueOutput(ElementType.NEWLINE);
+				}
+			}
+				break;
+			case ARRAY: {
+				skipNonBreakingWhitespace();
+				int ch = src.peek();
+				//TODO: List of forbidden characters
+				if (ch==']') {
+					this.popState();
+					this.enqueueOutput(ElementType.ARRAY_END);
+				} else if (ch=='\n') {
+					this.enqueueOutput(ElementType.NEWLINE);
+				}
+			}
+				break;
+		}
 	}
+	
+	
 }

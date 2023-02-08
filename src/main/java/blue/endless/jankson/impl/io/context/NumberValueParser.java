@@ -24,6 +24,9 @@ public class NumberValueParser implements ValueParser {
 
 	@Override
 	public Object read(LookaheadCodePointReader reader) throws IOException, SyntaxError {
+		int startLine = reader.getLine();
+		int startChar = reader.getCharacter();
+		
 		StringBuilder sb = new StringBuilder();
 		int ch = reader.read();
 		sb.appendCodePoint(ch);
@@ -57,7 +60,10 @@ public class NumberValueParser implements ValueParser {
 				result = result.substring(2);
 				return Long.parseLong(result, 16);
 			} catch (NumberFormatException ex) {
-				throw new SyntaxError("Invalid number format for '"+result+"'.", ex);
+				SyntaxError err = new SyntaxError("Invalid number format for '"+result+"'.", ex);
+				err.setStartParsing(startLine, startChar);
+				err.setEndParsing(reader.getLine(), reader.getCharacter());
+				throw err;
 			}
 		}
 		
@@ -66,7 +72,10 @@ public class NumberValueParser implements ValueParser {
 				result = result.substring(3);
 				return -Long.parseLong(result, 16);
 			} catch (NumberFormatException ex) {
-				throw new SyntaxError("Invalid number format for '"+result+"'.", ex);
+				SyntaxError err = new SyntaxError("Invalid number format for '"+result+"'.", ex);
+				err.setStartParsing(startLine, startChar);
+				err.setEndParsing(reader.getLine(), reader.getCharacter());
+				throw err;
 			}
 		}
 		
@@ -77,7 +86,10 @@ public class NumberValueParser implements ValueParser {
 				return Long.parseLong(sb.toString());
 			}
 		} catch (NumberFormatException ex) {
-			throw new SyntaxError("Invalid number format for '"+result+"'.", ex);
+			SyntaxError err = new SyntaxError("Invalid number format for '"+result+"'.", ex);
+			err.setStartParsing(startLine, startChar);
+			err.setEndParsing(reader.getLine(), reader.getCharacter());
+			throw err;
 		}
 	}
 	

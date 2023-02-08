@@ -85,4 +85,14 @@ public interface CodePointReader extends AutoCloseable {
 	 */
 	@Override
 	void close() throws IOException;
+	
+	/**
+	 * Gets the number of code points that have been read so far in the current line, starting from zero.
+	 */
+	int getCharacter();
+	
+	/**
+	 * Gets the number of lines that have been read so far in the stream, starting from zero.
+	 */
+	int getLine();
 }

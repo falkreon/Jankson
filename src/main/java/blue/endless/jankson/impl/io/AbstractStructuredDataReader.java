@@ -24,47 +24,76 @@
 
 package blue.endless.jankson.impl.io;
 
+import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
-import javax.annotation.Nullable;
-
-import blue.endless.jankson.api.document.PrimitiveElement;
+import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.ElementType;
 import blue.endless.jankson.api.io.StructuredDataReader;
-import blue.endless.jankson.impl.context.ParserContext;
 
-public class AbstractStructuredDataReader implements StructuredDataReader {
-	private final Reader src;
-	//private final CodePointReader in;
-	private Deque<ParserContext<?>> context = new ArrayDeque<>();
+public abstract class AbstractStructuredDataReader implements StructuredDataReader {
+	protected final LookaheadCodePointReader src;
+	private final Deque<ElementType> readQueue = new ArrayDeque<>();
+	private final Deque<ReaderState> stateStack = new ArrayDeque<>();
+	private Object latestValue = null;
+	//private Deque<ParserContext<?>> context = new ArrayDeque<>();
 	
 	public AbstractStructuredDataReader(Reader src) {
-		this.src = src;
-		//if (src instanceof CodePointReader r) {
-		//	in = r;
-		//} else {
-		//	in = new CodePointReader(src);
-		//}
+		this.src = new LookaheadCodePointReader(src);
+		pushState(ReaderState.ROOT);
 	}
 
 	@Override
-	public PrimitiveElement getValue() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	private @Nullable ElementType nextCharacter() {
-		return null;
+	public Object getLatestValue() {
+		return latestValue;
 	}
 	
+	protected void setLatestValue(Object o) {
+		this.latestValue = o;
+	}
+	
+	protected void pushState(ReaderState elem) {
+		stateStack.push(elem);
+	}
+	
+	protected ReaderState peekState() {
+		return stateStack.peek();
+	}
+	
+	protected ReaderState popState() {
+		return stateStack.pop();
+	}
+	
+	protected void enqueueOutput(ElementType elem) {
+		readQueue.addFirst(elem);
+	}
+	
+	protected void skipNonBreakingWhitespace() throws IOException {
+		while(true) {
+			int ch = src.peek();
+			if (ch==-1) return;
+			if (ch=='\n') return;
+			if (!Character.isWhitespace(ch)) return;
+			src.read();
+		}
+	}
+	
+	protected abstract void nextCharacter() throws IOException, SyntaxError;
+	
 	@Override
-	public ElementType next() {
+	public ElementType next() throws IOException, SyntaxError {
+		while(readQueue.isEmpty()) nextCharacter();
 		
+		if (readQueue.peekLast()==ElementType.EOF) return ElementType.EOF;
 		
-		
-		// TODO Auto-generated method stub
-		return null;
+		return readQueue.removeLast();
+	}
+	
+	public static enum ReaderState {
+		ROOT,
+		OBJECT,
+		ARRAY;
 	}
 }

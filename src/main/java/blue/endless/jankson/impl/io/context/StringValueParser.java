@@ -47,14 +47,27 @@ public class StringValueParser implements ValueParser {
 
 	@Override
 	public Object read(LookaheadCodePointReader reader) throws IOException, SyntaxError {
+		int startLine = reader.getLine();
+		int startChar = reader.getCharacter();
+		
 		int openQuote = reader.read();
 		
 		StringBuilder result = new StringBuilder();
 		int ch = reader.read();
 		
 		while(ch!=openQuote) {
-			if (ch==-1) throw new SyntaxError("Unmatched quote on a String value.");
-			if (ch=='\n') throw new SyntaxError("Unescaped newline in a String value.");
+			if (ch==-1) {
+				SyntaxError err = new SyntaxError("Unmatched quote on a String value.");
+				err.setStartParsing(startLine, startChar);
+				err.setEndParsing(reader.getLine(), reader.getCharacter());
+				throw err;
+			}
+			if (ch=='\n') {
+				SyntaxError err = new SyntaxError("Unescaped newline in a String value.");
+				err.setStartParsing(startLine, startChar);
+				err.setEndParsing(reader.getLine(), reader.getCharacter());
+				throw err;
+			}
 			
 			if (ch=='\\') {
 				readEscapeSequence(reader, result);
@@ -127,7 +140,7 @@ public class StringValueParser implements ValueParser {
 						int code = Integer.parseInt(sb.toString(), 16);
 						out.appendCodePoint(code);
 					} catch (NumberFormatException ex) {
-						throw new SyntaxError("Invalid unicode escape sequence '"+sb.toString()+"'");
+						throw new SyntaxError("Invalid unicode escape sequence '"+sb.toString()+"'", in.getLine(), in.getCharacter());
 					}
 				}
 				break;
@@ -147,13 +160,13 @@ public class StringValueParser implements ValueParser {
 						int code = Integer.parseInt(xb.toString(), 16);
 						out.appendCodePoint(code);
 					} catch (NumberFormatException ex) {
-						throw new SyntaxError("Invalid unicode escape sequence '"+xb.toString()+"'");
+						throw new SyntaxError("Invalid unicode escape sequence '"+xb.toString()+"'", in.getLine(), in.getCharacter());
 					}
 				}
 				break;
 			default:
 				if (Character.isDigit(escape)) {
-					throw new SyntaxError("Numeric escapes are forbidden ('\\"+Character.toString(escape)+"')");
+					throw new SyntaxError("Numeric escapes are forbidden ('\\"+Character.toString(escape)+"')", in.getLine(), in.getCharacter());
 				}
 				
 				out.appendCodePoint(escape);

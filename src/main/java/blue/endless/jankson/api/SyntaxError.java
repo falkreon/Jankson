@@ -36,12 +36,20 @@ public class SyntaxError extends Exception {
 		super(message);
 	}
 	
-	public SyntaxError(String message, Exception ex) {
-		super(message, ex);
+	public SyntaxError(String message, Throwable cause) {
+		super(message, cause);
 	}
 	
 	public SyntaxError(String message, int line, int column) {
 		super(message);
+		startLine = line;
+		startColumn = column;
+		this.line = line;
+		this.column = column;
+	}
+	
+	public SyntaxError(String message, int line, int column, Throwable cause) {
+		super(message, cause);
 		startLine = line;
 		startColumn = column;
 		this.line = line;

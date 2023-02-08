@@ -73,7 +73,17 @@ public enum ElementType {
 	 * The parser encountered a run of whitespace and consumed it all. The immediately following element will not be
 	 * whitespace.
 	 */
-	WHITESPACE(false);
+	WHITESPACE(false),
+	
+	/**
+	 * The parser encountered a newline.
+	 */
+	NEWLINE(false),
+	
+	/**
+	 * The parser encountered the end of the file.
+	 */
+	EOF(true);
 	
 	private final boolean semantic;
 	ElementType(boolean semantic) {

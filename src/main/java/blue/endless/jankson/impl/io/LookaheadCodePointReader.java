@@ -38,6 +38,9 @@ public class LookaheadCodePointReader implements CodePointReader, Lookahead {
 	private int len = 0;
 	private int ofs = 0;
 	
+	private int line = 0;
+	private int character = 0;
+	
 	public LookaheadCodePointReader(Reader in) {
 		this(in, 16);
 	}
@@ -117,15 +120,24 @@ public class LookaheadCodePointReader implements CodePointReader, Lookahead {
 	
 	@Override
 	public int read() throws IOException {
+		int result = -1;
+		
 		if (len>0) {
-			int result = lookahead[ofs];
+			result = lookahead[ofs];
 			ofs = (ofs + 1) % lookahead.length;
 			len--;
-			
-			return result;
 		} else {
-			return readInternal();
+			result = readInternal();
 		}
+		
+		if (result=='\n') {
+			line++;
+			character = 0;
+		} else {
+			character++;
+		}
+		
+		return result;
 	}
 	
 	@Override
@@ -151,5 +163,14 @@ public class LookaheadCodePointReader implements CodePointReader, Lookahead {
 	public void close() throws IOException {
 		in.close();
 	}
-
+	
+	@Override
+	public int getCharacter() {
+		return character;
+	}
+	
+	@Override
+	public int getLine() {
+		return line;
+	}
 }

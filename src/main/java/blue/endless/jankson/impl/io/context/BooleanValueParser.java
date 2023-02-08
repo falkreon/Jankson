@@ -10,12 +10,14 @@ public class BooleanValueParser implements ValueParser {
 
 	@Override
 	public boolean canRead(Lookahead lookahead) throws IOException {
+		//TODO: We probably need to peek one more character ahead and make sure that the character after our String is a valid breaking code point
 		String maybeFalse = lookahead.peekString(5);
 		return maybeFalse.equals("false") || maybeFalse.startsWith("true");
 	}
 
 	@Override
 	public Object read(LookaheadCodePointReader reader) throws IOException, SyntaxError {
+		
 		String start = reader.readString(4);
 		if (start.equals("true")) return Boolean.TRUE;
 		start += reader.readString(1);
