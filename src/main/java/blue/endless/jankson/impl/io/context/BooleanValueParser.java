@@ -7,23 +7,30 @@ import blue.endless.jankson.impl.io.Lookahead;
 import blue.endless.jankson.impl.io.LookaheadCodePointReader;
 
 public class BooleanValueParser implements ValueParser {
-
-	@Override
-	public boolean canRead(Lookahead lookahead) throws IOException {
+	
+	public static boolean canReadStatic(Lookahead lookahead) throws IOException {
 		//TODO: We probably need to peek one more character ahead and make sure that the character after our String is a valid breaking code point
 		String maybeFalse = lookahead.peekString(5);
 		return maybeFalse.equals("false") || maybeFalse.startsWith("true");
 	}
-
+	
 	@Override
-	public Object read(LookaheadCodePointReader reader) throws IOException, SyntaxError {
-		
+	public boolean canRead(Lookahead lookahead) throws IOException {
+		return canReadStatic(lookahead);
+	}
+
+	public static Object readStatic(LookaheadCodePointReader reader) throws IOException, SyntaxError {
 		String start = reader.readString(4);
 		if (start.equals("true")) return Boolean.TRUE;
 		start += reader.readString(1);
 		if (start.equals("false")) return Boolean.FALSE;
 		
 		throw new IllegalStateException("Couldn't parse boolean value '"+start+"'.");
+	}
+	
+	@Override
+	public Object read(LookaheadCodePointReader reader) throws IOException, SyntaxError {
+		return readStatic(reader);
 	}
 
 }

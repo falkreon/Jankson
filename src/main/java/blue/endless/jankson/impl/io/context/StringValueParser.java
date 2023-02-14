@@ -36,17 +36,21 @@ import blue.endless.jankson.impl.io.LookaheadCodePointReader;
  */
 public class StringValueParser implements ValueParser {
 	
-	@Override
-	public boolean canRead(Lookahead lookahead) throws IOException {
+	
+	public static boolean canReadStatic(Lookahead lookahead) throws IOException {
 		String test = lookahead.peekString(3);
-		if (test.equals("\"\"\"")) return false; //Disclaim responsibility for triple-quotes
+		if (test.equals(ParserConstants.TRIPLE_QUOTE)) return false; //Disclaim responsibility for triple-quotes
 		
 		int start = lookahead.peek();
 		return start=='\'' || start=='"';
 	}
-
+	
 	@Override
-	public Object read(LookaheadCodePointReader reader) throws IOException, SyntaxError {
+	public boolean canRead(Lookahead lookahead) throws IOException {
+		return canReadStatic(lookahead);
+	}
+	
+	public static Object readStatic(LookaheadCodePointReader reader) throws IOException, SyntaxError {
 		int startLine = reader.getLine();
 		int startChar = reader.getCharacter();
 		
@@ -81,12 +85,17 @@ public class StringValueParser implements ValueParser {
 		return result.toString();
 	}
 	
+	@Override
+	public Object read(LookaheadCodePointReader reader) throws IOException, SyntaxError {
+		return readStatic(reader);
+	}
+	
 	/**
 	 * Assuming the opening slash has already been read, consume an escape sequence from in and emit the result to out.
 	 * @param in the stream
 	 * @param out the result
 	 */
-	private void readEscapeSequence(LookaheadCodePointReader in, StringBuilder out) throws IOException, SyntaxError {
+	private static void readEscapeSequence(LookaheadCodePointReader in, StringBuilder out) throws IOException, SyntaxError {
 		int escape = in.read();
 		switch(escape) {
 			case 'b':

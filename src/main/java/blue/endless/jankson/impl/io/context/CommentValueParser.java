@@ -9,9 +9,8 @@ import blue.endless.jankson.impl.io.Lookahead;
 import blue.endless.jankson.impl.io.LookaheadCodePointReader;
 
 public class CommentValueParser implements ValueParser {
-
-	@Override
-	public boolean canRead(Lookahead lookahead) throws IOException {
+	
+	public static boolean canReadStatic(Lookahead lookahead) throws IOException {
 		int ch = lookahead.peek();
 		if (ch=='#') return true;
 		String s = lookahead.peekString(2);
@@ -20,19 +19,23 @@ public class CommentValueParser implements ValueParser {
 		
 		return false;
 	}
-
+	
 	@Override
-	public Object read(LookaheadCodePointReader reader) throws IOException, SyntaxError {
+	public boolean canRead(Lookahead lookahead) throws IOException {
+		return canReadStatic(lookahead);
+	}
+
+	public static Object readStatic(LookaheadCodePointReader reader) throws IOException, SyntaxError {
 		int ch = reader.peek();
 		
 		if (ch=='#') {
 			reader.read(); // Consume the octothorpe
-			String commentText = readLineEndComment(reader);
+			String commentText = readToLineEnd(reader);
 			return new CommentElement(commentText, CommentType.OCTOTHORPE);
 		} else {
 			String firstTwo = reader.peekString(2);
 			if (firstTwo.equals("//")) {
-				String commentText = readLineEndComment(reader);
+				String commentText = readToLineEnd(reader);
 				return new CommentElement(commentText, CommentType.LINE_END);
 			} else if (firstTwo.equals("/*")){
 				reader.read();
@@ -62,7 +65,12 @@ public class CommentValueParser implements ValueParser {
 		throw new IllegalStateException();
 	}
 	
-	private static String readLineEndComment(LookaheadCodePointReader reader) throws IOException {
+	@Override
+	public Object read(LookaheadCodePointReader reader) throws IOException, SyntaxError {
+		return readStatic(reader);
+	}
+	
+	private static String readToLineEnd(LookaheadCodePointReader reader) throws IOException {
 		//Read the line-end comment, consuming the newline in the process.
 		StringBuilder sb = new StringBuilder();
 		int ch = reader.read();

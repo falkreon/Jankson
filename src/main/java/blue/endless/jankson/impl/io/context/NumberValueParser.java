@@ -9,21 +9,22 @@ import blue.endless.jankson.impl.io.Lookahead;
 import blue.endless.jankson.impl.io.LookaheadCodePointReader;
 
 public class NumberValueParser implements ValueParser {
-	private static final int[] numberValueStart = createSortedLookup("-+.0123456789");
-	private static final int[] numberValueChars = createSortedLookup("-+.0123456789ABCDEFabcdefINintxy");
 	
-	@Override
-	public boolean canRead(Lookahead lookahead) throws IOException {
+	public static boolean canReadStatic(Lookahead lookahead) throws IOException {
 		String infTest = lookahead.peekString(8);
 		if (infTest.equals("Infinity") || infTest.equals("infinity")) return true;
 		if (infTest.toLowerCase(Locale.ROOT).startsWith("nan")) return true;
 		
 		int ch = lookahead.peek();
-		return Arrays.binarySearch(numberValueStart, ch) >= 0;
+		return Arrays.binarySearch(ParserConstants.NUMBER_VALUE_START, ch) >= 0;
 	}
-
+	
 	@Override
-	public Object read(LookaheadCodePointReader reader) throws IOException, SyntaxError {
+	public boolean canRead(Lookahead lookahead) throws IOException {
+		return canReadStatic(lookahead);
+	}
+	
+	public static Object readStatic(LookaheadCodePointReader reader) throws IOException, SyntaxError {
 		int startLine = reader.getLine();
 		int startChar = reader.getCharacter();
 		
@@ -32,7 +33,7 @@ public class NumberValueParser implements ValueParser {
 		sb.appendCodePoint(ch);
 		
 		ch = reader.peek();
-		while(Arrays.binarySearch(numberValueChars, ch) >= 0) {
+		while(Arrays.binarySearch(ParserConstants.NUMBER_VALUE_CHAR, ch) >= 0) {
 			ch = reader.read();
 			sb.appendCodePoint(ch);
 			ch = reader.peek();
@@ -93,9 +94,8 @@ public class NumberValueParser implements ValueParser {
 		}
 	}
 	
-	private static int[] createSortedLookup(String s) {
-		int[] arr = s.chars().toArray();
-		Arrays.sort(arr);
-		return arr;
+	@Override
+	public Object read(LookaheadCodePointReader reader) throws IOException, SyntaxError {
+		return readStatic(reader);
 	}
 }

@@ -130,5 +130,33 @@ public class JsonReader extends AbstractStructuredDataReader {
 		}
 	}
 	
+	private void scanObject() throws IOException, SyntaxError {
+		/*
+		 * Object parsing has 5 distinct phases:
+		 * - Before initial brace
+		 * - Before key
+		 * - Before delimiter
+		 * - Before value (which may result in a push and a state change)
+		 * - Before newline (where we clean up any end-of-line comments and switch to "before key" before we hit anything semantic)
+		 * 
+		 * When we walk down from the stack we'll always be at "before newline". BUT, if you don't care about comment attribution,
+		 * which we don't at this level, then "before newline" is the same as "before key".
+		 * 
+		 * We can also get rid of "before delimiter" and actively grab the delimiter as part of the key parsing process.
+		 * 
+		 * That leaves us with:
+		 * - Before initial brace
+		 * - Before key
+		 * - Before value
+		 */
+	}
 	
+	private void scanArray() throws IOException, SyntaxError {
+		/*
+		 * Array parsing:
+		 * - Before initial bracket
+		 * - Before value
+		 * (an end bracket is permitted to occur Before Value).
+		 */
+	}
 }
