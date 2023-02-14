@@ -46,7 +46,7 @@ public class JsonReader extends AbstractStructuredDataReader {
 	}
 	
 	@Override
-	protected void nextCharacter() throws IOException, SyntaxError {
+	protected void readNext() throws IOException, SyntaxError {
 		ReaderState state = peekState();
 		switch(state) {
 			case ROOT:

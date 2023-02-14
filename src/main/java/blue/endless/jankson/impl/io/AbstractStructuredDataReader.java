@@ -32,10 +32,12 @@ import java.util.Deque;
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.ElementType;
 import blue.endless.jankson.api.io.StructuredDataReader;
+import blue.endless.jankson.impl.io.context.ParserContext;
 
 public abstract class AbstractStructuredDataReader implements StructuredDataReader {
 	protected final LookaheadCodePointReader src;
 	private final Deque<ElementType> readQueue = new ArrayDeque<>();
+	private final Deque<ParserContext> contextStack = new ArrayDeque<>();
 	private final Deque<ReaderState> stateStack = new ArrayDeque<>();
 	private Object latestValue = null;
 	//private Deque<ParserContext<?>> context = new ArrayDeque<>();
@@ -80,11 +82,11 @@ public abstract class AbstractStructuredDataReader implements StructuredDataRead
 		}
 	}
 	
-	protected abstract void nextCharacter() throws IOException, SyntaxError;
+	protected abstract void readNext() throws IOException, SyntaxError;
 	
 	@Override
 	public ElementType next() throws IOException, SyntaxError {
-		while(readQueue.isEmpty()) nextCharacter();
+		while(readQueue.isEmpty()) readNext();
 		
 		if (readQueue.peekLast()==ElementType.EOF) return ElementType.EOF;
 		

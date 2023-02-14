@@ -28,6 +28,7 @@ import blue.endless.jankson.api.Jankson;
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.impl.context.ParserContext;
 
+@Deprecated(forRemoval=true)
 public class CommentParserContext implements ParserContext<String> {
 	int firstChar = -1;
 	int secondChar = -1;

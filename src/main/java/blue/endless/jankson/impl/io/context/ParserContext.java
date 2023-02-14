@@ -25,6 +25,7 @@
 package blue.endless.jankson.impl.io.context;
 
 import java.io.IOException;
+import java.util.function.BiConsumer;
 
 import javax.annotation.Nullable;
 
@@ -36,9 +37,9 @@ import blue.endless.jankson.impl.io.LookaheadCodePointReader;
 public interface ParserContext {
 	
 	/**
-	 * Move forward until one ElementType is available and return it.
+	 * Parse a small part of the stream, enqueueing elements and their associated values into the elementConsumer.
 	 */
-	public ElementType parse(LookaheadCodePointReader reader) throws IOException, SyntaxError;
+	public void parse(LookaheadCodePointReader reader, BiConsumer<ElementType, Object> elementConsumer) throws IOException, SyntaxError;
 	
 	/**
 	 * If there is a String value available at this point in the stream, return it. If not, return null.

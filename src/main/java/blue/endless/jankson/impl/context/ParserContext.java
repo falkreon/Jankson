@@ -27,6 +27,7 @@ package blue.endless.jankson.impl.context;
 import blue.endless.jankson.api.Jankson;
 import blue.endless.jankson.api.SyntaxError;
 
+@Deprecated(forRemoval=true)
 public interface ParserContext<T> {
 	/** Consume one codepoint from the stream, and either use it to continue composing the result or to discover that
 	 * the result is complete and processing should stop. Throws a SyntaxError if unexpected or nonsense characters are

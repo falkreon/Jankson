@@ -28,6 +28,7 @@ import java.util.function.Consumer;
 
 import blue.endless.jankson.api.SyntaxError;
 
+@Deprecated(forRemoval=true)
 public class ParserFrame<T> {
 	private ElementContext<T> context;
 	private Consumer<T> consumer;

@@ -29,6 +29,7 @@ import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.element.JsonArray;
 import blue.endless.jankson.impl.context.ParserContext;
 
+@Deprecated(forRemoval=true)
 public class ArrayParserContext implements ParserContext<JsonArray> {
 	private JsonArray result = new JsonArray();
 	private boolean foundClosingBrace = false;

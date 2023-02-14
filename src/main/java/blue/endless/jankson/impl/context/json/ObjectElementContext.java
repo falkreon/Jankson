@@ -31,6 +31,7 @@ import blue.endless.jankson.api.document.ObjectElement;
 import blue.endless.jankson.api.io.JsonReaderOptions;
 import blue.endless.jankson.impl.context.ElementContext;
 
+@Deprecated(forRemoval=true)
 public class ObjectElementContext implements ElementContext<ObjectElement> {
 	/**
 	 * These characters are pretty much always treated as whitespace. If we're skipping all whitespace, we're skipping these.

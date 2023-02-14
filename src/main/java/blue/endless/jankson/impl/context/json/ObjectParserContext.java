@@ -29,6 +29,7 @@ import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.element.JsonObject;
 import blue.endless.jankson.impl.context.ParserContext;
 
+@Deprecated(forRemoval=true)
 public class ObjectParserContext implements ParserContext<JsonObject> {
 	private JsonObject result = new JsonObject();
 	

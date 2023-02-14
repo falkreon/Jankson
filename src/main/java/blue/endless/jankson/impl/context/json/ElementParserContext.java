@@ -34,6 +34,7 @@ import blue.endless.jankson.api.element.JsonPrimitive;
 import blue.endless.jankson.impl.AnnotatedElement;
 import blue.endless.jankson.impl.context.ParserContext;
 
+@Deprecated(forRemoval=true)
 public class ElementParserContext implements ParserContext<AnnotatedElement> {
 	String comment = null;
 	AnnotatedElement result = null;

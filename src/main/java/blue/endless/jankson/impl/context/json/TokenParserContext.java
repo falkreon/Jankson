@@ -29,6 +29,7 @@ import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.element.JsonPrimitive;
 import blue.endless.jankson.impl.context.ParserContext;
 
+@Deprecated(forRemoval=true)
 public class TokenParserContext implements ParserContext<JsonPrimitive> {
 	private String token = "";
 	private boolean complete = false;
