@@ -32,19 +32,17 @@ import java.util.Deque;
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.ElementType;
 import blue.endless.jankson.api.io.StructuredDataReader;
+import blue.endless.jankson.impl.io.context.ObjectParserContext;
 import blue.endless.jankson.impl.io.context.ParserContext;
 
 public abstract class AbstractStructuredDataReader implements StructuredDataReader {
 	protected final LookaheadCodePointReader src;
-	private final Deque<ElementType> readQueue = new ArrayDeque<>();
+	private final Deque<PendingOutput> readQueue = new ArrayDeque<>();
 	private final Deque<ParserContext> contextStack = new ArrayDeque<>();
-	private final Deque<ReaderState> stateStack = new ArrayDeque<>();
 	private Object latestValue = null;
-	//private Deque<ParserContext<?>> context = new ArrayDeque<>();
 	
 	public AbstractStructuredDataReader(Reader src) {
 		this.src = new LookaheadCodePointReader(src);
-		pushState(ReaderState.ROOT);
 	}
 
 	@Override
@@ -56,20 +54,32 @@ public abstract class AbstractStructuredDataReader implements StructuredDataRead
 		this.latestValue = o;
 	}
 	
-	protected void pushState(ReaderState elem) {
-		stateStack.push(elem);
+	protected ParserContext getContext() {
+		return contextStack.peek();
 	}
 	
-	protected ReaderState peekState() {
-		return stateStack.peek();
+	protected void pushContext(ParserContext context) {
+		contextStack.push(context);
 	}
 	
-	protected ReaderState popState() {
-		return stateStack.pop();
+	protected void popContext() {
+		contextStack.pop();
 	}
 	
-	protected void enqueueOutput(ElementType elem) {
-		readQueue.addFirst(elem);
+	//protected void pushState(ReaderState elem) {
+	//	stateStack.push(elem);
+	//}
+	
+	//protected ReaderState peekState() {
+	//	return stateStack.peek();
+	//}
+	
+	//protected ReaderState popState() {
+	//	return stateStack.pop();
+	//}
+	
+	protected void enqueueOutput(ElementType elem, Object obj) {
+		readQueue.addFirst(new PendingOutput(elem, obj));
 	}
 	
 	protected void skipNonBreakingWhitespace() throws IOException {
@@ -85,17 +95,23 @@ public abstract class AbstractStructuredDataReader implements StructuredDataRead
 	protected abstract void readNext() throws IOException, SyntaxError;
 	
 	@Override
+	public boolean hasNext() {
+		if (readQueue.isEmpty()) return true;
+		
+		return readQueue.peekLast().elementType() != ElementType.EOF;
+	}
+	
+	@Override
 	public ElementType next() throws IOException, SyntaxError {
 		while(readQueue.isEmpty()) readNext();
 		
-		if (readQueue.peekLast()==ElementType.EOF) return ElementType.EOF;
+		PendingOutput pending = readQueue.peekLast();
+		if (pending.elementType==ElementType.EOF) return ElementType.EOF;
 		
-		return readQueue.removeLast();
+		pending = readQueue.removeLast();
+		if (pending.value()!=null) this.latestValue = pending.value();
+		return pending.elementType();
 	}
 	
-	public static enum ReaderState {
-		ROOT,
-		OBJECT,
-		ARRAY;
-	}
+	private static record PendingOutput(ElementType elementType, Object value) {}
 }

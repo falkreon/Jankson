@@ -25,6 +25,7 @@
 package blue.endless.jankson.api.document;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -35,6 +36,7 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
+import blue.endless.jankson.api.io.JsonWriter;
 import blue.endless.jankson.api.io.StructuredDataWriter;
 
 public class ObjectElement implements ValueElement, Map<String, ValueElement> {
@@ -138,6 +140,20 @@ public class ObjectElement implements ValueElement, Map<String, ValueElement> {
 		writer.writeObjectEnd();
 		
 		for(NonValueElement elem : epilogue) elem.write(writer);
+	}
+	
+	public String toString() {
+		StringWriter w = new StringWriter();
+		JsonWriter v = new JsonWriter(w);
+		
+		try {
+			this.write(v);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		
+		w.flush();
+		return w.toString();
 	}
 	
 	//implements Map {

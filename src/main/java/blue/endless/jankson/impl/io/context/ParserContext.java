@@ -26,11 +26,9 @@ package blue.endless.jankson.impl.io.context;
 
 import java.io.IOException;
 import java.util.function.BiConsumer;
-
-import javax.annotation.Nullable;
+import java.util.function.Consumer;
 
 import blue.endless.jankson.api.SyntaxError;
-import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.api.io.ElementType;
 import blue.endless.jankson.impl.io.LookaheadCodePointReader;
 
@@ -38,19 +36,11 @@ public interface ParserContext {
 	
 	/**
 	 * Parse a small part of the stream, enqueueing elements and their associated values into the elementConsumer.
+	 * @param reader the stream
+	 * @param elementConsumer elements submitted to this consumer will be seen by the reader in the order they are submitted in.
+	 * @param pusher submitting a ParserContext to this lambda will cause the parser to call that context until it is complete, and then return to this one.
 	 */
-	public void parse(LookaheadCodePointReader reader, BiConsumer<ElementType, Object> elementConsumer) throws IOException, SyntaxError;
-	
-	/**
-	 * If there is a String value available at this point in the stream, return it. If not, return null.
-	 */
-	public @Nullable String getStringValue();
-	
-	/**
-	 * If this Context parses primitive values, and one is available at this point in the stream, return it. If not,
-	 * return null.
-	 */
-	public @Nullable PrimitiveElement getValue();
+	public void parse(LookaheadCodePointReader reader, BiConsumer<ElementType, Object> elementConsumer, Consumer<ParserContext> pusher) throws IOException, SyntaxError;
 	
 	/**
 	 * Returns true if an EOF at this location in the stream would still result in well-formed data. Returns false if
@@ -65,7 +55,7 @@ public interface ParserContext {
 	 */
 	public boolean isComplete(LookaheadCodePointReader reader);
 	
-	public default void skipWhitespace(LookaheadCodePointReader reader) throws IOException {
+	public default void skipNonBreakingWhitespace(LookaheadCodePointReader reader) throws IOException {
 		while (true) {
 			int ch = reader.peek();
 			if (ch==-1 || ch=='\n' || !Character.isWhitespace(ch)) return;

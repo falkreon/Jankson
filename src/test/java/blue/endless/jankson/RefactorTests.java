@@ -27,21 +27,16 @@ package blue.endless.jankson;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.Objects;
 
 import org.junit.jupiter.api.Test;
 
-import blue.endless.jankson.api.document.FormattingElement;
-import blue.endless.jankson.api.document.KeyValuePairElement;
-import blue.endless.jankson.api.document.ObjectElement;
-import blue.endless.jankson.api.document.PrimitiveElement;
+import blue.endless.jankson.api.Jankson;
+import blue.endless.jankson.api.SyntaxError;
+import blue.endless.jankson.api.document.ValueElement;
+import blue.endless.jankson.api.io.ElementType;
+import blue.endless.jankson.api.io.JsonReader;
 import blue.endless.jankson.api.io.JsonWriter;
-import blue.endless.jankson.api.io.JsonWriterOptions;
-import blue.endless.jankson.impl.io.LookaheadCodePointReader;
 
 public class RefactorTests {
 	/*
@@ -62,33 +57,13 @@ public class RefactorTests {
 		System.out.println(stringWriter.toString());
 	}*/
 	
-	/*
 	@Test
-	public void testUnread() throws IOException {
-		StringReader s = new StringReader("Foo Bar");
-		CodePointReader in = new CodePointReader(s);
+	public void spam() throws IOException, SyntaxError {
+		String subject = "{ \"foo\": 42, /* stuff */ \"bar\": {} }";
 		
-		System.out.println(in.peekString(4));
-		char[] fin = new char[7];
-		in.read(fin);
-		System.out.println(new String(fin));
-	}*/
-	
-	@Test
-	public void codePoints() {
+		ValueElement value = Jankson.readJson(subject);
 		
-		/*
-		//String pizza = "\uD83C\uD855";
-		String pizza = new String(new int[] { 0x1F355 }, 0, 1);
-		System.out.println(pizza);
-		byte[] utf8 = pizza.getBytes();
-		System.out.println(Arrays.toString(utf8));
+		System.out.println(value);
 		
-		List<Integer> points = new ArrayList<>();
-		for(char ch : pizza.toCharArray()) points.add((int) ch);
-		
-		List<String> pointsList = points.stream().map(Integer::toHexString).collect(Collectors.toList());
-		
-		System.out.println(pointsList);*/
 	}
 }

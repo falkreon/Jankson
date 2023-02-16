@@ -177,6 +177,19 @@ public class PrimitiveElement implements ValueElement {
 		return new PrimitiveElement(value.toString());
 	}
 	
+	public static PrimitiveElement box(Object value) throws IllegalArgumentException {
+		if (value==null) return NULL;
+		
+		if (value instanceof String v)  return of(v);
+		if (value instanceof Boolean v) return of(v);
+		if (value instanceof Long v)    return of(v);
+		if (value instanceof Double v)  return of(v);
+		if (value instanceof BigInteger v) return of(v);
+		if (value instanceof BigDecimal v) return of(v);
+		
+		throw new IllegalArgumentException("Objects of type "+value.getClass().getCanonicalName()+" cannot be boxed as a PrimitiveElement.");
+	}
+	
 	@Override
 	public boolean isDefault() {
 		return isDefault;

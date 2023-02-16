@@ -45,4 +45,6 @@ public interface StructuredDataReader {
 	 * @return An ElementType corresponding to where we are in the object tree.
 	 */
 	public ElementType next() throws IOException, SyntaxError;
+	
+	public boolean hasNext();
 }

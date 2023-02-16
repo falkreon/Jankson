@@ -85,6 +85,22 @@ public class CommentElement implements NonValueElement {
 	
 	@Override
 	public void write(StructuredDataWriter writer) throws IOException {
-		//TODO: Implement
+		writer.writeComment(value, commentType);
+	}
+	
+	@Override
+	public String toString() {
+		switch(commentType) {
+		case OCTOTHORPE:
+			return "# "+this.value;
+		case MULTILINE:
+			return "/*"+this.value+"*/";
+		case LINE_END:
+			return "//"+this.value;
+		case DOC:
+			return "/**"+this.value+"*/";
+		default:
+			return this.value;
+		}
 	}
 }

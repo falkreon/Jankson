@@ -28,10 +28,9 @@ import java.io.IOException;
 import java.io.Reader;
 
 import blue.endless.jankson.api.SyntaxError;
-import blue.endless.jankson.api.document.CommentElement;
-import blue.endless.jankson.api.document.CommentType;
-import blue.endless.jankson.api.io.JsonReaderOptions.Hint;
 import blue.endless.jankson.impl.io.AbstractStructuredDataReader;
+import blue.endless.jankson.impl.io.context.ObjectParserContext;
+import blue.endless.jankson.impl.io.context.ParserContext;
 
 public class JsonReader extends AbstractStructuredDataReader {
 	private final JsonReaderOptions options;
@@ -43,11 +42,29 @@ public class JsonReader extends AbstractStructuredDataReader {
 	public JsonReader(Reader source, JsonReaderOptions options) {
 		super(source);
 		this.options = options;
+		pushContext(new ObjectParserContext()); //TODO: Push a root context first
 	}
 	
 	@Override
 	protected void readNext() throws IOException, SyntaxError {
-		ReaderState state = peekState();
+		ParserContext context = getContext();
+		//System.out.println("ReadNext > Context: "+context);
+		if (context==null) throw new IllegalStateException("Root context was popped");
+		if (context.isComplete(src)) {
+			//System.out.println("IsComplete.");
+			popContext();
+			if (getContext()==null) {
+				enqueueOutput(ElementType.EOF, null);
+			}
+		} else {
+			context.parse(
+					src,
+					this::enqueueOutput,
+					this::pushContext
+					);
+		}
+		
+		/*ReaderState state = peekState();
 		switch(state) {
 			case ROOT:
 				if (options.hasHint(Hint.ALLOW_BARE_ROOT_OBJECT)) {
@@ -127,7 +144,7 @@ public class JsonReader extends AbstractStructuredDataReader {
 				}
 			}
 				break;
-		}
+		}*/
 	}
 	
 	private void scanObject() throws IOException, SyntaxError {

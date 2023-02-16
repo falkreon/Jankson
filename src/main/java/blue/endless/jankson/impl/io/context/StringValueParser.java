@@ -50,7 +50,7 @@ public class StringValueParser implements ValueParser {
 		return canReadStatic(lookahead);
 	}
 	
-	public static Object readStatic(LookaheadCodePointReader reader) throws IOException, SyntaxError {
+	public static String readStatic(LookaheadCodePointReader reader) throws IOException, SyntaxError {
 		int startLine = reader.getLine();
 		int startChar = reader.getCharacter();
 		
@@ -86,7 +86,7 @@ public class StringValueParser implements ValueParser {
 	}
 	
 	@Override
-	public Object read(LookaheadCodePointReader reader) throws IOException, SyntaxError {
+	public String read(LookaheadCodePointReader reader) throws IOException, SyntaxError {
 		return readStatic(reader);
 	}
 	

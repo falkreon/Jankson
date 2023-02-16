@@ -27,14 +27,13 @@ package blue.endless.jankson.impl.io.context;
 import java.io.IOException;
 
 import blue.endless.jankson.api.SyntaxError;
-import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.api.io.ElementType;
 import blue.endless.jankson.api.io.JsonReaderOptions;
 import blue.endless.jankson.api.io.JsonReaderOptions.Hint;
 import blue.endless.jankson.impl.io.LookaheadCodePointReader;
 
 @Deprecated(forRemoval=true)
-public class ValueParserContext implements ParserContext {
+public class ValueParserContext {
 	private final JsonReaderOptions opts;
 	private final boolean isRoot;
 	
@@ -48,7 +47,6 @@ public class ValueParserContext implements ParserContext {
 		this.isRoot = isRoot;
 	}
 	
-	@Override
 	public ElementType parse(LookaheadCodePointReader reader) throws IOException, SyntaxError {
 		int ch = reader.peek();
 		
@@ -109,37 +107,5 @@ public class ValueParserContext implements ParserContext {
 				}
 				//break;
 		}
-	}
-
-	@Override
-	public String getStringValue() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public PrimitiveElement getValue() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public boolean canEOFHere() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public boolean isComplete(LookaheadCodePointReader reader) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-	
-	public static ValueParserContext create(JsonReaderOptions opts) {
-		return new ValueParserContext(opts);
-	}
-	
-	public static ValueParserContext createRoot(JsonReaderOptions opts) {
-		return new ValueParserContext(opts);
 	}
 }

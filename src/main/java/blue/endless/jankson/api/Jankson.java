@@ -30,6 +30,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
@@ -41,10 +42,13 @@ import java.util.function.Supplier;
 
 import javax.annotation.Nonnull;
 
+import blue.endless.jankson.api.document.DocumentBuilder;
+import blue.endless.jankson.api.document.ValueElement;
 import blue.endless.jankson.api.element.JsonElement;
 import blue.endless.jankson.api.element.JsonNull;
 import blue.endless.jankson.api.element.JsonObject;
 import blue.endless.jankson.api.io.JsonIOException;
+import blue.endless.jankson.api.io.JsonReader;
 import blue.endless.jankson.impl.AnnotatedElement;
 import blue.endless.jankson.impl.context.ParserContext;
 import blue.endless.jankson.impl.context.json.ElementParserContext;
@@ -419,5 +423,12 @@ public class Jankson {
 	public void throwDelayed(SyntaxError syntaxError) {
 		syntaxError.setEndParsing(line, column);
 		delayedError = syntaxError;
+	}
+	
+	/* Jankson 2.0 API */
+	
+	public static ValueElement readJson(String s) throws IOException, SyntaxError {
+		JsonReader reader = new JsonReader(new StringReader(s));
+		return DocumentBuilder.build(reader);
 	}
 }
