@@ -32,7 +32,6 @@ import java.util.Deque;
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.ElementType;
 import blue.endless.jankson.api.io.StructuredDataReader;
-import blue.endless.jankson.impl.io.context.ObjectParserContext;
 import blue.endless.jankson.impl.io.context.ParserContext;
 
 public abstract class AbstractStructuredDataReader implements StructuredDataReader {
@@ -65,18 +64,6 @@ public abstract class AbstractStructuredDataReader implements StructuredDataRead
 	protected void popContext() {
 		contextStack.pop();
 	}
-	
-	//protected void pushState(ReaderState elem) {
-	//	stateStack.push(elem);
-	//}
-	
-	//protected ReaderState peekState() {
-	//	return stateStack.peek();
-	//}
-	
-	//protected ReaderState popState() {
-	//	return stateStack.pop();
-	//}
 	
 	protected void enqueueOutput(ElementType elem, Object obj) {
 		readQueue.addFirst(new PendingOutput(elem, obj));

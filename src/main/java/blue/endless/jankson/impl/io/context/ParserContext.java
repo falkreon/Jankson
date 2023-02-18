@@ -43,12 +43,6 @@ public interface ParserContext {
 	public void parse(LookaheadCodePointReader reader, BiConsumer<ElementType, Object> elementConsumer, Consumer<ParserContext> pusher) throws IOException, SyntaxError;
 	
 	/**
-	 * Returns true if an EOF at this location in the stream would still result in well-formed data. Returns false if
-	 * EOF at this location should throw an error.
-	 */
-	public boolean canEOFHere();
-	
-	/**
 	 * Returns true if the parser has assembled a complete result. This method may trigger lookahead but MUST NOT read.
 	 * After this method returns true, the Reader state will change, and {@link #parse(LookaheadCodePointReader)} will
 	 * no longer be called.

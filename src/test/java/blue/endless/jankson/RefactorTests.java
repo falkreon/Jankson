@@ -25,41 +25,24 @@
 package blue.endless.jankson;
 
 import java.io.IOException;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.util.Objects;
 
 import org.junit.jupiter.api.Test;
 
 import blue.endless.jankson.api.Jankson;
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.document.ValueElement;
-import blue.endless.jankson.api.io.ElementType;
-import blue.endless.jankson.api.io.JsonReader;
-import blue.endless.jankson.api.io.JsonWriter;
 
 public class RefactorTests {
-	/*
-	@Test
-	public void basicOperation() throws IOException {
-		StringWriter stringWriter = new StringWriter();
-		JsonWriter writer = new JsonWriter(stringWriter, JsonWriterOptions.INI_SON);
-		
-		ObjectElement test = new ObjectElement();
-		test.put("foo", PrimitiveElement.of(42));
-		
-		KeyValuePairElement kvp = new KeyValuePairElement("bar", new ObjectElement());
-		kvp.getPreamble().add(FormattingElement.LINE_BREAK);
-		test.add(kvp);
-		
-		test.write(writer);
-		
-		System.out.println(stringWriter.toString());
-	}*/
 	
 	@Test
 	public void spam() throws IOException, SyntaxError {
-		String subject = "{ \"foo\": 42, /* stuff */ \"bar\": {} }";
+		String subject = """
+				{
+					\"foo\": 42, // This is a line end comment
+					/* stuff */ \"bar\": {},
+					"baz": [ 1, 2, 3 ]
+				}
+				""";
 		
 		ValueElement value = Jankson.readJson(subject);
 		

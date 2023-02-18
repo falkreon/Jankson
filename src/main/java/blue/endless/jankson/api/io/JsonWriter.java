@@ -45,10 +45,31 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 
 	@Override
 	public void writeComment(String value, CommentType type) throws IOException {
-		//For now, ignore commentType
-		dest.write("/* ");
-		dest.write(value);
-		dest.write(" */");
+		switch(type) {
+		case LINE_END:
+			dest.write("//");
+			dest.write(value);
+			writeNewline();
+			break;
+		
+		case OCTOTHORPE:
+			dest.write("#");
+			dest.write(value);
+			writeNewline();
+			break;
+		
+		case MULTILINE:
+			dest.write("/*");
+			dest.write(value);
+			dest.write("*/ "); //TODO: Figure out if we should write this extra space here
+			break;
+		
+		case DOC:
+			dest.write("/**");
+			dest.write(value);
+			dest.write("*/ "); //TODO: Figure out if we should write this extra space here
+			break;
+		}
 	}
 
 	@Override
@@ -103,7 +124,10 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 		if (peek()==State.ROOT && options.get(JsonWriterOptions.Hint.BARE_ROOT_OBJECT)) {
 			//Do not write the brace, and do not increase the indent level.
 		} else {
-			dest.write("{ ");
+			//dest.write("{ ");
+			dest.write('{'); //TODO: Consult hints for newline behavior
+			indentLevel++;
+			writeNewline();
 		}
 		objectStarted();
 	}
@@ -115,7 +139,9 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 		if (isWritingRoot() && options.get(JsonWriterOptions.Hint.BARE_ROOT_OBJECT)) {
 			//Do not write closing brace, and do not decrease the indent level.
 		} else {
-			dest.write(" }");
+			indentLevel--;
+			writeNewline(); //TODO: Consult hints for newline behavior
+			dest.write('}');
 		}
 		
 		objectEndWritten();
@@ -124,7 +150,8 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 	@Override
 	public void writeArrayStart() throws IOException {
 		assertValue();
-		dest.write("[ ");
+		dest.write("[ "); //TODO: Consult hints for newline behavior
+		indentLevel++;
 		arrayStarted();
 	}
 
@@ -132,6 +159,7 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 	public void writeArrayEnd() throws IOException {
 		assertArrayEnd();
 		dest.write(" ]");
+		indentLevel--;
 		arrayEndWritten();
 	}
 
@@ -172,5 +200,10 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 		assertValue();
 		dest.write("null");
 		valueWritten();
+	}
+	
+	private void writeNewline() throws IOException {
+		dest.write('\n');
+		dest.write("\t".repeat(indentLevel)); //TODO: Get the indent String from options
 	}
 }

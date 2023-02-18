@@ -31,11 +31,17 @@ import java.util.function.Consumer;
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.document.CommentElement;
 import blue.endless.jankson.api.io.ElementType;
+import blue.endless.jankson.api.io.JsonReaderOptions;
 import blue.endless.jankson.impl.io.LookaheadCodePointReader;
 
 public class ObjectParserContext implements ParserContext {
+	private JsonReaderOptions options;
 	private boolean foundStart = false;
 	private boolean foundEnd = false;
+	
+	public ObjectParserContext(JsonReaderOptions options) {
+		this.options = options;
+	}
 	
 	@Override
 	public void parse(LookaheadCodePointReader reader, BiConsumer<ElementType, Object> elementConsumer, Consumer<ParserContext> pusher) throws IOException, SyntaxError {
@@ -49,6 +55,8 @@ public class ObjectParserContext implements ParserContext {
 				elementConsumer.accept(ElementType.OBJECT_START, null);
 			} else if (ch == '}') {
 				throw new SyntaxError("End of object found before start.", reader.getLine(), reader.getCharacter());
+			} else {
+				throw new SyntaxError("Unexpected input found while looking for an object.", reader.getLine(), reader.getCharacter());
 			}
 		} else if (!foundEnd) {
 			int ch = reader.peek();
@@ -72,7 +80,7 @@ public class ObjectParserContext implements ParserContext {
 						elementConsumer.accept(ElementType.OBJECT_KEY, s);
 					} else {
 						//TODO: Accept bare String tokens
-						throw new SyntaxError("Bare tokens aren't accepted yet.");
+						throw new SyntaxError("Bare tokens aren't accepted yet.", reader.getLine(), reader.getCharacter());
 					}
 					
 					//Look for the colon
@@ -111,11 +119,6 @@ public class ObjectParserContext implements ParserContext {
 			skipNonBreakingWhitespace(reader);
 		}
 	}
-	
-	@Override
-	public boolean canEOFHere() {
-		return true;
-	}
 
 	@Override
 	public boolean isComplete(LookaheadCodePointReader reader) {
@@ -123,13 +126,12 @@ public class ObjectParserContext implements ParserContext {
 	}
 	
 	
-	public static void handleValue(LookaheadCodePointReader reader, BiConsumer<ElementType, Object> elementConsumer, Consumer<ParserContext> pusher) throws IOException, SyntaxError {
+	public void handleValue(LookaheadCodePointReader reader, BiConsumer<ElementType, Object> elementConsumer, Consumer<ParserContext> pusher) throws IOException, SyntaxError {
 		int ch = reader.peek();
 		if (ch=='{') {
-			pusher.accept(new ObjectParserContext());
+			pusher.accept(new ObjectParserContext(options));
 		} else if (ch=='[') {
-			//TODO: Write array parsercontext
-			//pusher.accept(new ArrayParserContext());
+			pusher.accept(new ArrayParserContext(options));
 		} else if (NumberValueParser.canReadStatic(reader)) {
 			Number value = NumberValueParser.readStatic(reader);
 			elementConsumer.accept(ElementType.PRIMITIVE, value);

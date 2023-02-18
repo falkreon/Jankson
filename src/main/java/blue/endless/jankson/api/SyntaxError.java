@@ -115,4 +115,12 @@ public class SyntaxError extends Exception {
 		this.column = column;
 	}
 	
+	@Override
+	public String toString() {
+		if (line!=-1 && column!=-1) {
+			return this.getClass().getCanonicalName()+" ["+(line+1)+", "+(column+1)+"]: "+getMessage();
+		} else {
+			return super.toString();
+		}
+	}
 }

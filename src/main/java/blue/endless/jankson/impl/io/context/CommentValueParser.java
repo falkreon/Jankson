@@ -59,6 +59,8 @@ public class CommentValueParser implements ValueParser {
 		} else {
 			String firstTwo = reader.peekString(2);
 			if (firstTwo.equals("//")) {
+				reader.read();
+				reader.read();
 				String commentText = readToLineEnd(reader);
 				return new CommentElement(commentText, CommentType.LINE_END);
 			} else if (firstTwo.equals("/*")){

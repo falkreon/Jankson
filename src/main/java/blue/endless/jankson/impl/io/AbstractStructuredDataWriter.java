@@ -94,7 +94,7 @@ public abstract class AbstractStructuredDataWriter implements StructuredDataWrit
 	 */
 	protected void assertArrayEnd() {
 		State peek = context.peek();
-		if (peek == State.ARRAY) return;
+		if (peek == State.ARRAY || peek == State.ARRAY_BEFORE_COMMA) return;
 		throw new IllegalStateException("Attempting to end an array-end in an invalid location. (State is "+peek+")");
 	}
 	

@@ -148,6 +148,13 @@ public class ArrayElement extends AbstractList<ValueElement> implements ValueEle
 	
 	@Override
 	public void write(StructuredDataWriter writer) throws IOException {
+		//TODO: Write comment preamble etc
+		writer.writeArrayStart();
+		for(int i=0; i<entries.size(); i++) {
+			entries.get(i).write(writer);
+			if (i<entries.size()-1) writer.nextValue();
+		}
 		
+		writer.writeArrayEnd();
 	}
 }
