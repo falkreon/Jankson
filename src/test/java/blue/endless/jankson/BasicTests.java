@@ -24,6 +24,7 @@
 
 package blue.endless.jankson;
 
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -40,6 +41,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import blue.endless.jankson.api.annotation.SerializedName;
+import blue.endless.jankson.api.document.ObjectElement;
+import blue.endless.jankson.api.document.PrimitiveElement;
+import blue.endless.jankson.api.document.ValueElement;
 import blue.endless.jankson.api.Jankson;
 import blue.endless.jankson.api.JsonGrammar;
 import blue.endless.jankson.api.SyntaxError;
@@ -63,32 +67,37 @@ public class BasicTests {
 	
 	@Test
 	public void testPrimitiveEquality() {
-		Assertions.assertEquals(new JsonPrimitive("foo"), new JsonPrimitive(new String("foo")), "Equal objects should produce equal json primitives"); //Ensure no interning
-		Assertions.assertEquals(new JsonPrimitive(Double.valueOf(42)), new JsonPrimitive(Double.valueOf(42)), "Equal objects should produce equal json primitives");
+		Assertions.assertEquals(PrimitiveElement.box("foo"), PrimitiveElement.of(new String("foo"))); //Ensure that string equality doesn't suffer from interning assumptions
+		Assertions.assertEquals(PrimitiveElement.of(42), PrimitiveElement.of(42)); //Ensure that equal objects produce equal primitives
 		
-		Assertions.assertNotEquals(new JsonPrimitive("foo"), new JsonPrimitive("bar"), "Non-Equal objects should produce non-equal json primitives");
-		Assertions.assertNotEquals(new JsonPrimitive(42.0), new JsonPrimitive(42.1), "Non-Equal objects should produce non-equal json primitives");
+		//Non-equal objects should produce non-equal primitives
+		Assertions.assertNotEquals(PrimitiveElement.of("foo"), PrimitiveElement.of("bar"));
+		Assertions.assertNotEquals(PrimitiveElement.of(42.0), PrimitiveElement.of(42.1));
 		
-		Assertions.assertNotEquals(new JsonPrimitive(Double.valueOf(42)), Long.valueOf(42), "Intended quirk behavior: 42.0 != 42");
+		//Intended quirk behavior: Data types matter in wrapped objects
+		Assertions.assertNotEquals(PrimitiveElement.of(42.0), PrimitiveElement.of(42));
 	}
 	
 	
 	@Test
-	public void testBasicComprehension() {
+	public void testBasicComprehension() throws IOException, SyntaxError {
 		String before = "{ 'foo': 'bar', 'baz':'bux' }";
 		
-		try {
-			JsonObject after = jankson.load(before);
+		ValueElement after = Jankson.readJson(before);
+		if (after instanceof ObjectElement obj) {
+			Assertions.assertEquals(2, obj.size());
+			Assertions.assertEquals(2, obj.keySet().size());
 			
-			Assertions.assertTrue(after.keySet().size()==2, "Object should contain two keys");
-			Assertions.assertTrue(after.get("foo").equals(new JsonPrimitive("bar")), "Object should contain mapping 'foo': 'bar'");
-			Assertions.assertTrue(after.get("baz").equals(new JsonPrimitive("bux")), "Object should contain mapping 'baz': 'bux'");
-			Assertions.assertNull(after.get("bar"), "Object shouldn't contain keys that weren't defined");
+			Assertions.assertEquals(PrimitiveElement.of("bar"), obj.get("foo")); //TODO: Make it easier to extract values from primitives
+			Assertions.assertEquals(PrimitiveElement.of("bux"), obj.get("baz"));
 			
-		} catch (SyntaxError ex) {
-			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+			Assertions.assertNull(obj.get("bar"));
+		} else {
+			Assertions.fail();
 		}
 	}
+	
+	/* Unported 1.2.x tests */
 	
 	@Test
 	public void testObjectContentCategories() {

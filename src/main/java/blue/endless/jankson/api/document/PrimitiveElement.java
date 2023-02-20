@@ -24,33 +24,30 @@
 
 package blue.endless.jankson.api.document;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 
-import blue.endless.jankson.api.io.StructuredDataWriter;
+import blue.endless.jankson.impl.document.BooleanElementImpl;
+import blue.endless.jankson.impl.document.DoubleElementImpl;
+import blue.endless.jankson.impl.document.LongElementImpl;
+import blue.endless.jankson.impl.document.NullElementImpl;
+import blue.endless.jankson.impl.document.StringElementImpl;
 
-public class PrimitiveElement implements ValueElement {
-	public static PrimitiveElement NULL = new PrimitiveElement(null);
+public abstract class PrimitiveElement implements ValueElement {
 	
 	protected boolean isDefault = false;
 	protected List<NonValueElement> preamble = new ArrayList<>();
-	protected Object value;
 	protected List<NonValueElement> epilogue = new ArrayList<>();
-	
-	private PrimitiveElement(Object o) {
-		value = o;
-	}
 	
 	@Override
 	public List<NonValueElement> getPreamble() {
 		return preamble;
-	}
-	
-	public Object getValue() {
-		return value;
 	}
 	
 	@Override
@@ -58,127 +55,54 @@ public class PrimitiveElement implements ValueElement {
 		return epilogue;
 	}
 	
-	public String asString() {
-		if (value==null) return "null";
-		return value.toString();
-	}
+	public abstract Optional<Object> getValue();
 	
-	public boolean asBoolean(boolean fallback) {
-		return (value instanceof Boolean) ? (Boolean) value : fallback;
-	}
+	public abstract Optional<String> asString();
+	public abstract Optional<Boolean> asBoolean();
+	public abstract OptionalDouble asDouble();
+	public abstract OptionalLong asLong();
+	public abstract OptionalInt asInt();
+	public abstract Optional<BigInteger> asBigInteger();
+	public abstract Optional<BigDecimal> asBigDecimal();
 	
-	public double asDouble(double fallback) {
-		return (value instanceof Number) ? ((Number) value).doubleValue() : fallback;
-	}
-	
-	public float asFloat(float fallback) {
-		return (value instanceof Number) ? ((Number) value).floatValue() : fallback;
-	}
-	
-	public long asLong(long fallback) {
-		return (value instanceof Number) ? ((Number) value).longValue() : fallback;
-	}
-	
-	public int asInt(int fallback) {
-		return (value instanceof Number) ? ((Number) value).intValue() : fallback;
-	}
-	
-	public short asShort(short fallback) {
-		return (value instanceof Number) ? ((Number) value).shortValue() : fallback;
-	}
-	
-	public byte asByte(byte fallback) {
-		return (value instanceof Number) ? ((Number) value).byteValue() : fallback;
-	}
-	
-	public char asChar(char fallback) {
-		if (value instanceof Number) {
-			return (char)((Number) value).intValue();
-		} else if (value instanceof String && ((String) value).length()==1) {
-			return ((String) value).charAt(0);
-		} else {
-			return fallback;
-		}
-	}
-	
-	public BigInteger asBigInteger(BigInteger fallback) {
-		if (value instanceof Number) {
-			return BigInteger.valueOf( ((Number) value).longValue() );
-		} else if (value instanceof String) {
-			try {
-				return new BigInteger((String) value, 16);
-			} catch (NumberFormatException ex) {
-				return fallback;
-			}
-		} else {
-			return fallback;
-		}
-	}
-	
-	public BigDecimal asBigDecimal(BigDecimal fallback) {
-		if (value instanceof Number) {
-			return BigDecimal.valueOf( ((Number) value).doubleValue() );
-		} else if (value instanceof String) {
-			try {
-				return new BigDecimal((String) value);
-			} catch (NumberFormatException ex) {
-				return fallback;
-			}
-		} else {
-			return fallback;
-		}
-	}
-	
-	@Override
-	public PrimitiveElement clone() {
-		if (this==NULL) return this;
-		
-		PrimitiveElement result = new PrimitiveElement(this.value);
-		for(NonValueElement elem : preamble) {
-			result.preamble.add(elem.clone());
-		}
-		for(NonValueElement elem : epilogue) {
-			result.epilogue.add(elem.clone());
-		}
-		
-		result.isDefault = isDefault;
-		
-		return result;
+	protected void copyNonValueElementsFrom(PrimitiveElement elem) {
+		for(NonValueElement nv : elem.preamble) this.preamble.add(nv);
+		for(NonValueElement nv : elem.epilogue) this.epilogue.add(nv);
 	}
 	
 	public static PrimitiveElement ofNull() {
-		return NULL;
+		return new NullElementImpl();
 	}
 	
 	public static PrimitiveElement of(String value) {
-		if (value==null) return NULL;
-		return new PrimitiveElement(value);
+		if (value==null) return ofNull();
+		return new StringElementImpl(value);
 	}
 	
 	public static PrimitiveElement of(boolean value) {
-		return new PrimitiveElement(value);
+		return new BooleanElementImpl(value);
 	}
 	
 	public static PrimitiveElement of(long value) {
-		return new PrimitiveElement(value);
+		return new LongElementImpl(value);
 	}
 	
 	public static PrimitiveElement of(double value) {
-		return new PrimitiveElement(value);
+		return new DoubleElementImpl(value);
 	}
 	
 	public static PrimitiveElement of(BigInteger value) {
-		if (value==null) return NULL;
-		return new PrimitiveElement(value.toString(16));
+		if (value==null) return ofNull();
+		return new StringElementImpl(value.toString(16));
 	}
 	
 	public static PrimitiveElement of(BigDecimal value) {
-		if (value==null) return NULL;
-		return new PrimitiveElement(value.toString());
+		if (value==null) return ofNull();
+		return new StringElementImpl(value.toString());
 	}
 	
 	public static PrimitiveElement box(Object value) throws IllegalArgumentException {
-		if (value==null) return NULL;
+		if (value==null) return ofNull();
 		
 		if (value instanceof String v)  return of(v);
 		if (value instanceof Boolean v) return of(v);
@@ -201,22 +125,5 @@ public class PrimitiveElement implements ValueElement {
 	}
 	
 	@Override
-	public void write(StructuredDataWriter writer) throws IOException {
-		
-		for(NonValueElement elem : preamble) elem.write(writer);
-		
-		if (value==null) writer.writeNullLiteral(); //Or throw an error if this!=NULL
-		
-		if (value instanceof Boolean b) {
-			writer.writeBooleanLiteral(b);
-		} else if (value instanceof Long l) {
-			writer.writeLongLiteral(l);
-		} else if (value instanceof Double d) {
-			writer.writeDoubleLiteral(d);
-		} else if (value instanceof String s) {
-			writer.writeStringLiteral(s);
-		}
-		
-		for(NonValueElement elem : epilogue) elem.write(writer);
-	}
+	public abstract ValueElement clone();
 }

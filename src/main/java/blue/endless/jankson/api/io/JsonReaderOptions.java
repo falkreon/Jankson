@@ -31,6 +31,12 @@ import blue.endless.jankson.impl.MarshallerImpl;
 
 @SuppressWarnings("deprecation")
 public class JsonReaderOptions {
+	/**
+	 * This is the set of options configured when there are no options specified. Effectively this is the "default
+	 * Jankson behavior". Bare root objects are not allowed, unquoted keys are allowed, and commas are ignored.
+	 */
+	public static final JsonReaderOptions UNSPECIFIED = new JsonReaderOptions(Hint.ALLOW_UNQUOTED_KEYS);
+	
 	private final EnumSet<Hint> hints = EnumSet.noneOf(Hint.class);
 	private final Marshaller marshaller;
 	

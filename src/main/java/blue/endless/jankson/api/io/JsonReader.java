@@ -36,7 +36,7 @@ public class JsonReader extends AbstractStructuredDataReader {
 	private final JsonReaderOptions options;
 	
 	public JsonReader(Reader source) {
-		this(source, new JsonReaderOptions());
+		this(source, JsonReaderOptions.UNSPECIFIED);
 	}
 	
 	public JsonReader(Reader source, JsonReaderOptions options) {

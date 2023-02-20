@@ -93,7 +93,7 @@ public class DocumentBuilder {
 			}
 		}
 		
-		if (elem==null) return PrimitiveElement.NULL;
+		if (elem==null) return PrimitiveElement.ofNull();
 		
 		for(NonValueElement e : prologue) {
 			elem.getPreamble().add(e);
