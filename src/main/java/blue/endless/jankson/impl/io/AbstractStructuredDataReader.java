@@ -96,7 +96,10 @@ public abstract class AbstractStructuredDataReader implements StructuredDataRead
 		if (pending.elementType==ElementType.EOF) return ElementType.EOF;
 		
 		pending = readQueue.removeLast();
-		if (pending.value()!=null) this.latestValue = pending.value();
+		//Should we update pending value?
+		if (pending.elementType==ElementType.COMMENT || pending.elementType==ElementType.OBJECT_KEY || pending.elementType==ElementType.PRIMITIVE) {
+			this.latestValue = pending.value();
+		}
 		return pending.elementType();
 	}
 	

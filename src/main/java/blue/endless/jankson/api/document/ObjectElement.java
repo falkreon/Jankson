@@ -114,6 +114,20 @@ public class ObjectElement implements ValueElement, Map<String, ValueElement> {
 	}
 	
 	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof ObjectElement elem) {
+			if (!preamble.equals(elem.preamble)) return false;
+			if (!footer.equals(elem.footer)) return false;
+			if (!epilogue.equals(elem.epilogue)) return false;
+			if (!entries.equals(elem.entries)) return false;
+			
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+	@Override
 	public boolean isDefault() {
 		return isDefault;
 	}

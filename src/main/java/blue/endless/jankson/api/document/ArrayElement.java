@@ -137,6 +137,20 @@ public class ArrayElement extends AbstractList<ValueElement> implements ValueEle
 	}
 	
 	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof ArrayElement elem) {
+			if (!preamble.equals(elem.preamble)) return false;
+			if (!footer.equals(elem.footer)) return false;
+			if (!epilogue.equals(elem.epilogue)) return false;
+			if (!entries.equals(elem.entries)) return false;
+			
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+	@Override
 	public boolean isDefault() {
 		return isDefault;
 	}

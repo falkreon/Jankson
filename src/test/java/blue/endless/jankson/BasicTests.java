@@ -41,6 +41,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import blue.endless.jankson.api.annotation.SerializedName;
+import blue.endless.jankson.api.document.ArrayElement;
 import blue.endless.jankson.api.document.ObjectElement;
 import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.api.document.ValueElement;
@@ -85,41 +86,40 @@ public class BasicTests {
 		
 		ValueElement after = Jankson.readJson(before);
 		if (after instanceof ObjectElement obj) {
+			//The above object should deserialize to two keys with specific, known values.
 			Assertions.assertEquals(2, obj.size());
 			Assertions.assertEquals(2, obj.keySet().size());
 			
 			Assertions.assertEquals("bar", obj.getPrimitive("foo").asString().get());
 			Assertions.assertEquals("bux", obj.getPrimitive("baz").asString().get());
 			
+			//Keys that are not present should retrieve synthetic null elements.
 			Assertions.assertTrue(obj.getPrimitive("bar").isNull());
 		} else {
 			Assertions.fail();
 		}
 	}
 	
-	/* Unported 1.2.x tests */
-	
 	@Test
-	public void testObjectContentCategories() {
+	public void testObjectContentCategories() throws IOException, SyntaxError {
 		String before = "{ 'a': 'hello', 'b': 42, 'c': 42.0, 'd': {}, 'e': [], 'f': true, 'g': false, 'h': null }";
 		
-		try {
-			JsonObject after = jankson.load(before);
+		ValueElement after = Jankson.readJson(before);
+		if (after instanceof ObjectElement obj) {
+			Assertions.assertEquals(8, obj.size());
 			
-			Assertions.assertTrue(after.keySet().size()==8, "Object should contain 8 keys");
-			Assertions.assertTrue(after.get("a").equals(new JsonPrimitive("hello")), "Object should contain mapping 'a': 'hello'");
-			Assertions.assertTrue(after.get("b").equals(new JsonPrimitive(Long.valueOf(42))), "Object should contain mapping 'b': 42");
-			Assertions.assertTrue(after.get("c").equals(new JsonPrimitive(Double.valueOf(42.0))), "Object should contain mapping 'c': 42.0");
-			Assertions.assertTrue(after.get("d").equals(new JsonObject()), "Object should contain mapping 'd': {}");
-			Assertions.assertTrue(after.get("e").equals(new JsonArray()), "Object should contain mapping 'e': []");
-			Assertions.assertTrue(after.get("f").equals(new JsonPrimitive(Boolean.TRUE)), "Object should contain mapping 'f': true");
-			Assertions.assertTrue(after.get("g").equals(new JsonPrimitive(Boolean.FALSE)), "Object should contain mapping 'g': false");
-			Assertions.assertTrue(after.get("h").equals(JsonNull.INSTANCE), "Object should contain mapping 'h': null");
-			
-		} catch (SyntaxError ex) {
-			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+			Assertions.assertEquals("hello",             obj.getPrimitive("a").getValue().get());
+			Assertions.assertEquals(42L,                 obj.getPrimitive("b").asLong().getAsLong());
+			Assertions.assertEquals(42.0,                obj.getPrimitive("c").asDouble().getAsDouble(), 0.000000001); //Should be equal to an extremely fine delta
+			Assertions.assertEquals(new ObjectElement(), obj.get("d"));
+			Assertions.assertEquals(new ArrayElement(),  obj.get("e"));
+			Assertions.assertEquals(true,                obj.getPrimitive("f").asBoolean().get());
+			Assertions.assertEquals(false,               obj.getPrimitive("g").asBoolean().get());
+			Assertions.assertTrue(obj.getPrimitive("h").isNull());
 		}
 	}
+	
+	/* Unported 1.2.x tests */
 	
 	@Test
 	public void testArrayContentCategories() {

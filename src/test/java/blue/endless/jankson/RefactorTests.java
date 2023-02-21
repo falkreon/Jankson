@@ -34,19 +34,20 @@ import blue.endless.jankson.api.document.ValueElement;
 
 public class RefactorTests {
 	
-	@Test
-	public void spam() throws IOException, SyntaxError {
-		String subject = """
-				{
-					\"foo\": 42, // This is a line end comment
-					/* stuff */ \"bar\": {},
-					"baz": [ 1, 2, 3 ]
-				}
-				""";
-		
-		ValueElement value = Jankson.readJson(subject);
-		
-		System.out.println(value);
-		
-	}
+	//@Test
+	//public void spam() throws IOException, SyntaxError {
+	//	
+	//	String subject = """
+	//			{
+	//				\"foo\": 42, // This is a line end comment
+	//				/* stuff */ \"bar\": {},
+	//				"baz": [ 1, 2, 3 ]
+	//			}
+	//			""";
+	//	
+	//	ValueElement value = Jankson.readJson(subject);
+	//	
+	//	System.out.println(value);
+	//	
+	//}
 }
