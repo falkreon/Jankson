@@ -88,10 +88,10 @@ public class BasicTests {
 			Assertions.assertEquals(2, obj.size());
 			Assertions.assertEquals(2, obj.keySet().size());
 			
-			Assertions.assertEquals(PrimitiveElement.of("bar"), obj.get("foo")); //TODO: Make it easier to extract values from primitives
-			Assertions.assertEquals(PrimitiveElement.of("bux"), obj.get("baz"));
+			Assertions.assertEquals("bar", obj.getPrimitive("foo").asString().get());
+			Assertions.assertEquals("bux", obj.getPrimitive("baz").asString().get());
 			
-			Assertions.assertNull(obj.get("bar"));
+			Assertions.assertTrue(obj.getPrimitive("bar").isNull());
 		} else {
 			Assertions.fail();
 		}

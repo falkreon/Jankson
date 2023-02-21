@@ -105,5 +105,13 @@ public class StringElementImpl extends PrimitiveElement {
 			return Optional.empty();
 		}
 	}
-
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof StringElementImpl v) {
+			return super.equals(obj) && v.value.equals(this.value);
+		} else {
+			return false;
+		}
+	}
 }

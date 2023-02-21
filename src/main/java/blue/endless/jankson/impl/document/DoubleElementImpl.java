@@ -97,5 +97,13 @@ public class DoubleElementImpl extends PrimitiveElement {
 	public Optional<BigDecimal> asBigDecimal() {
 		return Optional.of(BigDecimal.valueOf(value));
 	}
-
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof DoubleElementImpl v) {
+			return super.equals(obj) && v.value == this.value;
+		} else {
+			return false;
+		}
+	}
 }

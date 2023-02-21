@@ -98,4 +98,12 @@ public class BooleanElementImpl extends PrimitiveElement {
 		return Optional.empty();
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof BooleanElementImpl v) {
+			return super.equals(obj) && v.value == this.value;
+		} else {
+			return false;
+		}
+	}
 }

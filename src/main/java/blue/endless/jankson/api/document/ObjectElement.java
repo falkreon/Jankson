@@ -156,6 +156,23 @@ public class ObjectElement implements ValueElement, Map<String, ValueElement> {
 		return w.toString();
 	}
 	
+	/**
+	 * Gets a primtive element if it exists in this object. This method cannot return null values, only
+	 * PrimitiveElements representing the null value. If no element exists with the specified key, or the element
+	 * at the specified key is not a primitive, then a synthetic null literal element will be returned.
+	 * @param key the key whose corresponding value should be returned
+	 * @return The value if it is present and primitive, otherwise a synthetic element representing null.
+	 */
+	public PrimitiveElement getPrimitive(String key) {
+		for(KeyValuePairElement entry : entries) {
+			if (entry.getKey().equals(key) && entry.getValue() instanceof PrimitiveElement prim) {
+				return prim;
+			}
+		}
+		
+		return PrimitiveElement.ofNull();
+	}
+	
 	//implements Map {
 		@Override
 		public int size() {

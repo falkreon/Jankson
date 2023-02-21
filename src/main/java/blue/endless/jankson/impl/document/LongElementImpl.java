@@ -102,4 +102,12 @@ public class LongElementImpl extends PrimitiveElement {
 		return Optional.of(BigDecimal.valueOf(value));
 	}
 	
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof LongElementImpl v) {
+			return super.equals(obj) && v.value == this.value;
+		} else {
+			return false;
+		}
+	}
 }

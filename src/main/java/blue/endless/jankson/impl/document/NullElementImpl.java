@@ -52,6 +52,11 @@ public class NullElementImpl extends PrimitiveElement {
 	public Optional<Object> getValue() {
 		return Optional.empty();
 	}
+	
+	@Override
+	public boolean isNull() {
+		return true;
+	}
 
 	@Override
 	public Optional<String> asString() {
@@ -93,5 +98,10 @@ public class NullElementImpl extends PrimitiveElement {
 		for(NonValueElement elem : preamble) elem.write(writer);
 		writer.writeNullLiteral();
 		for(NonValueElement elem : epilogue) elem.write(writer);
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		return super.equals(obj) && obj instanceof NullElementImpl;
 	}
 }

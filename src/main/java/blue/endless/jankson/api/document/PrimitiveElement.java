@@ -55,14 +55,65 @@ public abstract class PrimitiveElement implements ValueElement {
 		return epilogue;
 	}
 	
+	/**
+	 * Gets the value represented by this element, or empty if this element is a null literal or a synthetic missing-key element.
+	 */
 	public abstract Optional<Object> getValue();
+	/**
+	 * Returns true if this element represents a null literal, otherwise returns false.
+	 */
+	public boolean isNull() { return false; }
 	
+	/**
+	 * If this value is a String, or an element stored in json as a String such as BigDecimal or BigInteger, returns the
+	 * value as a String. Otherwise, this method returns empty.
+	 */
 	public abstract Optional<String> asString();
+	
+	/**
+	 * Returns this value as a boolean if and only if it is a boolean value. Otherwise, this method returns empty.
+	 */
 	public abstract Optional<Boolean> asBoolean();
+	
+	/**
+	 * If this value is a floating point value, or an integer or long type value which can be upcast to double with
+	 * normal java semantics, this method will return that double value. Otherwise, empty will be returned.
+	 */
 	public abstract OptionalDouble asDouble();
+	
+	/**
+	 * If this value is an integer or long value, this method will return that value. Otherwise, empty will be returned.
+	 * String values that represent valid integers DO NOT count as integers here. If an integer value is specified with
+	 * fractional precision like 42.0, it is considered a double and empty will be returned by this method.
+	 */
 	public abstract OptionalLong asLong();
+	
+	/**
+	 * If the value is an integer value, that value will be returned. Otherwise, this method returns empty. Note that
+	 * integer types do not exist at all in normal json5, and all integer types in Jankson have long precision, so some
+	 * examples follow to clarify quirks behavior:
+	 * <ul>
+	 * <li>520 will return its exact value (it is a long value, but its exact value fits in an int)
+	 * <li>2.0 will return empty (it is a double value)
+	 * <li>"8" will return empty (it is a string value)
+	 * <li>Infinity will return empty (it is a double value)
+	 * <li>2147483648 will return empty (it is too big for its exact value to fit in an int)
+	 * </ul>
+	 */
 	public abstract OptionalInt asInt();
+	
+	/**
+	 * If this value is a base-16 String which can be parsed as a valid BigInteger, this method returns that value.
+	 * If this is a long value, its BigInteger representation will be returned. Otherwise, the result will be empty.
+	 */
 	public abstract Optional<BigInteger> asBigInteger();
+	
+	/**
+	 * If this value is String whose contents conform to BigDecimal's canonical String representation, its corresponding
+	 * BigDecimal value will be returned. If this is a long or double value, it will be wrapped and returned as a
+	 * BigDecimal. Otherwise, the result will be empty.
+	 * @see BigDecimal#toString()
+	 */
 	public abstract Optional<BigDecimal> asBigDecimal();
 	
 	protected void copyNonValueElementsFrom(PrimitiveElement elem) {
@@ -126,4 +177,15 @@ public abstract class PrimitiveElement implements ValueElement {
 	
 	@Override
 	public abstract ValueElement clone();
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof PrimitiveElement prim) {
+			return
+					preamble.equals(prim.preamble) &&
+					epilogue.equals(prim.epilogue);
+		} else {
+			return false;
+		}
+	}
 }
