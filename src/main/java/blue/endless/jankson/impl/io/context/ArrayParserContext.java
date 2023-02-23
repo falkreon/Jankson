@@ -109,8 +109,14 @@ public class ArrayParserContext implements ParserContext {
 			String value = StringValueParser.readStatic(reader);
 			elementConsumer.accept(ElementType.PRIMITIVE, value);
 		} else {
-			//TODO: Unquoted Strings etc.
-			throw new SyntaxError("Expected a value here, but couldn't decode it.", reader.getLine(), reader.getCharacter());
+			String maybeNull = reader.peekString(4);
+			if (maybeNull.equals("null")) {
+				reader.readString(4);
+				elementConsumer.accept(ElementType.PRIMITIVE, null);
+			} else {
+				//TODO: Unquoted Strings etc.
+				throw new SyntaxError("Expected a value here, but couldn't decode it.", reader.getLine(), reader.getCharacter());
+			}
 		}
 	}
 

@@ -60,6 +60,14 @@ public class ArrayElement extends AbstractList<ValueElement> implements ValueEle
 		return this;
 	}
 	
+	public PrimitiveElement getPrimitive(int index) {
+		if (entries.get(index) instanceof PrimitiveElement prim) {
+			return prim;
+		} else {
+			return PrimitiveElement.ofNull();
+		}
+	}
+	
 	//extends AbstractList<ValueElement> {
 	
 		@Override

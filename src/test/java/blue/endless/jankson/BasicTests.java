@@ -116,37 +116,38 @@ public class BasicTests {
 			Assertions.assertEquals(true,                obj.getPrimitive("f").asBoolean().get());
 			Assertions.assertEquals(false,               obj.getPrimitive("g").asBoolean().get());
 			Assertions.assertTrue(obj.getPrimitive("h").isNull());
+		} else {
+			Assertions.fail();
+		}
+	}
+	
+	@Test
+	public void testArrayContentCategories() throws IOException, SyntaxError {
+		String before = "{ 'a': ['hello', 42, 42.0, {}, [], true, false, null] }";
+		
+		ValueElement after = Jankson.readJson(before);
+		
+		if (after instanceof ObjectElement obj) {
+			Assertions.assertEquals(1, obj.keySet().size());
+			
+			ArrayElement array = obj.getArray("a");
+			Assertions.assertEquals(8, array.size());
+			
+			Assertions.assertEquals("hello",       array.getPrimitive(0).asString().get());
+			Assertions.assertEquals(42,            array.getPrimitive(1).asInt().getAsInt());
+			Assertions.assertEquals(42.0,          array.getPrimitive(2).asDouble().getAsDouble());
+			Assertions.assertInstanceOf(ObjectElement.class, array.get(3));
+			Assertions.assertInstanceOf(ArrayElement.class,  array.get(4));
+			Assertions.assertEquals(Boolean.TRUE,  array.getPrimitive(5).asBoolean().get());
+			Assertions.assertEquals(Boolean.FALSE, array.getPrimitive(6).asBoolean().get());
+			Assertions.assertTrue(array.getPrimitive(7).isNull());
+			
+		} else {
+			Assertions.fail();
 		}
 	}
 	
 	/* Unported 1.2.x tests */
-	
-	@Test
-	public void testArrayContentCategories() {
-		String before = "{ 'a': ['hello', 42, 42.0, {}, [], true, false, null] }";
-		
-		try {
-			JsonObject after = jankson.load(before);
-			
-			Assertions.assertTrue(after.keySet().size()==1, "Object should contain one key");
-			
-			JsonArray array = after.recursiveGet(JsonArray.class, "a");
-			Assertions.assertNotNull(array, "Recursive get of just 'a' should obtain an array.");
-			Assertions.assertEquals(8, array.size(), "Array should contain all declared elements and no more.");
-			
-			Assertions.assertEquals(new JsonPrimitive("hello"), array.get(0), "Array should contain 'hello' at position 0");
-			Assertions.assertEquals(new JsonPrimitive(Long.valueOf(42)), array.get(1), "Array should contain 42 at position 1");
-			Assertions.assertEquals(new JsonPrimitive(Double.valueOf(42)), array.get(2),"Array should contain 42.0 at position 2");
-			Assertions.assertEquals(new JsonObject(), array.get(3), "Array should contain {} at position 3");
-			Assertions.assertEquals(new JsonArray(), array.get(4), "Array should contain [] at position 4");
-			Assertions.assertEquals(new JsonPrimitive(Boolean.TRUE), array.get(5), "Array should contain true at position 5");
-			Assertions.assertEquals(new JsonPrimitive(Boolean.FALSE), array.get(6), "Array should contain false at position 6");
-			Assertions.assertEquals(JsonNull.INSTANCE, array.get(7), "Array should contain null at position 7");
-			
-		} catch (SyntaxError ex) {
-			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
-		}
-	}
 	
 	@Test
 	public void testCommentAttribution() {

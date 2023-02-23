@@ -187,6 +187,38 @@ public class ObjectElement implements ValueElement, Map<String, ValueElement> {
 		return PrimitiveElement.ofNull();
 	}
 	
+	/**
+	 * Gets an array element if it exists in this object. If no element is mapped to the key, or if the value mapped to
+	 * the key is not an array, an empty array will be returned.
+	 * @param key the key whose corresponding value should be returned
+	 * @return the value if it is present and an array, otherwise a synthetic empty array representing the missing element.
+	 */
+	public ArrayElement getArray(String key) {
+		for(KeyValuePairElement entry : entries) {
+			if (entry.getKey().equals(key) && entry.getValue() instanceof ArrayElement arr) {
+				return arr;
+			}
+		}
+		
+		return new ArrayElement();
+	}
+	
+	/**
+	 * Gets an object element if it exists in this object. If no element is mapped to the key, or if the value mapped to
+	 * the key is not an object, an empty object will be returned.
+	 * @param key the key whose corresponding value should be returned
+	 * @return the value if it is present and an object, otherwise a synthetic empty object representing the missing element.
+	 */
+	public ObjectElement getObject(String key) {
+		for(KeyValuePairElement entry : entries) {
+			if (entry.getKey().equals(key) && entry.getValue() instanceof ObjectElement obj) {
+				return obj;
+			}
+		}
+		
+		return new ObjectElement();
+	}
+	
 	//implements Map {
 		@Override
 		public int size() {
