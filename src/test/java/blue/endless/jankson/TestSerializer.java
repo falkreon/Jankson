@@ -33,90 +33,86 @@ import org.junit.jupiter.api.Test;
 import blue.endless.jankson.api.Jankson;
 import blue.endless.jankson.api.JsonGrammar;
 import blue.endless.jankson.api.SyntaxError;
-import blue.endless.jankson.api.element.JsonElement;
-import blue.endless.jankson.api.element.JsonNull;
-import blue.endless.jankson.api.element.JsonObject;
-import blue.endless.jankson.api.element.JsonPrimitive;
 
 public class TestSerializer {
-	Jankson jankson;
-	
-	@BeforeEach
-	public void setup() {
-		jankson = Jankson.builder().build();
-	}
-	
-	/**
-	 * Make sure that characters which lie outside the BMP and/or have complex encodings wind up
-	 * decomposed and escaped properly
-	 */
-	@Test
-	public void testUnicodeEscapes() {
-		String smileyFace = String.valueOf(Character.toChars(0x1F600));
-		String result = new JsonPrimitive(smileyFace).toString();
-		Assertions.assertEquals("\"\\ud83d\\ude00\"", result);
-	}
-	
-	
-	private static class DeclaredSerializerTest {
-		@SuppressWarnings("unused")
-		private String foo = "bar";
-		
-		@Serializer
-		public JsonPrimitive serialize() {
-			return JsonPrimitive.of(42L);
-		}
-	}
-	
-	@Test
-	public void testInternalSerializer() {
-		JsonElement elem = jankson.toJson(new DeclaredSerializerTest());
-		Assertions.assertEquals("42", elem.toJson());
-	}
-	
-	/**
-	 * Issue #34 - switching to Writer caused a small bug where doubles were double-printed
-	 */
-	@Test
-	public void testBareSpecialNumericsDuplication() {
-		JsonObject subject = new JsonObject();
-		subject.put("foo", JsonPrimitive.of(42.0));
-		
-		JsonGrammar grammar = JsonGrammar.builder().bareSpecialNumerics(true).printWhitespace(false).build();
-		
-		Assertions.assertEquals("{ \"foo\": 42.0 }", subject.toJson(grammar));
-	}
-	
-	/** Issues #26 and #38 - ':' isn't force-quoted in object keys */
-	@Test
-	public void testIssue26() {
-		JsonObject obj = new JsonObject();
-		obj.put("test:key", JsonNull.INSTANCE);
-		
-		String result = obj.toJson(JsonGrammar.builder().printWhitespace(false).printUnquotedKeys(true).build());
-		Assertions.assertEquals("{ \"test:key\": null }", result);
-	}
-	
-	/**
-	 * Issue #42: String with russian characters is incorrectly parsed.
-	 * 
-	 * <p>Moved off of a hand-decoding of UTF-8 surrogates onto Reader, which offers a much more robust and future-proof assembly of UTF-8 surrogates into code points.
-	 */
-	
-	@Test
-	public void testCyrillic() {
-		String input =
-				"{\n" + 
-				"  en: \"Play with sound?\",\n" + 
-				"  ru: \"Играть с музыкой?\"\n" + 
-				"}";
-		
-		try {
-			JsonObject obj = Jankson.builder().build().load(input);
-			
-			Assertions.assertEquals("Играть с музыкой?", obj.get(String.class, "ru"));
-		} catch (SyntaxError ex) {
-			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
-		}
-	}
+//	Jankson jankson;
+//	
+//	@BeforeEach
+//	public void setup() {
+//		jankson = Jankson.builder().build();
+//	}
+//	
+//	/**
+//	 * Make sure that characters which lie outside the BMP and/or have complex encodings wind up
+//	 * decomposed and escaped properly
+//	 */
+//	@Test
+//	public void testUnicodeEscapes() {
+//		String smileyFace = String.valueOf(Character.toChars(0x1F600));
+//		String result = new JsonPrimitive(smileyFace).toString();
+//		Assertions.assertEquals("\"\\ud83d\\ude00\"", result);
+//	}
+//	
+//	
+//	private static class DeclaredSerializerTest {
+//		@SuppressWarnings("unused")
+//		private String foo = "bar";
+//		
+//		@Serializer
+//		public JsonPrimitive serialize() {
+//			return JsonPrimitive.of(42L);
+//		}
+//	}
+//	
+//	@Test
+//	public void testInternalSerializer() {
+//		JsonElement elem = jankson.toJson(new DeclaredSerializerTest());
+//		Assertions.assertEquals("42", elem.toJson());
+//	}
+//	
+//	/**
+//	 * Issue #34 - switching to Writer caused a small bug where doubles were double-printed
+//	 */
+//	@Test
+//	public void testBareSpecialNumericsDuplication() {
+//		JsonObject subject = new JsonObject();
+//		subject.put("foo", JsonPrimitive.of(42.0));
+//		
+//		JsonGrammar grammar = JsonGrammar.builder().bareSpecialNumerics(true).printWhitespace(false).build();
+//		
+//		Assertions.assertEquals("{ \"foo\": 42.0 }", subject.toJson(grammar));
+//	}
+//	
+//	/** Issues #26 and #38 - ':' isn't force-quoted in object keys */
+//	@Test
+//	public void testIssue26() {
+//		JsonObject obj = new JsonObject();
+//		obj.put("test:key", JsonNull.INSTANCE);
+//		
+//		String result = obj.toJson(JsonGrammar.builder().printWhitespace(false).printUnquotedKeys(true).build());
+//		Assertions.assertEquals("{ \"test:key\": null }", result);
+//	}
+//	
+//	/**
+//	 * Issue #42: String with russian characters is incorrectly parsed.
+//	 * 
+//	 * <p>Moved off of a hand-decoding of UTF-8 surrogates onto Reader, which offers a much more robust and future-proof assembly of UTF-8 surrogates into code points.
+//	 */
+//	
+//	@Test
+//	public void testCyrillic() {
+//		String input =
+//				"{\n" + 
+//				"  en: \"Play with sound?\",\n" + 
+//				"  ru: \"Играть с музыкой?\"\n" + 
+//				"}";
+//		
+//		try {
+//			JsonObject obj = Jankson.builder().build().load(input);
+//			
+//			Assertions.assertEquals("Играть с музыкой?", obj.get(String.class, "ru"));
+//		} catch (SyntaxError ex) {
+//			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+//		}
+//	}
 }

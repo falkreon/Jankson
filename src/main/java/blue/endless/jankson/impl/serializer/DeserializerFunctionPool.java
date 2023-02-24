@@ -28,10 +28,6 @@ import java.util.HashMap;
 
 import blue.endless.jankson.api.JsonGrammar;
 import blue.endless.jankson.api.Marshaller;
-import blue.endless.jankson.api.element.JsonArray;
-import blue.endless.jankson.api.element.JsonElement;
-import blue.endless.jankson.api.element.JsonObject;
-import blue.endless.jankson.api.element.JsonPrimitive;
 import blue.endless.jankson.api.io.JsonIOException;
 
 /**
@@ -53,7 +49,9 @@ public class DeserializerFunctionPool<B> {
 		return (InternalDeserializerFunction<B>)values.get(sourceClass);
 	}
 	
-	public B apply(JsonElement elem, Marshaller marshaller) throws JsonIOException, FunctionMatchFailedException {
+	//public B apply(JsonElement elem, Marshaller marshaller) throws JsonIOException, FunctionMatchFailedException {
+	//	return null;
+		/*
 		InternalDeserializerFunction<B> selected = null;
 		
 		//This whole block is pretty ugly but there's a very particular selection order
@@ -82,7 +80,8 @@ public class DeserializerFunctionPool<B> {
 		
 		//We can't just return null, *because null might be the intended output of one of the functions above!*
 		throw new FunctionMatchFailedException("Couldn't find a deserializer in class '"+targetClass.getCanonicalName()+"' to unpack element '"+elem.toJson(JsonGrammar.JSON5)+"'.");
-	}
+		*/
+	//}
 	
 	public static class FunctionMatchFailedException extends Exception {
 		private static final long serialVersionUID = -7909332778483440658L;

@@ -25,13 +25,11 @@
 package blue.endless.jankson.api;
 
 import java.lang.reflect.Type;
-
-import blue.endless.jankson.api.element.JsonElement;
 import blue.endless.jankson.api.io.JsonIOException;
 
 public interface Marshaller {
 	/** Turns a java object into its json intermediate representation. */
-	JsonElement serialize(Object obj);
+	//JsonElement serialize(Object obj);
 	
 	/**
 	 * Unpacks the provided JsonElement into a new object of type {@code clazz}, making a best
@@ -46,7 +44,7 @@ public interface Marshaller {
 	 * @param <E>   The type of the object to create and deserialize
 	 * @return      A new object of the provided class that represents the data in the json provided.
 	 */
-	<E> E marshall(Class<E> clazz, JsonElement elem);
+	//<E> E marshall(Class<E> clazz, JsonElement elem);
 	
 	/**
 	 * Unpacks the provided JsonElement into an object of the provided Type, and force-casts it to
@@ -56,7 +54,7 @@ public interface Marshaller {
 	 * @param <E>  The type to force-cast to at the end
 	 * @return     A new object of the provided Type that represents the data in the json provided.
 	 */
-	<E> E marshall(Type type, JsonElement elem);
+	//<E> E marshall(Type type, JsonElement elem);
 	
 	/**
 	 * Unpacks the provided JsonElement in fail-fast mode. A detailed exception is thrown for any
@@ -67,5 +65,5 @@ public interface Marshaller {
 	 * @return      A new object of the provided class that represents the data in the json provided.
 	 * @throws JsonIOException if any problems are encountered unpacking the data.
 	 */
-	<E> E marshallCarefully(Class<E> clazz, JsonElement elem) throws JsonIOException;
+	//<E> E marshallCarefully(Class<E> clazz, JsonElement elem) throws JsonIOException;
 }
