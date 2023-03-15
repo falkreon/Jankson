@@ -256,11 +256,23 @@ public class TestDeserializer {
 		Assert.assertEquals(0x00FF00L, obj.getLong("foo", -1));
 	}
 	
+	/**
+	 * Issue #64: Trailing whitespace crashes the parser.
+	 * 
+	 * This was originally due to an underflow in the context stack after optimized tail call recursion.
+	 */
 	@Test
 	public void testTrailingNewline() throws IOException, SyntaxError {
 		Jankson jankson = Jankson.builder().build();
 		String src = "{ \"stuff\": \"things\" }\n";
 		JsonElement obj = jankson.loadElement(src);
 		
+	}
+	
+	@Test
+	public void testWindowsCRLF() throws IOException, SyntaxError {
+		Jankson jankson = Jankson.builder().build();
+		String src = "{ \"stuff\": \"things\" \r\n \"other_stuff\": \"other_things\" }";
+		JsonElement obj = jankson.loadElement(src);
 	}
 }
