@@ -33,7 +33,7 @@ import blue.endless.jankson.api.SyntaxError;
 public class NumberParserContext implements ParserContext<JsonPrimitive> {
 	private String numberString = "";
 	private boolean complete = false;
-	private String acceptedChars = "0123456789.+-eExabcdefInityNn";
+	private String acceptedChars = "0123456789.+-eExabcdefInityNnABCDF";
 	
 	public NumberParserContext(int firstCodePoint) {
 		numberString += (char)firstCodePoint;

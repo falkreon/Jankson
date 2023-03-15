@@ -24,6 +24,7 @@
 
 package blue.endless.jankson;
 
+import java.io.IOException;
 import java.util.regex.Pattern;
 
 import org.junit.Assert;
@@ -235,5 +236,23 @@ public class TestDeserializer {
 			Assert.fail("Should not successfully load bare root object without enabling option");
 		} catch (SyntaxError ex) {
 		}
+	}
+	
+	/**
+	 * Issue #69, #70: Capitalized hexadecimal, and hexadecimal with leading zeroes, fails to load.
+	 */
+	@Test
+	public void testHexadecimalConstants() throws IOException, SyntaxError {
+		Jankson jankson = Jankson.builder().build();
+		String src = " { \"foo\": 0xDEADBEEF } ";
+		JsonObject obj = jankson.load(src);
+		
+		Assert.assertEquals(0xDEADBEEFL, obj.getLong("foo", -1));
+		
+		
+		src = " { \"foo\": 0x00FF00 } ";
+		obj = jankson.load(src);
+		
+		Assert.assertEquals(0x00FF00L, obj.getLong("foo", -1));
 	}
 }
