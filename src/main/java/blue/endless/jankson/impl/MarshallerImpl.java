@@ -34,7 +34,9 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -43,8 +45,10 @@ import javax.annotation.Nullable;
 
 import blue.endless.jankson.api.annotation.SerializedName;
 import blue.endless.jankson.api.annotation.Serializer;
+import blue.endless.jankson.api.document.DocumentElement;
 import blue.endless.jankson.api.DeserializerFunction;
 import blue.endless.jankson.api.Marshaller;
+import blue.endless.jankson.api.MarshallerException;
 import blue.endless.jankson.api.annotation.Comment;
 import blue.endless.jankson.api.io.JsonIOException;
 import blue.endless.jankson.impl.serializer.DeserializerFunctionPool;
@@ -143,6 +147,21 @@ public class MarshallerImpl implements blue.endless.jankson.api.Marshaller {
 //		registerSerializer(Float.TYPE, (it)->new JsonPrimitive(Double.valueOf(it)));
 //		registerSerializer(Double.TYPE, JsonPrimitive::new);
 //		registerSerializer(Boolean.TYPE, JsonPrimitive::new);
+	}
+
+	@Override
+	public <E> E marshall(Type type, DocumentElement elem) throws InstantiationException, MarshallerException, ClassCastException {
+		//Early shunt into generic collection types
+		if (type.getClass().isAssignableFrom(List.class)) {
+			
+		} else if (type.getClass().isAssignableFrom(Set.class)){
+			
+		} else if (type.getClass().isAssignableFrom(Map.class)) {
+			
+		}
+		
+		// TODO IMPLEMENT
+		return null;
 	}
 	
 	/** EXPERIMENTAL. Marshalls elem into a very specific parameterized type, honoring generic type arguments. */

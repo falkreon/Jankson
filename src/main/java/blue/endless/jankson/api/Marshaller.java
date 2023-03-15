@@ -25,13 +25,15 @@
 package blue.endless.jankson.api;
 
 import java.lang.reflect.Type;
+
+import blue.endless.jankson.api.document.DocumentElement;
 import blue.endless.jankson.api.io.JsonIOException;
 
 public interface Marshaller {
-	/** Turns a java object into its json intermediate representation. */
+	/* Turns a java object into its json intermediate representation. */
 	//JsonElement serialize(Object obj);
 	
-	/**
+	/*
 	 * Unpacks the provided JsonElement into a new object of type {@code clazz}, making a best
 	 * effort to unpack all the fields it can. Any fields that cannot be unpacked will be left in
 	 * the state the initializer and no-arg constructor leaves them in.
@@ -46,7 +48,7 @@ public interface Marshaller {
 	 */
 	//<E> E marshall(Class<E> clazz, JsonElement elem);
 	
-	/**
+	/*
 	 * Unpacks the provided JsonElement into an object of the provided Type, and force-casts it to
 	 * E.
 	 * @param type The type to deserialize to
@@ -56,7 +58,7 @@ public interface Marshaller {
 	 */
 	//<E> E marshall(Type type, JsonElement elem);
 	
-	/**
+	/*
 	 * Unpacks the provided JsonElement in fail-fast mode. A detailed exception is thrown for any
 	 * problem encountered during the unpacking process.
 	 * @param clazz The class of the object to create and deserialize
@@ -66,4 +68,19 @@ public interface Marshaller {
 	 * @throws JsonIOException if any problems are encountered unpacking the data.
 	 */
 	//<E> E marshallCarefully(Class<E> clazz, JsonElement elem) throws JsonIOException;
+	
+	/**
+	 * Unpacks the provided DocumentElement into an object of the provided Type, and force-casts it to the return type.
+	 * @param <E>  The return type; the type of object this method should produce. Should be assignableFrom type.
+	 * @param type The target type to create and convert the data to.
+	 * @param elem The source data to convert.
+	 * @return An object of type E which is the result of converting the data from elem into a new object of the provided Type and then downcasting to E.
+	 * @throws InstantiationException if there was a problem creating the target object. Most often this is because the
+	 *                                target Type is not a record type and does not have the required no-arg constructor
+	 *                                for non-record types.
+	 * @throws MarshallerException    if the data cannot be reconciled with the target class - there's no target field
+	 *                                for a piece of source data, or the type can't be marshalled to E.
+	 * @throws ClassCastException     if the final cast from the provided Type to the return type fails.
+	 */
+	<E> E marshall(Type type, DocumentElement elem) throws InstantiationException, MarshallerException, ClassCastException;
 }
