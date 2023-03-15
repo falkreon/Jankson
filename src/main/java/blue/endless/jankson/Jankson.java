@@ -265,8 +265,9 @@ public class Jankson {
 					} else {
 						return rootElement.getElement();
 					}
+				} else {
+					processCodePoint(inByte);
 				}
-				processCodePoint(inByte);
 			}
 		}
 		
@@ -334,7 +335,8 @@ public class Jankson {
 		}
 		
 		try {
-			boolean consumed = frame.context.consume(codePoint, this);
+			if (frame==null) return; //We ran out of stack frames due to tail call recursion. This means the file's done.
+			boolean consumed = frame.context().consume(codePoint, this);
 			if (frame.context.isComplete()) {
 				contextStack.pop();
 				frame.supply();

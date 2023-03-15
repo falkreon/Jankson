@@ -255,4 +255,12 @@ public class TestDeserializer {
 		
 		Assert.assertEquals(0x00FF00L, obj.getLong("foo", -1));
 	}
+	
+	@Test
+	public void testTrailingNewline() throws IOException, SyntaxError {
+		Jankson jankson = Jankson.builder().build();
+		String src = "{ \"stuff\": \"things\" }\n";
+		JsonElement obj = jankson.loadElement(src);
+		
+	}
 }
