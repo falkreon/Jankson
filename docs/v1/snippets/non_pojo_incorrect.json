@@ -1,0 +1,20 @@
+{
+  "array": null,
+  "classC": {
+    "some": [
+      true,
+      false
+    ],
+    "data": [
+      1,
+      2,
+      3
+    ],
+    "structure": [
+      "this",
+      "is",
+      "wrong"
+    ]
+  },
+  "isClassC": true
+}
