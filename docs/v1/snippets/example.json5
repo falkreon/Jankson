@@ -1,0 +1,15 @@
+{
+  /* why orbs? */
+  "maxOrbs": 10,
+  "some_strings": [],
+  "uninitialized": null,
+  "initialized": {
+    "a": "1",
+    "foo": "bar"
+  },
+  "integer_array": [6, 9],
+  "int_array": [4, 2, 0],
+  "nested": {
+    "nested_data": [1, 2, 3]
+  }
+}
