@@ -1,0 +1,44 @@
+# Deploys MkDocs website to GitHub Pages
+name: Deploy MkDocs
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Pages
+        uses: actions/configure-pages@v2
+      - name: Setup Python
+        uses: actions/setup-python@v4.3.0
+      - name: Install MkDocs & Plugins
+        run: python -m pip install mkdocs mkdocs-material \
+      - name: Build MkDocs site
+        run: python -m mkdocs build
+      - name: Upload site to GitHub Pages
+        uses: actions/upload-pages-artifact@v1
+        with:
+          # Upload generated static site
+          path: 'site'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1
