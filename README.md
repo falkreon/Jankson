@@ -73,7 +73,7 @@ The following supported quirks are unique to jankson:
 
 ## Compiling
 
-NOTE: This artifact isn't on MavenCentral yet! Check the 1.8 branch or (https://falkreon.github.io/Jankson/)[the docs]
+NOTE: This artifact isn't on MavenCentral yet! Check the 1.8 branch or [the docs](https://falkreon.github.io/Jankson/)
 for code you can get from MavenCentral right now.
 
 ```groovy
