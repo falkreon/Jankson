@@ -47,7 +47,7 @@ public class DocumentBuilder {
 			case COMMENT:
 				if (reader.getLatestValue() instanceof CommentElement comment) {
 					if (elem == null) {
-						prologue.add(comment);
+						prologue.add(comment); //TODO: This is probably wrong
 					} else {
 						epilogue.add(comment);
 					}
@@ -110,9 +110,11 @@ public class DocumentBuilder {
 	private static ObjectElement buildObjectInternal(StructuredDataReader reader) throws IOException, SyntaxError {
 		List<NonValueElement> kvPrologue = new ArrayList<>();
 		List<NonValueElement> kvI = new ArrayList<>();
+		ValueElement lastValue = null;
 		ObjectElement result = new ObjectElement();
 		String key = null;
 		
+		//System.out.println("==KEY==");
 		while(true) {
 			//Grab the key
 			while(true) {
@@ -121,11 +123,9 @@ public class DocumentBuilder {
 				if (elemType==ElementType.EOF) throw new IOException("Encountered EOF before object ended");
 				if (elemType==ElementType.COMMENT) {
 					if (reader.getLatestValue() instanceof CommentElement comment) {
-						if (key==null) {
-							kvPrologue.add(comment);
-						} else {
-							kvI.add(comment);
-						}
+						
+						kvPrologue.add(comment);
+						
 					}
 				}
 				if (elemType==ElementType.OBJECT_KEY) {
@@ -134,17 +134,64 @@ public class DocumentBuilder {
 				}
 				
 				if (elemType==ElementType.OBJECT_END) {
+					if (!kvPrologue.isEmpty()) {
+						if (lastValue!=null) {
+							for(NonValueElement nve : kvPrologue) {
+								lastValue.getEpilogue().add(nve);
+							}
+						} else {
+							// This is a floating comment in an empty object. Add that to the object footer.
+							for(NonValueElement nve : kvPrologue) {
+								result.footer.add(nve);
+							}
+						}
+					}
+					kvPrologue.clear();
+					
 					return result;
 				}
 			}
 			
+			//System.out.println("==SEPARATOR==");
+			//Grab the separator
+			kv_separator_found:
+			while(true) {
+				ElementType elemType = reader.next();
+				
+				switch(elemType) {
+				
+					case OBJECT_KEY_VALUE_SEPARATOR -> {
+						break kv_separator_found;
+					}
+					
+					case COMMENT -> {
+						if (reader.getLatestValue() instanceof CommentElement comment) {
+							kvI.add(comment);
+						} else {
+							throw new IOException("Invalid latestValue returned from StructuredDataReader after reporting a comment (required: CommentElement)");
+						}
+					}
+					
+					default -> {
+						throw new SyntaxError("Invalid element ("+elemType.name()+")found while looking for the separator between a key and a value.");
+					}
+				
+				}
+			}
+			
+			
+			//System.out.println("==VALUE==");
 			//Grab the value
+			ArrayList<NonValueElement> valuePreamble = new ArrayList<>();
 			while(true) {
 				ElementType elemType = reader.next();
 				//System.out.println("Scanning for value: "+elemType);
 				if (elemType==ElementType.OBJECT_END) throw new IOException("Encountered end of object between a key and a value.");
 				if (elemType==ElementType.PRIMITIVE) {
 					ValueElement elem = PrimitiveElement.box(reader.getLatestValue());
+					for(NonValueElement nve : valuePreamble) {
+						elem.getPreamble().add(nve);
+					}
 					KeyValuePairElement kv = new KeyValuePairElement(key, elem);
 					key = null;
 					for(NonValueElement e : kvPrologue) kv.preamble.add(e);
@@ -152,10 +199,14 @@ public class DocumentBuilder {
 					kvPrologue.clear();
 					kvI.clear();
 					result.add(kv);
+					lastValue = elem;
 					break;
 				}
 				if (elemType==ElementType.OBJECT_START) {
 					ObjectElement elem = buildObjectInternal(reader);
+					for(NonValueElement nve : valuePreamble) {
+						elem.getPreamble().add(nve);
+					}
 					KeyValuePairElement kv = new KeyValuePairElement(key, elem);
 					key = null;
 					for(NonValueElement e : kvPrologue) kv.preamble.add(e);
@@ -163,10 +214,14 @@ public class DocumentBuilder {
 					kvPrologue.clear();
 					kvI.clear();
 					result.add(kv);
+					lastValue = elem;
 					break;
 				}
 				if (elemType==ElementType.ARRAY_START) {
 					ArrayElement elem = buildArrayInternal(reader);
+					for(NonValueElement nve : valuePreamble) {
+						elem.getPreamble().add(nve);
+					}
 					KeyValuePairElement kv = new KeyValuePairElement(key, elem);
 					key = null;
 					for(NonValueElement e : kvPrologue) kv.preamble.add(e);
@@ -174,7 +229,20 @@ public class DocumentBuilder {
 					kvPrologue.clear();
 					kvI.clear();
 					result.add(kv);
+					lastValue = elem;
 					break;
+				}
+				
+				if (elemType==ElementType.OBJECT_KEY_VALUE_SEPARATOR) {
+					throw new SyntaxError("Found two keyValuePair separators in a row!");
+				}
+				
+				if (elemType==ElementType.COMMENT) {
+					if (reader.getLatestValue() instanceof CommentElement comment) {
+						valuePreamble.add(comment);
+					} else {
+						throw new IOException("Inconsistent behavior from the StructuredValueReader");
+					}
 				}
 				if (elemType==ElementType.EOF) {
 					throw new IOException("Encountered EOF between a key and a value.");

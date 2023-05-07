@@ -42,6 +42,8 @@ import org.junit.jupiter.api.Test;
 
 import blue.endless.jankson.api.annotation.SerializedName;
 import blue.endless.jankson.api.document.ArrayElement;
+import blue.endless.jankson.api.document.KeyValuePairElement;
+import blue.endless.jankson.api.document.NonValueElement;
 import blue.endless.jankson.api.document.ObjectElement;
 import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.api.document.ValueElement;
@@ -135,6 +137,52 @@ public class BasicTests {
 			Assertions.fail();
 		}
 	}
+	
+	@Test
+	public void testCommentAttribution() throws IOException, SyntaxError {
+		/*
+		 * A preamble is a list of all the non-value elements that occur before a value element within the same context.
+		 */
+		String subjectString = "/* 1a */ /* 1b */ { /* 2a */ /* 2b */ 'foo' /* 3a */ /* 3b */ : /* 4a */ /* 4b */ true /* 5a */ /* 5b */ } /* 6a */ /* 6b */";
+
+		ObjectElement subject = Jankson.readJsonObject(subjectString);
+		
+		Assertions.assertEquals(2, subject.getPreamble().size());
+		Assertions.assertEquals("1a", subject.getPreamble().get(0).asCommentElement().getValue());
+		Assertions.assertEquals("1b", subject.getPreamble().get(1).asCommentElement().getValue());
+		
+		Map.Entry<String, ValueElement> entry = subject.entrySet().iterator().next();
+		if (entry instanceof KeyValuePairElement kvPair) { //TODO: Oh no! Is there no better way to acquire these objects??
+			List<NonValueElement> preamble = kvPair.getPreamble();
+			Assertions.assertEquals(2, preamble.size());
+			Assertions.assertEquals("2a", preamble.get(0).asCommentElement().getValue());
+			Assertions.assertEquals("2b", preamble.get(1).asCommentElement().getValue());
+			
+			
+			List<NonValueElement> intermission = kvPair.getIntermission();
+			Assertions.assertEquals(2, intermission.size());
+			Assertions.assertEquals("3a", intermission.get(0).asCommentElement().getValue());
+			Assertions.assertEquals("3b", intermission.get(1).asCommentElement().getValue());
+			
+			ValueElement value = kvPair.getValue();
+			List<NonValueElement> valuePreamble = value.getPreamble();
+			Assertions.assertEquals(2, valuePreamble.size());
+			Assertions.assertEquals("4a", valuePreamble.get(0).asCommentElement().getValue());
+			Assertions.assertEquals("4b", valuePreamble.get(1).asCommentElement().getValue());
+			
+			//5a and 5b are technically value epilogues because they're not after a comma
+			Assertions.assertEquals(2, value.getEpilogue().size());
+			Assertions.assertEquals("5a", value.getEpilogue().get(0).asCommentElement().getValue());
+			Assertions.assertEquals("5b", value.getEpilogue().get(1).asCommentElement().getValue());
+		}
+		
+		//TODO: KNOWN ISSUE: Comments after the root object are not kept
+		//Assertions.assertEquals(2, subject.getEpilogue().size());
+		//Assertions.assertEquals("6a", subject.getEpilogue().get(0).asCommentElement().getValue());
+		//Assertions.assertEquals("6b", subject.getEpilogue().get(1).asCommentElement().getValue());
+	}
+	
+	
 	
 	/* Unported 1.2.x tests */
 	

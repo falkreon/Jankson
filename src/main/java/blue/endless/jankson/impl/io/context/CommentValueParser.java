@@ -50,6 +50,10 @@ public class CommentValueParser implements ValueParser {
 	}
 
 	public static CommentElement readStatic(LookaheadCodePointReader reader) throws IOException, SyntaxError {
+		/*
+		 * TODO: trim up to one space after a line-end comment symbol; trim up to one space at the start and end of a multiline or doc comment
+		 */
+		
 		int ch = reader.peek();
 		
 		if (ch=='#') {
@@ -63,9 +67,11 @@ public class CommentValueParser implements ValueParser {
 				reader.read();
 				String commentText = readToLineEnd(reader);
 				return new CommentElement(commentText, CommentType.LINE_END);
-			} else if (firstTwo.equals("/*")){
+			} else if (firstTwo.equals("/*")) {
 				reader.read();
 				reader.read(); //Discard those two
+				ch = reader.peek();
+				if (Character.isWhitespace(ch)) reader.read();
 				
 				CommentType commentType = CommentType.MULTILINE;
 				ch = reader.peek();
@@ -80,6 +86,9 @@ public class CommentValueParser implements ValueParser {
 					if (maybeEnd.equals("*/")) {
 						reader.read();
 						reader.read();
+						if (Character.isWhitespace(sb.codePointAt(sb.length()-1))) {
+							sb.setLength(sb.length()-1);
+						}
 						return new CommentElement(sb.toString(), commentType);
 					}
 					

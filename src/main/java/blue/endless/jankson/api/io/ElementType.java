@@ -59,10 +59,15 @@ public enum ElementType {
 	OBJECT_END(true),
 	
 	/**
-	 * The parser encountered a key-value pair in a valid location, has read the delimiting colon, and is ready to
-	 * report the entire key. The next semantic object will be the value associated with this key.
+	 * The parser encountered a key-value pair in a valid location, and is ready to report the entire key. The next
+	 * semantic object will be the delimiter between this key and its associated value.
 	 */
 	OBJECT_KEY(true),
+	
+	/**
+	 * The parser encountered the separator between a key and its associated value - for json, a colon.
+	 */
+	OBJECT_KEY_VALUE_SEPARATOR(true),
 	
 	/**
 	 * The parser encountered a comment in a valid location, and is ready to report its full contents.

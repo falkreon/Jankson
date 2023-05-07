@@ -70,9 +70,10 @@ public class ObjectParserContext implements ParserContext {
 				elementConsumer.accept(ElementType.OBJECT_END, null);
 			} else {
 				//This is either a comment or a key.
-				if (CommentValueParser.canReadStatic(reader)) {
-					CommentValueParser.readStatic(reader);
-				} else {
+				//if (CommentValueParser.canReadStatic(reader)) {
+					// TODO: This seems to be dead code - emitComments at the top tends to capture any comments we could find here!
+				//	CommentValueParser.readStatic(reader);
+				//} else {
 					//Read a key
 					if (StringValueParser.canReadStatic(reader)) {
 						//Read a quoted key
@@ -89,6 +90,9 @@ public class ObjectParserContext implements ParserContext {
 					if (ch==':') {
 						//Eat it and proceed to the value parsing
 						reader.read();
+						
+						elementConsumer.accept(ElementType.OBJECT_KEY_VALUE_SEPARATOR, null);
+						
 						emitComments(reader, elementConsumer);
 						
 						handleValue(reader, elementConsumer, pusher);
@@ -99,7 +103,7 @@ public class ObjectParserContext implements ParserContext {
 						throw new SyntaxError("Couldn't find key-value separator (:)", reader.getLine(), reader.getCharacter());
 					}
 					
-				}
+				//}
 			}
 		} else {
 			//Do nothing - we should stop being called

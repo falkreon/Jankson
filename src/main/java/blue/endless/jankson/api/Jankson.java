@@ -32,6 +32,7 @@ import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 
 import blue.endless.jankson.api.document.DocumentBuilder;
+import blue.endless.jankson.api.document.ObjectElement;
 import blue.endless.jankson.api.document.ValueElement;
 import blue.endless.jankson.api.io.JsonReader;
 import blue.endless.jankson.api.io.JsonReaderOptions;
@@ -102,5 +103,84 @@ public class Jankson {
 	 */
 	public static ValueElement readJson(InputStream in) throws IOException, SyntaxError {
 		return readJson(in, JsonReaderOptions.UNSPECIFIED);
+	}
+	
+	/**
+	 * Reads in a json object from a String using the settings provided.
+	 * @param s    the String to interpret as json
+	 * @param opts hints and settings to control the reading process
+	 * @return     a ValueElement representing the document root
+	 * @throws IOException if there was a problem reading the String. This should almost never happen
+	 * @throws SyntaxError if there was a problem with the syntax or structure of the json document, or if the value is not a json Object element.
+	 */
+	public static ObjectElement readJsonObject(String s, JsonReaderOptions opts) throws IOException, SyntaxError {
+		ValueElement elem = readJson(s, opts);
+		if (elem instanceof ObjectElement obj) {
+			return obj;
+		} else {
+			throw new SyntaxError("Object expected, but found "+elem.getClass().getSimpleName());
+		}
+	}
+	
+	/**
+	 * Reads in a json object from a Reader, using the settings provided. The Reader will be read all the way to the end
+	 * of the stream, but will not be closed.
+	 * @param r    the Reader that is reading json character data
+	 * @param opts hints and settings to control the reading process
+	 * @return     a ValueElement representing the document root
+	 * @throws IOException if there was a problem reading the String. This should almost never happen
+	 * @throws SyntaxError if there was a problem with the syntax or structure of the json document, or if the value is not a json Object element.
+	 */
+	public static ObjectElement readJsonObject (Reader r, JsonReaderOptions opts) throws IOException, SyntaxError {
+		ValueElement elem = DocumentBuilder.build(new JsonReader(r));
+		if (elem instanceof ObjectElement obj) {
+			return obj;
+		} else {
+			throw new SyntaxError("Object expected, but found "+elem.getClass().getSimpleName());
+		}
+	}
+	
+	/**
+	 * Reads in a json object from an InputStream, using the settings provided. The data will be interpreted as UTF-8
+	 * character data. Characters will be read until the end of the stream, but the stream will not be closed by this
+	 * method.
+	 * @param r    the InputStream that is reading the json document
+	 * @param opts hints and settings to control the reading process
+	 * @return     a ValueElement representing the document root
+	 * @throws IOException if there was a problem reading the String. This should almost never happen
+	 * @throws SyntaxError if there was a problem with the syntax or structure of the json document, or if the value is not a json Object element.
+	 */
+	public static ObjectElement readJsonObject(InputStream in, JsonReaderOptions opts) throws IOException, SyntaxError {
+		JsonReader reader = new JsonReader(new InputStreamReader(in, StandardCharsets.UTF_8), opts);
+		ValueElement elem = DocumentBuilder.build(reader);
+		if (elem instanceof ObjectElement obj) {
+			return obj;
+		} else {
+			throw new SyntaxError("Object expected, but found "+elem.getClass().getSimpleName());
+		}
+	}
+	
+	/**
+	 * Reads in a json object from a String using the default settings.
+	 * @see #readJsonObject(String, JsonReaderOptions)
+	 */
+	public static ObjectElement readJsonObject(String s) throws IOException, SyntaxError {
+		return readJsonObject(s, JsonReaderOptions.UNSPECIFIED);
+	}
+	
+	/**
+	 * Reads in a json object from a Reader using the default settings.
+	 * @see #readJsonObject(Reader, JsonReaderOptions)
+	 */
+	public static ObjectElement readJsonObject(Reader r) throws IOException, SyntaxError {
+		return readJsonObject(r, JsonReaderOptions.UNSPECIFIED);
+	}
+	
+	/**
+	 * Reads in a json object from an InputStream using the default settings.
+	 * @see #readJsonObject(InputStream, JsonReaderOptions)
+	 */
+	public static ObjectElement readJsonObject(InputStream in) throws IOException, SyntaxError {
+		return readJsonObject(in, JsonReaderOptions.UNSPECIFIED);
 	}
 }
