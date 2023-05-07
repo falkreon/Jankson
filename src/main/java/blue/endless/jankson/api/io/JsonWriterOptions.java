@@ -31,7 +31,8 @@ import blue.endless.jankson.impl.MarshallerImpl;
 
 @SuppressWarnings("deprecation")
 public class JsonWriterOptions {
-	public static JsonWriterOptions DEFAULTS = new JsonWriterOptions();
+	public static JsonWriterOptions DEFAULTS = new JsonWriterOptions(Hint.UNQUOTED_KEYS);
+	public static JsonWriterOptions STRICT = new JsonWriterOptions(); // TODO: Add strict hints
 	public static JsonWriterOptions INI_SON = new JsonWriterOptions(Hint.BARE_ROOT_OBJECT, Hint.KEY_EQUALS_VALUE, Hint.UNQUOTED_KEYS, Hint.OMIT_COMMAS);
 	
 	private final EnumSet<Hint> hints = EnumSet.noneOf(Hint.class);

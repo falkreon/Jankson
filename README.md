@@ -73,13 +73,16 @@ The following supported quirks are unique to jankson:
 
 ## Compiling
 
+NOTE: This artifact isn't on MavenCentral yet! Check the 1.8 branch or (https://falkreon.github.io/Jankson/)[the docs]
+for code you can get from MavenCentral right now.
+
 ```groovy
 repositories {
 	mavenCentral()
 }
 
 dependencies {
-	"blue.endless:jankson:1.2.1"
+	"blue.endless:jankson:2.0.0"
 }
 ```
 
@@ -90,25 +93,27 @@ syntax for another parser to consume.
 
 ```java
 	try {
-		JsonObject configObject = Jankson
-			.builder()
-			.build()
-			.load(new File(configPath, "config.hjson"));
-			
-		//This will strip comments and regularize the file, but emit newlines and indents for readability
-		String processed = configObject.toJson(false, true);
+		// configObject will represent the document root of the config file, and contains comments and formatting
+		// that can be used to recreate the file with some minor formatting and indentation cleanup.
+		ObjectElement configObject = Jankson.loadJsonObject(new File(configPath, "config.json"));
 		
-		//This will inject a default setting after the last listed key in the object, if it doesn't already exist.
-		//Otherwise it does nothing to the comment, ordering, or value.
-		configObject.putDefault("someConfigKey", new JsonPrimitive(Boolean.TRUE), "Turns on the someConfigKey thing (default=TRUE)");
+		
+		String json5 = configObject.toString(); // toString for any JsonElement is its serialized form
+		
+		
+		// Asking the writer to use STRICT json allows you to use Jankson as a preprocessor for other libraries
+		StringWriter stringWriter = new StringWriter();
+		JsonWriter jsonWriter = new JsonWriter(stringWriter, JsonWriterOptions.STRICT);
+		configObject.write(jsonWriter);
+		stringWriter.flush();
+		String strictJson = stringWriter.toString(); //strictJson is your preprocessed data
 		
 	} catch (IOException ex) {
 		log.error("Couldn't read the config file", ex);
-		return; //or System.exit(-1) or rethrow an exception
+		return;
 	} catch (SyntaxError error) {
-		log.error(error.getMessage());
-		log.error(error.getLineMessage());
-		return; //or System.exit(-1) or rethrow an exception
+		log.error(error); // Stack traces printed or logged will be enhanced with line numbers
+		return;
 	}
 ```
 
