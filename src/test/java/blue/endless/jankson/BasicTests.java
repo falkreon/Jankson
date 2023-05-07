@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Queue;
 
 import javax.annotation.Nullable;
@@ -182,55 +183,31 @@ public class BasicTests {
 		//Assertions.assertEquals("6b", subject.getEpilogue().get(1).asCommentElement().getValue());
 	}
 	
-	
+	@Test
+	public void testDeepNesting() throws IOException, SyntaxError {
+		String subjectString = "{ a: { a: { a: { a: { a: { a: { a: { a: 'Hello' } } } } } } } }";
+		ObjectElement subject = Jankson.readJsonObject(subjectString);
+		
+		Optional<Object> result =
+			subject
+			.getObject("a")
+			.getObject("a")
+			.getObject("a")
+			.getObject("a")
+			.getObject("a")
+			.getObject("a")
+			.getObject("a")
+			.getPrimitive("a")
+			.getValue();
+		
+		Assertions.assertTrue(result.isPresent());
+		Assertions.assertEquals("Hello", result.get());
+	}
 	
 	/* Unported 1.2.x tests */
 	
-	
-	
-	//@Test
-	//public void testCommentAttribution() {
-	//	try {
-	//		String before = "{ /* Hello World */ 'foo': true }";
-	//		JsonObject after = jankson.load(before);
-	//		
-	//		Assertions.assertEquals("Hello World", after.getComment("foo"), "Comment should be parsed and attributed to child 'foo'");
-	//		
-	//		before = "{ /*Hello World */ 'foo': true }";
-	//		after = jankson.load(before);
-	//		
-	//		Assertions.assertEquals("Hello World", after.getComment("foo"), "Comment should still be parsed and attributed to child 'foo'");
-	//		
-	//		before = "{ //\tHello World \n 'foo': true }";
-	//		after = jankson.load(before);
-	//		
-	//		Assertions.assertEquals("Hello World", after.getComment("foo"), "Single-line comment should be parsed and attributed to child 'foo'");
-	//		
-	//	} catch (SyntaxError ex) {
-	//		Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
-	//	}
-	//}
-	
 	/*
-	@Test
-	public void testDeepNesting() {
-		String subject = "{ a: { a: { a: { a: { a: { a: { a: { a: 'Hello' } } } } } } } }";
-		try {
-			JsonObject parsed = jankson.load(subject);
-			JsonPrimitive prim = parsed.recursiveGet(JsonPrimitive.class, "a.a.a.a.a.a.a.a");
-			
-			Assertions.assertEquals(new JsonPrimitive("Hello"), prim);
-			
-			JsonPrimitive notPrim = parsed.recursiveGet(JsonPrimitive.class, "a.a.a.a.a.a.a.a.a");
-			Assertions.assertNull(notPrim);
-			
-			notPrim = parsed.recursiveGet(JsonPrimitive.class, "a.a.a.a.a.a.a");
-			Assertions.assertNull(notPrim);
-			
-		} catch (SyntaxError ex) {
-			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
-		}
-	}
+	
 	
 	@Test
 	public void testMarshaller() {

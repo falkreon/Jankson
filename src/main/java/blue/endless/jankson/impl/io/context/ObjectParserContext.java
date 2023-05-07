@@ -60,6 +60,9 @@ public class ObjectParserContext implements ParserContext {
 			}
 		} else if (!foundEnd) {
 			int ch = reader.peek();
+			if (ch==-1) {
+				throw new IOException("EOF found before object end.");
+			}
 			if (ch == ',') {
 				reader.read(); //We ignore commas
 				return;
@@ -81,7 +84,8 @@ public class ObjectParserContext implements ParserContext {
 						elementConsumer.accept(ElementType.OBJECT_KEY, s);
 					} else {
 						//TODO: Accept bare String tokens
-						throw new SyntaxError("Bare tokens aren't accepted yet.", reader.getLine(), reader.getCharacter());
+						String token = TokenValueParser.readStatic(reader);
+						elementConsumer.accept(ElementType.OBJECT_KEY, token);
 					}
 					
 					//Look for the colon
@@ -151,8 +155,11 @@ public class ObjectParserContext implements ParserContext {
 				reader.readString(4);
 				elementConsumer.accept(ElementType.PRIMITIVE, null);
 			} else {
+				String token = TokenValueParser.readStatic(reader);
+				
+				elementConsumer.accept(ElementType.PRIMITIVE, token);
 				//TODO: Unquoted Strings etc.
-				throw new SyntaxError("Expected a value here, but couldn't decode it.", reader.getLine(), reader.getCharacter());
+				//throw new SyntaxError("Expected a value here, but couldn't decode it.", reader.getLine(), reader.getCharacter());
 			}
 		}
 	}

@@ -63,7 +63,7 @@ public class LookaheadCodePointReader implements CodePointReader, Lookahead {
 		for(int i=0; i<resultLength; i++) {
 			int ptOfs = (ofs + i) % lookahead.length;
 			int point = lookahead[ptOfs];
-			result.appendCodePoint(point);
+			if (point!=-1) result.appendCodePoint(point);
 		}
 		
 		return result.toString();
@@ -76,7 +76,7 @@ public class LookaheadCodePointReader implements CodePointReader, Lookahead {
 		if (len >= lookahead.length) return; //Refuse to clobber the start of the ring buffer
 		int newIndex = (ofs + len) % lookahead.length;
 		int nextChar = readInternal();
-		if (nextChar==-1) return;
+		//if (nextChar==-1) return;
 		
 		lookahead[newIndex] = nextChar;
 		len++;
