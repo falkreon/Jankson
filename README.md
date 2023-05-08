@@ -92,29 +92,29 @@ used as a preprocessor to fix quirks and strip comments, rebaking it into standa
 syntax for another parser to consume.
 
 ```java
-	try {
-		// configObject will represent the document root of the config file, and contains comments and formatting
-		// that can be used to recreate the file with some minor formatting and indentation cleanup.
-		ObjectElement configObject = Jankson.loadJsonObject(new File(configPath, "config.json"));
-		
-		
-		String json5 = configObject.toString(); // toString for any JsonElement is its serialized form
-		
-		
-		// Asking the writer to use STRICT json allows you to use Jankson as a preprocessor for other libraries
-		StringWriter stringWriter = new StringWriter();
-		JsonWriter jsonWriter = new JsonWriter(stringWriter, JsonWriterOptions.STRICT);
-		configObject.write(jsonWriter);
-		stringWriter.flush();
-		String strictJson = stringWriter.toString(); //strictJson is your preprocessed data
-		
-	} catch (IOException ex) {
-		log.error("Couldn't read the config file", ex);
-		return;
-	} catch (SyntaxError error) {
-		log.error(error); // Stack traces printed or logged will be enhanced with line numbers
-		return;
-	}
+try {
+	// configObject will represent the document root of the config file, and contains comments and formatting
+	// that can be used to recreate the file with some minor formatting and indentation cleanup.
+	ObjectElement configObject = Jankson.loadJsonObject(new File(configPath, "config.json"));
+	
+	
+	String json5 = configObject.toString(); // toString for any JsonElement is its serialized form
+	
+	
+	// Asking the writer to use STRICT json allows you to use Jankson as a preprocessor for other libraries
+	StringWriter stringWriter = new StringWriter();
+	JsonWriter jsonWriter = new JsonWriter(stringWriter, JsonWriterOptions.STRICT);
+	configObject.write(jsonWriter);
+	stringWriter.flush();
+	String strictJson = stringWriter.toString(); //strictJson is your preprocessed data
+	
+} catch (IOException ex) {
+	log.error("Couldn't read the config file", ex);
+	return;
+} catch (SyntaxError error) {
+	log.error(error); // Stack traces printed or logged will be enhanced with line numbers
+	return;
+}
 ```
 
 

@@ -4,6 +4,10 @@ name: Deploy MkDocs
 on:
   push:
     branches: ["main"]
+    paths:
+      - ".github/workflows/deploy.yml"
+      - "docs/**"
+      - "mkdocs.yml"
   workflow_dispatch:
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
