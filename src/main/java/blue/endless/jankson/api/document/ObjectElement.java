@@ -41,14 +41,14 @@ import blue.endless.jankson.api.io.StructuredDataWriter;
 
 public class ObjectElement implements ValueElement, Map<String, ValueElement> {
 	protected boolean isDefault = false;
-	protected List<NonValueElement> preamble = new ArrayList<>();
+	protected List<NonValueElement> prologue = new ArrayList<>();
 	protected List<KeyValuePairElement> entries = new ArrayList<>();
 	protected List<NonValueElement> footer = new ArrayList<>();
 	protected List<NonValueElement> epilogue = new ArrayList<>();
 	
 	@Override
-	public List<NonValueElement> getPreamble() {
-		return preamble;
+	public List<NonValueElement> getPrologue() {
+		return prologue;
 	}
 	
 	/**
@@ -69,7 +69,7 @@ public class ObjectElement implements ValueElement, Map<String, ValueElement> {
 	
 	@Override
 	public ValueElement stripFormatting() {
-		preamble.clear();
+		prologue.clear();
 		footer.clear();
 		epilogue.clear();
 		
@@ -78,7 +78,7 @@ public class ObjectElement implements ValueElement, Map<String, ValueElement> {
 	
 	@Override
 	public ObjectElement stripAllFormatting() {
-		preamble.clear();
+		prologue.clear();
 		
 		for(KeyValuePairElement elem : entries) {
 			elem.stripAllFormatting();
@@ -92,8 +92,8 @@ public class ObjectElement implements ValueElement, Map<String, ValueElement> {
 	
 	public ObjectElement clone() {
 		ObjectElement result = new ObjectElement();
-		for(NonValueElement elem : preamble) {
-			result.preamble.add(elem.clone());
+		for(NonValueElement elem : prologue) {
+			result.prologue.add(elem.clone());
 		}
 		
 		for(KeyValuePairElement elem : entries) {
@@ -116,7 +116,7 @@ public class ObjectElement implements ValueElement, Map<String, ValueElement> {
 	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof ObjectElement elem) {
-			if (!preamble.equals(elem.preamble)) return false;
+			if (!prologue.equals(elem.prologue)) return false;
 			if (!footer.equals(elem.footer)) return false;
 			if (!epilogue.equals(elem.epilogue)) return false;
 			if (!entries.equals(elem.entries)) return false;
@@ -138,7 +138,7 @@ public class ObjectElement implements ValueElement, Map<String, ValueElement> {
 	}
 	
 	public void write(StructuredDataWriter writer) throws IOException {
-		for(NonValueElement elem : preamble) elem.write(writer);
+		for(NonValueElement elem : prologue) elem.write(writer);
 		
 		writer.writeObjectStart();
 		

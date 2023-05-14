@@ -42,12 +42,12 @@ import blue.endless.jankson.impl.document.StringElementImpl;
 public abstract class PrimitiveElement implements ValueElement {
 	
 	protected boolean isDefault = false;
-	protected List<NonValueElement> preamble = new ArrayList<>();
+	protected List<NonValueElement> prologue = new ArrayList<>();
 	protected List<NonValueElement> epilogue = new ArrayList<>();
 	
 	@Override
-	public List<NonValueElement> getPreamble() {
-		return preamble;
+	public List<NonValueElement> getPrologue() {
+		return prologue;
 	}
 	
 	@Override
@@ -117,7 +117,7 @@ public abstract class PrimitiveElement implements ValueElement {
 	public abstract Optional<BigDecimal> asBigDecimal();
 	
 	protected void copyNonValueElementsFrom(PrimitiveElement elem) {
-		for(NonValueElement nv : elem.preamble) this.preamble.add(nv);
+		for(NonValueElement nv : elem.prologue) this.prologue.add(nv);
 		for(NonValueElement nv : elem.epilogue) this.epilogue.add(nv);
 	}
 	
@@ -182,7 +182,7 @@ public abstract class PrimitiveElement implements ValueElement {
 	public boolean equals(Object obj) {
 		if (obj instanceof PrimitiveElement prim) {
 			return
-					preamble.equals(prim.preamble) &&
+					prologue.equals(prim.prologue) &&
 					epilogue.equals(prim.epilogue);
 		} else {
 			return false;

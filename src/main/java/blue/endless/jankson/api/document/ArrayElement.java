@@ -33,14 +33,14 @@ import blue.endless.jankson.api.io.StructuredDataWriter;
 
 public class ArrayElement extends AbstractList<ValueElement> implements ValueElement {
 	protected boolean isDefault = false;
-	protected List<NonValueElement> preamble = new ArrayList<>();
+	protected List<NonValueElement> prologue = new ArrayList<>();
 	protected List<ValueElement> entries = new ArrayList<>();
 	protected List<NonValueElement> footer = new ArrayList<>();
 	protected List<NonValueElement> epilogue = new ArrayList<>();
 	
 	@Override
-	public List<NonValueElement> getPreamble() {
-		return preamble;
+	public List<NonValueElement> getPrologue() {
+		return prologue;
 	}
 	
 	/**
@@ -65,6 +65,22 @@ public class ArrayElement extends AbstractList<ValueElement> implements ValueEle
 			return prim;
 		} else {
 			return PrimitiveElement.ofNull();
+		}
+	}
+	
+	public ObjectElement getObject(int index) {
+		if (entries.get(index) instanceof ObjectElement obj) {
+			return obj;
+		} else {
+			return new ObjectElement();
+		}
+	}
+	
+	public ArrayElement getArray(int index) {
+		if (entries.get(index) instanceof ArrayElement arr) {
+			return arr;
+		} else {
+			return new ArrayElement();
 		}
 	}
 	
@@ -99,7 +115,7 @@ public class ArrayElement extends AbstractList<ValueElement> implements ValueEle
 	
 	@Override
 	public ValueElement stripFormatting() {
-		preamble.clear();
+		prologue.clear();
 		footer.clear();
 		epilogue.clear();
 		
@@ -108,7 +124,7 @@ public class ArrayElement extends AbstractList<ValueElement> implements ValueEle
 	
 	@Override
 	public ValueElement stripAllFormatting() {
-		preamble.clear();
+		prologue.clear();
 		
 		for(ValueElement elem : entries) {
 			elem.stripAllFormatting();
@@ -123,8 +139,8 @@ public class ArrayElement extends AbstractList<ValueElement> implements ValueEle
 	public ArrayElement clone() {
 		ArrayElement result = new ArrayElement();
 		
-		for(NonValueElement elem : preamble) {
-			result.preamble.add(elem.clone());
+		for(NonValueElement elem : prologue) {
+			result.prologue.add(elem.clone());
 		}
 		
 		for(ValueElement elem : entries) {
@@ -147,7 +163,7 @@ public class ArrayElement extends AbstractList<ValueElement> implements ValueEle
 	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof ArrayElement elem) {
-			if (!preamble.equals(elem.preamble)) return false;
+			if (!prologue.equals(elem.prologue)) return false;
 			if (!footer.equals(elem.footer)) return false;
 			if (!epilogue.equals(elem.epilogue)) return false;
 			if (!entries.equals(elem.entries)) return false;

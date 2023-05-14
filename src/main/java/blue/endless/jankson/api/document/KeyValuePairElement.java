@@ -92,7 +92,7 @@ public class KeyValuePairElement implements DocumentElement, Map.Entry<String, V
 	public KeyValuePairElement stripAllFormatting() {
 		preamble.clear();
 		intermission.clear();
-		value.getPreamble().clear();
+		value.getPrologue().clear();
 		value.getEpilogue().clear();
 		
 		return this;

@@ -31,7 +31,7 @@ public interface ValueElement extends DocumentElement {
 	 * Returns any NonValueElements between this ValueElement and the one preceding it, excluding any which occur on
 	 * the same line as the preceding ValueElement (its epilogue). In other words, all the comments and such above this value.
 	 */
-	public List<NonValueElement> getPreamble();
+	public List<NonValueElement> getPrologue();
 	/**
 	 * Returns any NonValueElements after this ValueElement, on the same line as the last line this ValueElement occupies.
 	 * In other words, trailing comments and such on the same line as this value.
@@ -54,7 +54,7 @@ public interface ValueElement extends DocumentElement {
 	 * @return this object.
 	 */
 	public default ValueElement stripFormatting() {
-		getPreamble().clear();
+		getPrologue().clear();
 		getEpilogue().clear();
 		
 		return this;

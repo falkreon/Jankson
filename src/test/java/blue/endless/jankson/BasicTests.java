@@ -148,9 +148,9 @@ public class BasicTests {
 
 		ObjectElement subject = Jankson.readJsonObject(subjectString);
 		
-		Assertions.assertEquals(2, subject.getPreamble().size());
-		Assertions.assertEquals("1a", subject.getPreamble().get(0).asCommentElement().getValue());
-		Assertions.assertEquals("1b", subject.getPreamble().get(1).asCommentElement().getValue());
+		Assertions.assertEquals(2, subject.getPrologue().size());
+		Assertions.assertEquals("1a", subject.getPrologue().get(0).asCommentElement().getValue());
+		Assertions.assertEquals("1b", subject.getPrologue().get(1).asCommentElement().getValue());
 		
 		Map.Entry<String, ValueElement> entry = subject.entrySet().iterator().next();
 		if (entry instanceof KeyValuePairElement kvPair) { //TODO: Oh no! Is there no better way to acquire these objects??
@@ -166,7 +166,7 @@ public class BasicTests {
 			Assertions.assertEquals("3b", intermission.get(1).asCommentElement().getValue());
 			
 			ValueElement value = kvPair.getValue();
-			List<NonValueElement> valuePreamble = value.getPreamble();
+			List<NonValueElement> valuePreamble = value.getPrologue();
 			Assertions.assertEquals(2, valuePreamble.size());
 			Assertions.assertEquals("4a", valuePreamble.get(0).asCommentElement().getValue());
 			Assertions.assertEquals("4b", valuePreamble.get(1).asCommentElement().getValue());
@@ -204,70 +204,67 @@ public class BasicTests {
 		Assertions.assertEquals("Hello", result.get());
 	}
 	
+	
+	@Test
+	public void testSkippingPrimitiveMarshalling() throws IOException, SyntaxError {
+		String subjectString = "{ a: { a: { a: 'Hello' } } }";
+		String helloString = Jankson.readJsonObject(subjectString)
+				.getObject("a")
+				.getObject("a")
+				.getPrimitive("a")
+				.asString().get(); //Throws NoSuchElementException if not present
+		Assertions.assertEquals("Hello", helloString);
+		
+		
+		subjectString = "{ a: { a: { a: 42 } } }";
+		int fortyTwo = Jankson.readJsonObject(subjectString)
+				.getObject("a")
+				.getObject("a")
+				.getPrimitive("a")
+				.asInt().getAsInt(); // " "
+		Assertions.assertEquals(42, fortyTwo);
+		
+		subjectString = "{ a: { a: { a: 42.0 } } }";
+		double fortyTwoPointOh = Jankson.readJsonObject(subjectString)
+				.getObject("a")
+				.getObject("a")
+				.getPrimitive("a")
+				.asDouble().getAsDouble();
+		Assertions.assertEquals(42.0, fortyTwoPointOh, 0.00001);
+	}
+	
+	@Test
+	public void testOmitCommasAndKeyQuotes() throws IOException, SyntaxError {
+		String subjectString = "{ mods: [{name: 'alf' version:'1.12.2_v143.6'} {name:'bux', version:false}]}";
+		ObjectElement subject = Jankson.readJsonObject(subjectString);
+		
+		Assertions.assertTrue(subject.containsKey("mods"));
+		
+		Assertions.assertEquals(2, subject.getArray("mods").size());
+		
+		ObjectElement modElement = subject
+				.getArray("mods")
+				.getObject(0);
+		
+		Assertions.assertEquals(
+				"alf",
+				modElement
+					.getPrimitive("name")
+					.asString()
+					.get()
+				);
+		Assertions.assertEquals(
+				"1.12.2_v143.6",
+				modElement
+					.getPrimitive("version")
+					.asString()
+					.get()
+				);
+	}
+	
 	/* Unported 1.2.x tests */
 	
-	/*
-	
-	
-	@Test
-	public void testMarshaller() {
-		try {
-			String subject = "{ a: { a: { a: 'Hello' } } }";
-			String stringResult = jankson.load(subject).recursiveGet(String.class, "a.a.a");
-			Assertions.assertEquals("Hello", stringResult, "Should get the String 'Hello' back");
-			
-			subject = "{ a: { a: { a: 42 } } }";
-			Integer intResult = jankson.load(subject).recursiveGet(Integer.class, "a.a.a");
-			Assertions.assertEquals(Integer.valueOf(42), intResult, "Should get the Integer 42 back");
-			
-			Assertions.assertEquals(Double.valueOf(42), 
-					jankson.load(subject).recursiveGet(Double.class, "a.a.a"),
-					"Should get the Double 42 back");
-			
-			
-			
-		} catch (SyntaxError ex) {
-			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
-		}
-	}
-	
-	@Test
-	public void testForReuseLeaks() {
-		try {
-			String subjectOne = "{ a: 42 }";
-			@SuppressWarnings("unused")
-			JsonObject parsedOne = jankson.load(subjectOne);
-			
-			String subjectTwo = "{ b: 12 }";
-			JsonObject parsedTwo = jankson.load(subjectTwo);
-			
-			Assertions.assertNull(parsedTwo.get("a"));
-		} catch (SyntaxError ex) {
-			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
-		}
-	}
-	
-	@Test
-	public void testComplexQuirks() {
-		try {
-			String subject = "{ mods: [{name: 'alf' version:'1.12.2_v143.6'} {name:'bux', version:false}]}";
-			JsonObject parsed = jankson.load(subject);
-			
-			Assertions.assertNotNull(parsed);
-			Assertions.assertNotNull(parsed.get("mods"));
-			
-			Assertions.assertEquals(JsonArray.class, parsed.get("mods").getClass());
-			
-			JsonArray mods = parsed.recursiveGet(JsonArray.class, "mods");
-			Assertions.assertEquals(2, mods.size());
-			
-			//TODO: Add more marshalling logic to arrays
-			//JsonElement alfMod = mods.get(0);
-			
-		} catch (SyntaxError ex) {
-			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
-		}
-	}
+/*
 	
 	@SuppressWarnings("unused")
 	public static class TestObject {
@@ -401,7 +398,7 @@ public class BasicTests {
 			"\uD83D\uDCA8", //flyIntoWall
 			"\u2734", //*
 			"\uD83D\uDC7B", //???
-			"✨ ⚚", //magic
+			"\u2728\u269A", //:sparkles: :caduceus:
 	        "\uD83D\uDD71", //wither
 	        "\uD83D\uDC32", //dragonBreath
 	        "\uD83C\uDF86", //fireworks
@@ -500,14 +497,6 @@ public class BasicTests {
 			Assertions.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
 		}
 		
-	}
-	
-	@Test
-	public void testAvoidRecursiveGetNPE() {
-		JsonObject subject = new JsonObject();
-		
-		subject.recursiveGetOrCreate(JsonArray.class, "some/random/path", new JsonArray(), "This is a test");
-		//Prior test failure is an NPE on the line above.
 	}
 	
 	@Test

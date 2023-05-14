@@ -96,7 +96,7 @@ public class DocumentBuilder {
 		if (elem==null) return PrimitiveElement.ofNull();
 		
 		for(NonValueElement e : prologue) {
-			elem.getPreamble().add(e);
+			elem.getPrologue().add(e);
 		}
 		
 		for(NonValueElement e : epilogue) {
@@ -190,7 +190,7 @@ public class DocumentBuilder {
 				if (elemType==ElementType.PRIMITIVE) {
 					ValueElement elem = PrimitiveElement.box(reader.getLatestValue());
 					for(NonValueElement nve : valuePreamble) {
-						elem.getPreamble().add(nve);
+						elem.getPrologue().add(nve);
 					}
 					KeyValuePairElement kv = new KeyValuePairElement(key, elem);
 					key = null;
@@ -205,7 +205,7 @@ public class DocumentBuilder {
 				if (elemType==ElementType.OBJECT_START) {
 					ObjectElement elem = buildObjectInternal(reader);
 					for(NonValueElement nve : valuePreamble) {
-						elem.getPreamble().add(nve);
+						elem.getPrologue().add(nve);
 					}
 					KeyValuePairElement kv = new KeyValuePairElement(key, elem);
 					key = null;
@@ -220,7 +220,7 @@ public class DocumentBuilder {
 				if (elemType==ElementType.ARRAY_START) {
 					ArrayElement elem = buildArrayInternal(reader);
 					for(NonValueElement nve : valuePreamble) {
-						elem.getPreamble().add(nve);
+						elem.getPrologue().add(nve);
 					}
 					KeyValuePairElement kv = new KeyValuePairElement(key, elem);
 					key = null;
@@ -265,7 +265,7 @@ public class DocumentBuilder {
 				
 			case PRIMITIVE:
 				PrimitiveElement elem = PrimitiveElement.box(reader.getLatestValue());
-				for(NonValueElement e : prologue) elem.preamble.add(e);
+				for(NonValueElement e : prologue) elem.prologue.add(e);
 				prologue.clear();
 				array.add(elem);
 				break;
@@ -278,14 +278,14 @@ public class DocumentBuilder {
 			
 			case OBJECT_START:
 				ObjectElement objectElem = buildObjectInternal(reader);
-				for(NonValueElement e : prologue) objectElem.preamble.add(e);
+				for(NonValueElement e : prologue) objectElem.prologue.add(e);
 				prologue.clear();
 				array.add(objectElem);
 				break;
 			
 			case ARRAY_START:
 				ArrayElement arrayElem = buildArrayInternal(reader);
-				for(NonValueElement e : prologue) arrayElem.preamble.add(e);
+				for(NonValueElement e : prologue) arrayElem.prologue.add(e);
 				prologue.clear();
 				array.add(arrayElem);
 				break;

@@ -53,7 +53,7 @@ public class BooleanElementImpl extends PrimitiveElement {
 
 	@Override
 	public void write(StructuredDataWriter writer) throws IOException {
-		for(NonValueElement elem : preamble) elem.write(writer);
+		for(NonValueElement elem : prologue) elem.write(writer);
 		writer.writeBooleanLiteral(value);
 		for(NonValueElement elem : epilogue) elem.write(writer);
 	}
