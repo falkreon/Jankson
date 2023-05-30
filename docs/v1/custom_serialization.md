@@ -5,12 +5,12 @@ Suppose you have an object that's not straightforward like a POJO, and you want 
 In this example, Class A may contain information about either an array or an instance of Class B.
 We only want to serialize one of them at a time. The other will always be null.
 
-=== "Classes"
+=== "Java Example"
     !!! note inline "ClassA.java"
         ```java
         --8<-- "v1/snippets/non_pojo_a.java"
         ```
-    !!! note "ClassB.java"
+    !!! note inline "ClassB.java"
         ```java
         --8<-- "v1/snippets/non_pojo_b.java"
         ```

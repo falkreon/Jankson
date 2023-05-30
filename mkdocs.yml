@@ -47,6 +47,7 @@ nav:
   - Home:
       - 'index.md'
       - "Getting Started": 'getting_started.md'
+      - "Quirks": 'quirks.md'
   - 1.2.x:
       - "Loading POJOs": "v1/loading_pojos.md"
       - "Combine with Gson/Jackson": "v1/jankson_preprocessor.md"
