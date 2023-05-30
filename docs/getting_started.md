@@ -36,7 +36,7 @@ Then you can add the dependency itself.
     ```groovy
     dependencies {
         // Other dependencies
-        compile "blue.endless:jankson:x.y.z"
+        implementation "blue.endless:jankson:x.y.z"
     }
     ```
 === "Kotlin DSL"
