@@ -218,8 +218,8 @@ public class POJODeserializer {
 	public static void unpackMap(Map<Object, Object> map, Type keyType, Type valueType, JsonElement elem, blue.endless.jankson.api.Marshaller marshaller) throws DeserializationException {
 		if (!(elem instanceof JsonObject)) throw new DeserializationException("Cannot deserialize a "+elem.getClass().getSimpleName()+" into a Map - expected a JsonObject!");
 		
-		//Class<?> keyClass = TypeMagic.classForType(keyType);
-		//Class<?> valueClass = TypeMagic.classForType(valueType);
+		map.clear(); //This may be a user-supplied collection, initialized in the constructor with default mappings. Erase those.
+		
 		JsonObject object = (JsonObject)elem;
 		for(Map.Entry<String, JsonElement> entry : object.entrySet()) {
 			try {
@@ -232,6 +232,8 @@ public class POJODeserializer {
 	
 	public static void unpackCollection(Collection<Object> collection, Type elementType, JsonElement elem, blue.endless.jankson.api.Marshaller marshaller) throws DeserializationException {
 		if (!(elem instanceof JsonArray)) throw new DeserializationException("Cannot deserialize a "+elem.getClass().getSimpleName()+" into a Set - expected a JsonArray!");
+		
+		collection.clear(); //This may be a user-supplied collection, initialized in the constructor with default items. Erase those.
 		
 		JsonArray array = (JsonArray)elem;
 		for(JsonElement arrayElem : array) {
