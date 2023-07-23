@@ -28,6 +28,10 @@ import java.io.IOException;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 
 import blue.endless.jankson.api.io.StructuredDataWriter;
 
@@ -58,6 +62,96 @@ public class ArrayElement extends AbstractList<ValueElement> implements ValueEle
 	@Override
 	public ValueElement asValueElement() {
 		return this;
+	}
+	
+	public Optional<boolean[]> asBooleanArray() {
+		boolean[] result = new boolean[entries.size()];
+		for(int i=0; i<entries.size(); i++) {
+			ValueElement elem = entries.get(i);
+			if (elem instanceof PrimitiveElement prim) {
+				Optional<Boolean> cur = prim.asBoolean();
+				if (cur.isPresent()) {
+					result[i] = cur.get();
+				} else {
+					return Optional.empty();
+				}
+			} else {
+				return Optional.empty();
+			}
+		}
+		return Optional.of(result);
+	}
+	
+	public Optional<double[]> asDoubleArray() {
+		double[] result = new double[entries.size()];
+		for(int i=0; i<entries.size(); i++) {
+			ValueElement elem = entries.get(i);
+			if (elem instanceof PrimitiveElement prim) {
+				OptionalDouble cur = prim.asDouble();
+				if (cur.isPresent()) {
+					result[i] = cur.getAsDouble();
+				} else {
+					return Optional.empty();
+				}
+			} else {
+				return Optional.empty();
+			}
+		}
+		return Optional.of(result);
+	}
+	
+	public Optional<long[]> asLongArray() {
+		long[] result = new long[entries.size()];
+		for(int i=0; i<entries.size(); i++) {
+			ValueElement elem = entries.get(i);
+			if (elem instanceof PrimitiveElement prim) {
+				OptionalLong cur = prim.asLong();
+				if (cur.isPresent()) {
+					result[i] = cur.getAsLong();
+				} else {
+					return Optional.empty();
+				}
+			} else {
+				return Optional.empty();
+			}
+		}
+		return Optional.of(result);
+	}
+	
+	public Optional<int[]> asIntArray() {
+		int[] result = new int[entries.size()];
+		for(int i=0; i<entries.size(); i++) {
+			ValueElement elem = entries.get(i);
+			if (elem instanceof PrimitiveElement prim) {
+				OptionalInt cur = prim.asInt();
+				if (cur.isPresent()) {
+					result[i] = cur.getAsInt();
+				} else {
+					return Optional.empty();
+				}
+			} else {
+				return Optional.empty();
+			}
+		}
+		return Optional.of(result);
+	}
+	
+	public Optional<String[]> asStringArray() {
+		String[] result = new String[entries.size()];
+		for(int i=0; i<entries.size(); i++) {
+			ValueElement elem = entries.get(i);
+			if (elem instanceof PrimitiveElement prim) {
+				Optional<String> cur = prim.asString();
+				if (cur.isPresent()) {
+					result[i] = cur.get();
+				} else {
+					return Optional.empty();
+				}
+			} else {
+				return Optional.empty();
+			}
+		}
+		return Optional.of(result);
 	}
 	
 	public PrimitiveElement getPrimitive(int index) {

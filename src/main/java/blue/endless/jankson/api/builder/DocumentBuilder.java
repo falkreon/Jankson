@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.api.document;
+package blue.endless.jankson.api.builder;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,6 +30,14 @@ import java.util.List;
 import java.util.Objects;
 
 import blue.endless.jankson.api.SyntaxError;
+import blue.endless.jankson.api.document.ArrayElement;
+import blue.endless.jankson.api.document.CommentElement;
+import blue.endless.jankson.api.document.FormattingElement;
+import blue.endless.jankson.api.document.KeyValuePairElement;
+import blue.endless.jankson.api.document.NonValueElement;
+import blue.endless.jankson.api.document.ObjectElement;
+import blue.endless.jankson.api.document.PrimitiveElement;
+import blue.endless.jankson.api.document.ValueElement;
 import blue.endless.jankson.api.io.ElementType;
 import blue.endless.jankson.api.io.StructuredDataReader;
 
@@ -142,7 +150,7 @@ public class DocumentBuilder {
 						} else {
 							// This is a floating comment in an empty object. Add that to the object footer.
 							for(NonValueElement nve : kvPrologue) {
-								result.footer.add(nve);
+								result.getFooter().add(nve);
 							}
 						}
 					}
@@ -194,8 +202,8 @@ public class DocumentBuilder {
 					}
 					KeyValuePairElement kv = new KeyValuePairElement(key, elem);
 					key = null;
-					for(NonValueElement e : kvPrologue) kv.preamble.add(e);
-					for(NonValueElement e : kvI) kv.intermission.add(e);
+					for(NonValueElement e : kvPrologue) kv.getPreamble().add(e);
+					for(NonValueElement e : kvI) kv.getIntermission().add(e);
 					kvPrologue.clear();
 					kvI.clear();
 					result.add(kv);
@@ -209,8 +217,8 @@ public class DocumentBuilder {
 					}
 					KeyValuePairElement kv = new KeyValuePairElement(key, elem);
 					key = null;
-					for(NonValueElement e : kvPrologue) kv.preamble.add(e);
-					for(NonValueElement e : kvI) kv.intermission.add(e);
+					for(NonValueElement e : kvPrologue) kv.getPreamble().add(e);
+					for(NonValueElement e : kvI) kv.getIntermission().add(e);
 					kvPrologue.clear();
 					kvI.clear();
 					result.add(kv);
@@ -224,8 +232,8 @@ public class DocumentBuilder {
 					}
 					KeyValuePairElement kv = new KeyValuePairElement(key, elem);
 					key = null;
-					for(NonValueElement e : kvPrologue) kv.preamble.add(e);
-					for(NonValueElement e : kvI) kv.intermission.add(e);
+					for(NonValueElement e : kvPrologue) kv.getPreamble().add(e);
+					for(NonValueElement e : kvI) kv.getIntermission().add(e);
 					kvPrologue.clear();
 					kvI.clear();
 					result.add(kv);
@@ -265,7 +273,7 @@ public class DocumentBuilder {
 				
 			case PRIMITIVE:
 				PrimitiveElement elem = PrimitiveElement.box(reader.getLatestValue());
-				for(NonValueElement e : prologue) elem.prologue.add(e);
+				for(NonValueElement e : prologue) elem.getPrologue().add(e);
 				prologue.clear();
 				array.add(elem);
 				break;
@@ -278,14 +286,14 @@ public class DocumentBuilder {
 			
 			case OBJECT_START:
 				ObjectElement objectElem = buildObjectInternal(reader);
-				for(NonValueElement e : prologue) objectElem.prologue.add(e);
+				for(NonValueElement e : prologue) objectElem.getPrologue().add(e);
 				prologue.clear();
 				array.add(objectElem);
 				break;
 			
 			case ARRAY_START:
 				ArrayElement arrayElem = buildArrayInternal(reader);
-				for(NonValueElement e : prologue) arrayElem.prologue.add(e);
+				for(NonValueElement e : prologue) arrayElem.getPrologue().add(e);
 				prologue.clear();
 				array.add(arrayElem);
 				break;

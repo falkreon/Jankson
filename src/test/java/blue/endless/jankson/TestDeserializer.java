@@ -38,6 +38,25 @@ import blue.endless.jankson.api.io.JsonIOException;
 
 public class TestDeserializer {
 	
+	/*
+	@Test
+	public void testBaseDeserialization() {
+		try {
+			JsonObject parsed = jankson.load("{x: 4, y: 4}");
+			
+			TestObject des = jankson.fromJson(parsed, TestObject.class);
+			
+			Assert.assertEquals(4, des.x);
+			Assert.assertEquals("4", des.y);
+			
+		} catch (SyntaxError ex) {
+			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
+		}
+	}
+	 */
+	
+	
+	
 //	public static class Foo {
 //		private String value = "";
 //		private String opt = "";

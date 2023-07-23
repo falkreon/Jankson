@@ -35,6 +35,72 @@ import blue.endless.jankson.api.JsonGrammar;
 import blue.endless.jankson.api.SyntaxError;
 
 public class TestSerializer {
+	
+	/*
+	
+	@SuppressWarnings("unused")
+	public static class TestObject {
+		private int x = 1;
+		private String y = "Hello";
+	}
+	
+	@Test
+	public void testArraySerialization() {
+		int[] intArray = new int[] {3, 2, 1};
+		String serializedIntArray = MarshallerImpl.getFallback().serialize(intArray).toString();
+		Assertions.assertEquals("[ 3, 2, 1 ]", serializedIntArray);
+		
+		Void[] voidArray = new Void[] {null, null}; //Yes, I realize this is black magic. We *must not* simply break at the first sign of black magic.
+		String serializedVoidArray = MarshallerImpl.getFallback().serialize(voidArray).toString();
+		Assertions.assertEquals("[ null, null ]", serializedVoidArray);
+		
+		List<Double[]> doubleArrayList = new ArrayList<Double[]>();
+		doubleArrayList.add(new Double[] {1.0, 2.0, 3.0});
+		doubleArrayList.add(new Double[] {4.0, 5.0});
+		String serializedDoubleArrayList = MarshallerImpl.getFallback().serialize(doubleArrayList).toString();
+		Assertions.assertEquals("[ [ 1.0, 2.0, 3.0 ], [ 4.0, 5.0 ] ]", serializedDoubleArrayList);
+	}
+	
+	@Test
+	public void testMapSerialization() {
+		HashMap<String, Integer> intHashMap = new HashMap<>();
+		intHashMap.put("foo", 1);
+		intHashMap.put("bar", 2);
+		JsonElement serialized = MarshallerImpl.getFallback().serialize(intHashMap);
+		Assertions.assertTrue(serialized instanceof JsonObject);
+		JsonObject obj = (JsonObject)serialized;
+		Assertions.assertEquals(new JsonPrimitive(1L), obj.get("foo"));
+		Assertions.assertEquals(new JsonPrimitive(2L), obj.get("bar"));
+	}
+	
+	private static class CommentedClass {
+		@Comment("This is a comment.")
+		private String foo = "what?";
+	}
+	*/
+	//@Test
+	//public void testSerializedComments() {
+	//	CommentedClass commented = new CommentedClass();
+	//	String serialized = MarshallerImpl.getFallback().serialize(commented).toJson(true, false, 0);
+	//	Assertions.assertEquals("{ /* This is a comment. */ \"foo\": \"what?\" }", serialized);
+	//}
+	/*
+	private enum ExampleEnum {
+		ANT,
+		BOX,
+		CAT,
+		DAY;
+	};
+	
+	@Test
+	public void testSerializeEnums() {
+		String serialized = MarshallerImpl.getFallback().serialize(ExampleEnum.CAT).toJson();
+		
+		Assertions.assertEquals("\"CAT\"", serialized);
+	}
+	*/
+	
+	
 //	Jankson jankson;
 //	
 //	@BeforeEach

@@ -29,9 +29,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
+import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 
-import blue.endless.jankson.api.document.DocumentBuilder;
+import blue.endless.jankson.api.builder.DocumentBuilder;
+import blue.endless.jankson.api.builder.ObjectBuilder;
 import blue.endless.jankson.api.document.ObjectElement;
 import blue.endless.jankson.api.document.ValueElement;
 import blue.endless.jankson.api.io.JsonReader;
@@ -182,5 +184,19 @@ public class Jankson {
 	 */
 	public static ObjectElement readJsonObject(InputStream in) throws IOException, SyntaxError {
 		return readJsonObject(in, JsonReaderOptions.UNSPECIFIED);
+	}
+	
+	/**
+	 * Reads in json data from a String, 
+	 * @param <T> the return type, which the result will be cast to
+	 * @param s
+	 * @param opts
+	 * @param type
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public static <T> T readJsonObject(String s, JsonReaderOptions opts, Type type) throws IOException, SyntaxError {
+		JsonReader reader = new JsonReader(new StringReader(s));
+		return (T) ObjectBuilder.build(reader, type);
 	}
 }
