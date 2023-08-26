@@ -1,6 +1,6 @@
 {
   "array": null,
-  "classC": {
+  "classB": {
     "some": [
       true,
       false
@@ -16,5 +16,5 @@
       "wrong"
     ]
   },
-  "isClassC": true
+  "isClassB": true
 }
