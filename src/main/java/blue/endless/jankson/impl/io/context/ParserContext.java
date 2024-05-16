@@ -44,7 +44,7 @@ public interface ParserContext {
 	
 	/**
 	 * Returns true if the parser has assembled a complete result. This method may trigger lookahead but MUST NOT read.
-	 * After this method returns true, the Reader state will change, and {@link #parse(LookaheadCodePointReader)} will
+	 * After this method returns true, the Reader state will change, and {@link #parse(LookaheadCodePointReader, BiConsumer, Consumer)} will
 	 * no longer be called.
 	 */
 	public boolean isComplete(LookaheadCodePointReader reader);

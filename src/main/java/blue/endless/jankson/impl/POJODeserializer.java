@@ -39,7 +39,6 @@ import javax.annotation.Nullable;
 
 import blue.endless.jankson.api.annotation.Deserializer;
 import blue.endless.jankson.api.annotation.SerializedName;
-import blue.endless.jankson.api.JsonGrammar;
 import blue.endless.jankson.api.io.JsonIOException;
 import blue.endless.jankson.impl.serializer.InternalDeserializerFunction;
 import blue.endless.jankson.impl.serializer.DeserializerFunctionPool;

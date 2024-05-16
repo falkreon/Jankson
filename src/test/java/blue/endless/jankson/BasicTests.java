@@ -49,7 +49,6 @@ import blue.endless.jankson.api.document.ObjectElement;
 import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.api.document.ValueElement;
 import blue.endless.jankson.api.Jankson;
-import blue.endless.jankson.api.JsonGrammar;
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.annotation.Comment;
 import blue.endless.jankson.impl.MarshallerImpl;

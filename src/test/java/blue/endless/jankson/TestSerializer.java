@@ -31,7 +31,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import blue.endless.jankson.api.Jankson;
-import blue.endless.jankson.api.JsonGrammar;
 import blue.endless.jankson.api.SyntaxError;
 
 public class TestSerializer {

@@ -26,10 +26,6 @@ package blue.endless.jankson.impl.serializer;
 
 import java.util.HashMap;
 
-import blue.endless.jankson.api.JsonGrammar;
-import blue.endless.jankson.api.Marshaller;
-import blue.endless.jankson.api.io.JsonIOException;
-
 /**
  * Stores deserializer functions that produce objects of type &lt;B&gt;
  */

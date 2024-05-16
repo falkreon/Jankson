@@ -68,6 +68,9 @@ public class JsonWriterOptions {
 		/**
 		 * Don't write commas between elements that don't need them.
 		 */
-		OMIT_COMMAS;
+		OMIT_COMMAS,
+		
+		WRITE_COMMENTS,
+		WRITE_WHITESPACE;
 	}
 }

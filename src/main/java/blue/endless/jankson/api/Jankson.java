@@ -72,7 +72,7 @@ public class Jankson {
 	 * Reads in json data from an InputStream, using the settings provided. The data will be interpreted as UTF-8
 	 * character data. Characters will be read until the end of the stream, but the stream will not be closed by this
 	 * method.
-	 * @param r    the InputStream that is reading the json document
+	 * @param in   the InputStream that is reading the json document
 	 * @param opts hints and settings to control the reading process
 	 * @return     a ValueElement representing the document root
 	 * @throws IOException if there was a problem reading the String. This should almost never happen
@@ -146,7 +146,7 @@ public class Jankson {
 	 * Reads in a json object from an InputStream, using the settings provided. The data will be interpreted as UTF-8
 	 * character data. Characters will be read until the end of the stream, but the stream will not be closed by this
 	 * method.
-	 * @param r    the InputStream that is reading the json document
+	 * @param in   the InputStream that is reading the json document
 	 * @param opts hints and settings to control the reading process
 	 * @return     a ValueElement representing the document root
 	 * @throws IOException if there was a problem reading the String. This should almost never happen

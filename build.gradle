@@ -9,9 +9,6 @@ buildscript {
 			url "https://plugins.gradle.org/m2/";
 		}
 	}
-	dependencies {
-	//	classpath "gradle.plugin.net.minecrell:licenser:0.3";
-	}
 }
 
 plugins {
@@ -19,7 +16,6 @@ plugins {
 }
 
 apply plugin: "java";
-//apply plugin: "net.minecrell.licenser";
 apply plugin: "eclipse";
 apply plugin: "maven-publish";
 apply plugin: "signing";
@@ -38,7 +34,7 @@ repositories {
 jar {
 	manifest {
 		attributes(
-			"Automatic-Module-Name"       : "jankson"
+			"Automatic-Module-Name" : "jankson"
 		);
 	}
 }
@@ -53,11 +49,9 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
 	from javadoc.destinationDir
 }
 
-tasks.withType(Javadoc) {
-      failOnError false
-      options.addStringOption('Xdoclint:none', '-quiet')
-      options.addStringOption('encoding', 'UTF-8')
-      options.addStringOption('charSet', 'UTF-8')
+javadoc {
+	failOnError false
+    options.addStringOption('Xdoclint:none', '-quiet')
 }
 
 def versionSuffix = ''
@@ -137,7 +131,6 @@ defaultTasks "clean", "build", "sourcesJar";
 dependencies {
 	testImplementation(platform('org.junit:junit-bom:5.9.2'))
 	testImplementation('org.junit.jupiter:junit-jupiter')
-	//testImplementation "junit:junit:4.12";
 	
 	compileOnly group: "com.google.code.findbugs", name: "jsr305", version: "3.0.2";
 	testImplementation group: "com.google.code.findbugs", name: "jsr305", version: "3.0.2";
