@@ -29,6 +29,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 
@@ -38,6 +40,8 @@ import blue.endless.jankson.api.document.ObjectElement;
 import blue.endless.jankson.api.document.ValueElement;
 import blue.endless.jankson.api.io.JsonReader;
 import blue.endless.jankson.api.io.JsonReaderOptions;
+import blue.endless.jankson.api.io.JsonWriter;
+import blue.endless.jankson.api.io.JsonWriterOptions;
 
 
 public class Jankson {
@@ -198,5 +202,18 @@ public class Jankson {
 	public static <T> T readJsonObject(String s, JsonReaderOptions opts, Type type) throws IOException, SyntaxError {
 		JsonReader reader = new JsonReader(new StringReader(s));
 		return (T) ObjectBuilder.build(reader, type);
+	}
+	
+	public static void writeJson(ValueElement elem, Writer writer) throws IOException {
+		JsonWriter out = new JsonWriter(writer);
+		elem.write(out);
+	}
+	
+	public static String toJsonString(ValueElement elem, JsonWriterOptions options) throws IOException {
+		try(StringWriter sw = new StringWriter()) {
+			JsonWriter out = new JsonWriter(sw, options);
+			elem.write(out);
+			return sw.toString();
+		}
 	}
 }

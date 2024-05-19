@@ -25,6 +25,12 @@
 package blue.endless.jankson;
 
 import blue.endless.jankson.api.annotation.Serializer;
+import blue.endless.jankson.api.document.ArrayElement;
+import blue.endless.jankson.api.document.PrimitiveElement;
+import blue.endless.jankson.api.io.JsonWriterOptions;
+import blue.endless.jankson.impl.MarshallerImpl;
+
+import java.io.IOException;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,11 +47,24 @@ public class TestSerializer {
 	public static class TestObject {
 		private int x = 1;
 		private String y = "Hello";
+	}*/
+	
+	@Test
+	public void testArraySerialization() throws IOException {
+		ArrayElement array = new ArrayElement();
+		array.add(PrimitiveElement.of(3));
+		array.add(PrimitiveElement.of(2));
+		array.add(PrimitiveElement.of(1));
+		
+		String serializedArray = Jankson.toJsonString(array, JsonWriterOptions.DEFAULTS);
+		System.out.println(serializedArray);
 	}
 	
+	/*
 	@Test
 	public void testArraySerialization() {
 		int[] intArray = new int[] {3, 2, 1};
+		
 		String serializedIntArray = MarshallerImpl.getFallback().serialize(intArray).toString();
 		Assertions.assertEquals("[ 3, 2, 1 ]", serializedIntArray);
 		
@@ -58,8 +77,9 @@ public class TestSerializer {
 		doubleArrayList.add(new Double[] {4.0, 5.0});
 		String serializedDoubleArrayList = MarshallerImpl.getFallback().serialize(doubleArrayList).toString();
 		Assertions.assertEquals("[ [ 1.0, 2.0, 3.0 ], [ 4.0, 5.0 ] ]", serializedDoubleArrayList);
-	}
+	}*/
 	
+	/*
 	@Test
 	public void testMapSerialization() {
 		HashMap<String, Integer> intHashMap = new HashMap<>();

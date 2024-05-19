@@ -24,35 +24,19 @@
 
 package blue.endless.jankson.impl;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.Parameter;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import javax.annotation.Nullable;
-
-import blue.endless.jankson.api.annotation.SerializedName;
-import blue.endless.jankson.api.annotation.Serializer;
 import blue.endless.jankson.api.document.DocumentElement;
 import blue.endless.jankson.api.DeserializerFunction;
 import blue.endless.jankson.api.Marshaller;
 import blue.endless.jankson.api.MarshallerException;
-import blue.endless.jankson.api.annotation.Comment;
-import blue.endless.jankson.api.io.JsonIOException;
 import blue.endless.jankson.impl.serializer.DeserializerFunctionPool;
-import blue.endless.jankson.impl.serializer.DeserializerFunctionPool.FunctionMatchFailedException;
 
 /**
  * @deprecated For removal; please use {@link blue.endless.jankson.api.Marshaller}
@@ -73,20 +57,6 @@ public class MarshallerImpl implements blue.endless.jankson.api.Marshaller {
 	public <T> void register(Class<T> clazz, Function<Object, T> marshaller) {
 		primitiveMarshallers.put(clazz, marshaller);
 	}
-	
-	//public <T> void registerTypeAdapter(Class<T> clazz, Function<JsonObject, T> adapter) {
-	//	typeAdapters.put(clazz, adapter);
-	//}
-	
-	//@SuppressWarnings("unchecked")
-	//public <T> void registerSerializer(Class<T> clazz, Function<T, JsonElement> serializer) {
-	//	serializers.put(clazz, (it, marshaller)->serializer.apply((T) it));
-	//}
-	
-	//@SuppressWarnings("unchecked")
-	//public <T> void registerSerializer(Class<T> clazz, BiFunction<T, blue.endless.jankson.api.Marshaller, JsonElement> serializer) {
-	//	serializers.put(clazz, (BiFunction<Object, blue.endless.jankson.api.Marshaller, JsonElement>) serializer);
-	//}
 	
 	public <T> void registerTypeFactory(Class<T> clazz, Supplier<T> supplier) {
 		typeFactories.put(clazz, supplier);

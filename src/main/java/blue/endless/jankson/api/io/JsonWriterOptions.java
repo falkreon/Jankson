@@ -31,25 +31,31 @@ import blue.endless.jankson.impl.MarshallerImpl;
 
 @SuppressWarnings("deprecation")
 public class JsonWriterOptions {
-	public static JsonWriterOptions DEFAULTS = new JsonWriterOptions(Hint.UNQUOTED_KEYS);
-	public static JsonWriterOptions STRICT = new JsonWriterOptions(); // TODO: Add strict hints
-	public static JsonWriterOptions INI_SON = new JsonWriterOptions(Hint.BARE_ROOT_OBJECT, Hint.KEY_EQUALS_VALUE, Hint.UNQUOTED_KEYS, Hint.OMIT_COMMAS);
+	public static JsonWriterOptions DEFAULTS = new JsonWriterOptions(Hint.UNQUOTED_KEYS, Hint.WRITE_COMMENTS, Hint.WRITE_NEWLINES, Hint.WRITE_WHITESPACE);
+	public static JsonWriterOptions STRICT = new JsonWriterOptions(Hint.WRITE_NEWLINES, Hint.WRITE_WHITESPACE); // TODO: Add strict hints
+	public static JsonWriterOptions INI_SON = new JsonWriterOptions(Hint.BARE_ROOT_OBJECT, Hint.KEY_EQUALS_VALUE, Hint.UNQUOTED_KEYS, Hint.OMIT_COMMAS, Hint.WRITE_NEWLINES, Hint.WRITE_WHITESPACE);
 	
 	private final EnumSet<Hint> hints = EnumSet.noneOf(Hint.class);
+	private final String indentString;
 	private final Marshaller marshaller;
 	
 	public JsonWriterOptions(Hint... hints) {
-		for(Hint hint : hints) this.hints.add(hint);
-		this.marshaller = MarshallerImpl.getFallback();
+		this("\t", MarshallerImpl.getFallback(), hints);
 	}
 	
-	public JsonWriterOptions(Marshaller marshaller, Hint... hints) {
+	public JsonWriterOptions(String indentString, Marshaller marshaller, Hint... hints) {
 		for(Hint hint : hints) this.hints.add(hint);
 		this.marshaller = marshaller;
+		this.indentString = indentString;
 	}
 	
 	public boolean get(Hint hint) {
 		return hints.contains(hint);
+	}
+	
+	public String getIndent(int count) {
+		if (count<=0) return "";
+		return indentString.repeat(count);
 	}
 	
 	public static enum Hint {
@@ -71,6 +77,9 @@ public class JsonWriterOptions {
 		OMIT_COMMAS,
 		
 		WRITE_COMMENTS,
-		WRITE_WHITESPACE;
+		
+		WRITE_WHITESPACE,
+		
+		WRITE_NEWLINES;
 	}
 }

@@ -30,9 +30,15 @@ import java.io.Writer;
 import blue.endless.jankson.api.document.CommentType;
 import blue.endless.jankson.impl.io.AbstractStructuredDataWriter;
 
+import static blue.endless.jankson.api.io.JsonWriterOptions.Hint.*;
+
 public class JsonWriter extends AbstractStructuredDataWriter {
 	private final JsonWriterOptions options;
 	private int indentLevel = 0;
+	
+	private String resource = "";
+	private int line = 0;
+	private int column = 0;
 	
 	public JsonWriter(Writer destination) {
 		this(destination, JsonWriterOptions.DEFAULTS);
@@ -42,39 +48,65 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 		super(destination);
 		this.options = options;
 	}
-
+	
+	private void write(char ch) throws IOException {
+		if (ch == '\n') {
+			line++;
+			column = 0;
+		}
+		dest.write(ch);
+	}
+	
+	private void write(String s) throws IOException {
+		for(int i=0; i<s.length(); i++) {
+			dest.write(s.charAt(i));
+		}
+	}
+	
+	private boolean hint(JsonWriterOptions.Hint hint) {
+		return options.get(hint);
+	}
+	
+	public int getLine() {
+		return line;
+	}
+	
+	public int getColumn() {
+		return column;
+	}
+	
 	@Override
 	public void writeComment(String value, CommentType type) throws IOException {
 		switch(type) {
 		case LINE_END:
-			dest.write("//");
-			dest.write(value);
+			write("//");
+			write(value);
 			writeNewline();
 			break;
 		
 		case OCTOTHORPE:
-			dest.write("#");
-			dest.write(value);
+			write("#");
+			write(value);
 			writeNewline();
 			break;
 		
 		case MULTILINE:
-			dest.write("/*");
-			dest.write(value);
-			dest.write("*/ "); //TODO: Figure out if we should write this extra space here
+			write("/*");
+			write(value);
+			write("*/ "); //TODO: Figure out if we should write this extra space here
 			break;
 		
 		case DOC:
-			dest.write("/**");
-			dest.write(value);
-			dest.write("*/ "); //TODO: Figure out if we should write this extra space here
+			write("/**");
+			write(value);
+			write("*/ "); //TODO: Figure out if we should write this extra space here
 			break;
 		}
 	}
 
 	@Override
 	public void writeWhitespace(String value) throws IOException {
-		dest.write(value);
+		if (hint(WRITE_WHITESPACE)) write(value);
 	}
 
 	@Override
@@ -82,13 +114,13 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 		assertKey();
 		
 		//TODO: escape parts of the key if needed, omit quotes if possible + configured
-		boolean quoted = !options.get(JsonWriterOptions.Hint.UNQUOTED_KEYS); //TODO: Check to make sure it CAN be unquoted
+		boolean quoted = !hint(UNQUOTED_KEYS); //TODO: Check to make sure it CAN be unquoted
 		if (quoted) {
-			dest.write('"');
+			write('"');
 		}
 		dest.write(key);
 		if (quoted) {
-			dest.write("\" ");
+			write("\" ");
 		}
 		
 		keyWritten();
@@ -98,10 +130,10 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 	public void writeKeyValueDelimiter() throws IOException {
 		assertKeyValueDelimiter();
 		
-		if (options.get(JsonWriterOptions.Hint.KEY_EQUALS_VALUE)) {
-			dest.write(" = ");
+		if (hint(KEY_EQUALS_VALUE)) {
+			write(" = ");
 		} else {
-			dest.write(": ");
+			write(": ");
 		}
 		
 		keyValueDelimiterWritten();
@@ -110,24 +142,33 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 	@Override
 	public void nextValue() throws IOException {
 		assertNextValue();
-		if (!options.get(JsonWriterOptions.Hint.OMIT_COMMAS)) {
-			dest.write(", ");
-		} else {
-			dest.write(" ");
+		
+		if (!hint(OMIT_COMMAS)) {
+			write(',');
 		}
+		
+		if (hint(WRITE_NEWLINES)) {
+			writeNewline();
+		} else {
+			write(' ');
+		}
+		
 		nextValueWritten();
 	}
 
 	@Override
 	public void writeObjectStart() throws IOException {
 		assertValue();
-		if (peek()==State.ROOT && options.get(JsonWriterOptions.Hint.BARE_ROOT_OBJECT)) {
+		if (peek()==State.ROOT && hint(BARE_ROOT_OBJECT)) {
 			//Do not write the brace, and do not increase the indent level.
 		} else {
-			//dest.write("{ ");
-			dest.write('{'); //TODO: Consult hints for newline behavior
-			indentLevel++;
-			writeNewline();
+			write('{');
+			if (hint(WRITE_NEWLINES)) {
+				indentLevel++;
+				writeNewline();
+			} else {
+				if (hint(WRITE_WHITESPACE)) write(' ');
+			}
 		}
 		objectStarted();
 	}
@@ -136,12 +177,12 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 	public void writeObjectEnd() throws IOException {
 		assertObjectEnd();
 		
-		if (isWritingRoot() && options.get(JsonWriterOptions.Hint.BARE_ROOT_OBJECT)) {
+		if (isWritingRoot() && hint(BARE_ROOT_OBJECT)) {
 			//Do not write closing brace, and do not decrease the indent level.
 		} else {
 			indentLevel--;
 			writeNewline(); //TODO: Consult hints for newline behavior
-			dest.write('}');
+			write('}');
 		}
 		
 		objectEndWritten();
@@ -150,16 +191,33 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 	@Override
 	public void writeArrayStart() throws IOException {
 		assertValue();
-		dest.write("[ "); //TODO: Consult hints for newline behavior
-		indentLevel++;
+		
+		write("["); //TODO: Consult hints for newline behavior
+		if (hint(WRITE_NEWLINES)) {
+			indentLevel++;
+			writeNewline();
+			
+		}
+		
 		arrayStarted();
 	}
 
 	@Override
 	public void writeArrayEnd() throws IOException {
 		assertArrayEnd();
-		dest.write(" ]");
-		indentLevel--;
+		
+		if (hint(WRITE_NEWLINES)) {
+			indentLevel--;
+			writeNewline();
+		}
+		
+		write(']');
+		if (hint(WRITE_NEWLINES)) {
+			writeNewline();
+		} else if (hint(WRITE_WHITESPACE)) {
+			write(' ');
+		}
+		
 		arrayEndWritten();
 	}
 
@@ -167,9 +225,9 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 	public void writeStringLiteral(String value) throws IOException {
 		assertValue();
 		
-		dest.write('"');
-		dest.write(value);
-		dest.write('"');
+		write('"');
+		write(value);
+		write('"');
 		
 		valueWritten();
 	}
@@ -177,33 +235,33 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 	@Override
 	public void writeLongLiteral(long value) throws IOException {
 		assertValue();
-		dest.write(Long.toString(value));
+		write(Long.toString(value));
 		valueWritten();
 	}
 
 	@Override
 	public void writeDoubleLiteral(double value) throws IOException {
 		assertValue();
-		dest.write(Double.toString(value));
+		write(Double.toString(value));
 		valueWritten();
 	}
 
 	@Override
 	public void writeBooleanLiteral(boolean value) throws IOException {
 		assertValue();
-		dest.write(Boolean.toString(value));
+		write(Boolean.toString(value));
 		valueWritten();
 	}
 
 	@Override
 	public void writeNullLiteral() throws IOException {
 		assertValue();
-		dest.write("null");
+		write("null");
 		valueWritten();
 	}
 	
 	private void writeNewline() throws IOException {
-		dest.write('\n');
-		dest.write("\t".repeat(indentLevel)); //TODO: Get the indent String from options
+		write('\n');
+		write(options.getIndent(indentLevel));
 	}
 }
