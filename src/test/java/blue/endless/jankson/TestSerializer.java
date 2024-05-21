@@ -27,7 +27,9 @@ package blue.endless.jankson;
 import blue.endless.jankson.api.annotation.Serializer;
 import blue.endless.jankson.api.document.ArrayElement;
 import blue.endless.jankson.api.document.PrimitiveElement;
+import blue.endless.jankson.api.document.ValueElement;
 import blue.endless.jankson.api.io.JsonWriterOptions;
+import blue.endless.jankson.impl.ToStructuredDataFunction;
 import blue.endless.jankson.impl.MarshallerImpl;
 
 import java.io.IOException;
@@ -37,6 +39,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import blue.endless.jankson.api.Jankson;
+import blue.endless.jankson.api.MarshallerException;
 import blue.endless.jankson.api.SyntaxError;
 
 public class TestSerializer {
@@ -50,14 +53,26 @@ public class TestSerializer {
 	}*/
 	
 	@Test
-	public void testArraySerialization() throws IOException {
+	public void testArraySerialization() throws IOException, MarshallerException {
+		// TODO: Go back to Marshaller to turn Object->Json
+		ValueElement array = ToStructuredDataFunction.toStructuredData(new int[] { 3, 2, 1 });
+		/*
 		ArrayElement array = new ArrayElement();
 		array.add(PrimitiveElement.of(3));
 		array.add(PrimitiveElement.of(2));
-		array.add(PrimitiveElement.of(1));
+		array.add(PrimitiveElement.of(1));*/
 		
-		String serializedArray = Jankson.toJsonString(array, JsonWriterOptions.DEFAULTS);
-		System.out.println(serializedArray);
+		String actual = Jankson.toJsonString(array, JsonWriterOptions.DEFAULTS);
+		
+		String expected =
+				"""
+				[
+					3,
+					2,
+					1
+				]
+				""";
+		Assertions.assertEquals(expected, actual);
 	}
 	
 	/*

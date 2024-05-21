@@ -38,10 +38,7 @@ import blue.endless.jankson.api.Marshaller;
 import blue.endless.jankson.api.MarshallerException;
 import blue.endless.jankson.impl.serializer.DeserializerFunctionPool;
 
-/**
- * @deprecated For removal; please use {@link blue.endless.jankson.api.Marshaller}
- */
-@Deprecated
+
 public class MarshallerImpl implements blue.endless.jankson.api.Marshaller {
 	private static MarshallerImpl INSTANCE = new MarshallerImpl();
 	

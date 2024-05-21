@@ -29,6 +29,7 @@ import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
+import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -242,6 +243,55 @@ public class TypeMagic {
 		}
 		
 		return Optional.empty();
+	}
+	
+	/**
+	 * Reflectively gets the value of a Field, setting and then reverting the accessible flag on the object if needed.
+	 * @param field     The field to retrieve
+	 * @param instance  The object instance that "owns" the field
+	 * @return          The value of that field, promoted to an Object by reflection if needed.
+	 * @throws InaccessibleObjectException  if the value can't be obtained at all. In particular, we can expect this
+	 *    to happen for private members of another module.
+	 */
+	public static Object getFieldValue(Field field, Object instance) throws InaccessibleObjectException {
+		if (field.canAccess(instance)) {
+			try {
+				return field.get(instance);
+			} catch (Throwable t) {
+				throw new InaccessibleObjectException();
+			}
+		} else {
+			try {
+				field.setAccessible(true);
+				Object result = field.get(instance);
+				field.setAccessible(false);
+				
+				return result;
+			} catch (Throwable t) {
+				throw new InaccessibleObjectException();
+			}
+		}
+	}
+	
+	public static boolean setFieldValue(Field field, Object instance, Object value) {
+		if (field.canAccess(instance)) {
+			try {
+				field.set(instance, value);
+				return true;
+			} catch (Throwable t) {
+				return false;
+			}
+		} else {
+			try {
+				field.setAccessible(true);
+				field.set(instance, value);
+				field.setAccessible(false);
+				
+				return true;
+			} catch (Throwable t) {
+				return false;
+			}
+		}
 	}
 	
 	public static enum Nullity {

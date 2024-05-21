@@ -152,11 +152,24 @@ public abstract class PrimitiveElement implements ValueElement {
 		return new StringElementImpl(value.toString());
 	}
 	
+	public static boolean canBox(Object value) {
+		return
+				value == null ||
+				value instanceof String ||
+				value instanceof Boolean ||
+				value instanceof Integer ||
+				value instanceof Long ||
+				value instanceof Double ||
+				value instanceof BigInteger ||
+				value instanceof BigDecimal;
+	}
+	
 	public static PrimitiveElement box(Object value) throws IllegalArgumentException {
 		if (value==null) return ofNull();
 		
 		if (value instanceof String v)  return of(v);
 		if (value instanceof Boolean v) return of(v);
+		if (value instanceof Integer v) return of(v);
 		if (value instanceof Long v)    return of(v);
 		if (value instanceof Double v)  return of(v);
 		if (value instanceof BigInteger v) return of(v);
