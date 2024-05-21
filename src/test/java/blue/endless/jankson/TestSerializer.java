@@ -24,23 +24,21 @@
 
 package blue.endless.jankson;
 
-import blue.endless.jankson.api.annotation.Serializer;
-import blue.endless.jankson.api.document.ArrayElement;
-import blue.endless.jankson.api.document.PrimitiveElement;
+import blue.endless.jankson.api.document.ObjectElement;
 import blue.endless.jankson.api.document.ValueElement;
 import blue.endless.jankson.api.io.JsonWriterOptions;
 import blue.endless.jankson.impl.ToStructuredDataFunction;
-import blue.endless.jankson.impl.MarshallerImpl;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import blue.endless.jankson.api.Jankson;
 import blue.endless.jankson.api.MarshallerException;
-import blue.endless.jankson.api.SyntaxError;
 
 public class TestSerializer {
 	
@@ -54,13 +52,7 @@ public class TestSerializer {
 	
 	@Test
 	public void testArraySerialization() throws IOException, MarshallerException {
-		// TODO: Go back to Marshaller to turn Object->Json
 		ValueElement array = ToStructuredDataFunction.toStructuredData(new int[] { 3, 2, 1 });
-		/*
-		ArrayElement array = new ArrayElement();
-		array.add(PrimitiveElement.of(3));
-		array.add(PrimitiveElement.of(2));
-		array.add(PrimitiveElement.of(1));*/
 		
 		String actual = Jankson.toJsonString(array, JsonWriterOptions.DEFAULTS);
 		
@@ -75,38 +67,50 @@ public class TestSerializer {
 		Assertions.assertEquals(expected, actual);
 	}
 	
-	/*
 	@Test
-	public void testArraySerialization() {
-		int[] intArray = new int[] {3, 2, 1};
+	public void testVoidArraySerialization() throws IOException, MarshallerException {
+		Void[] voidArray = new Void[] {null, null}; // We must not simply break at the first sign of black magic.
+		ValueElement asValue = ToStructuredDataFunction.toStructuredData(voidArray);
 		
-		String serializedIntArray = MarshallerImpl.getFallback().serialize(intArray).toString();
-		Assertions.assertEquals("[ 3, 2, 1 ]", serializedIntArray);
+		String actual = Jankson.toJsonString(asValue, JsonWriterOptions.ONE_LINE);
 		
-		Void[] voidArray = new Void[] {null, null}; //Yes, I realize this is black magic. We *must not* simply break at the first sign of black magic.
-		String serializedVoidArray = MarshallerImpl.getFallback().serialize(voidArray).toString();
-		Assertions.assertEquals("[ null, null ]", serializedVoidArray);
-		
+		/*
+		 * Note: This is a change from earlier behavior, which is "[ null, null ]". I felt this additional whitespace was unnecessary.
+		 */
+		Assertions.assertEquals("[null, null]", actual);
+	}
+	
+	@Test
+	public void testNestedCollections() throws IOException, MarshallerException {
 		List<Double[]> doubleArrayList = new ArrayList<Double[]>();
 		doubleArrayList.add(new Double[] {1.0, 2.0, 3.0});
 		doubleArrayList.add(new Double[] {4.0, 5.0});
-		String serializedDoubleArrayList = MarshallerImpl.getFallback().serialize(doubleArrayList).toString();
-		Assertions.assertEquals("[ [ 1.0, 2.0, 3.0 ], [ 4.0, 5.0 ] ]", serializedDoubleArrayList);
-	}*/
+		ValueElement asValue = ToStructuredDataFunction.toStructuredData(doubleArrayList);
+		
+		String actual = Jankson.toJsonString(asValue, JsonWriterOptions.ONE_LINE);
+		
+		/**
+		 * Again, change from original behavior which included whitespace around brackets
+		 */
+		Assertions.assertEquals("[[1.0, 2.0, 3.0], [4.0, 5.0]]", actual);
+	}
 	
-	/*
+	
 	@Test
-	public void testMapSerialization() {
+	public void testMapToStructuredData() throws MarshallerException {
 		HashMap<String, Integer> intHashMap = new HashMap<>();
 		intHashMap.put("foo", 1);
 		intHashMap.put("bar", 2);
-		JsonElement serialized = MarshallerImpl.getFallback().serialize(intHashMap);
-		Assertions.assertTrue(serialized instanceof JsonObject);
-		JsonObject obj = (JsonObject)serialized;
-		Assertions.assertEquals(new JsonPrimitive(1L), obj.get("foo"));
-		Assertions.assertEquals(new JsonPrimitive(2L), obj.get("bar"));
+		ValueElement asValue = ToStructuredDataFunction.toStructuredData(intHashMap);
+		
+		Assertions.assertTrue(asValue instanceof ObjectElement);
+		
+		ObjectElement obj = (ObjectElement) asValue;
+		Assertions.assertEquals(1, obj.getPrimitive("foo").asInt().getAsInt());
+		Assertions.assertEquals(2, obj.getPrimitive("bar").asInt().getAsInt());
 	}
 	
+	/*
 	private static class CommentedClass {
 		@Comment("This is a comment.")
 		private String foo = "what?";

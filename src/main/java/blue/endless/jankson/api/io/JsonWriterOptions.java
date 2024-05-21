@@ -32,6 +32,7 @@ import blue.endless.jankson.impl.MarshallerImpl;
 @SuppressWarnings("deprecation")
 public class JsonWriterOptions {
 	public static JsonWriterOptions DEFAULTS = new JsonWriterOptions(Hint.UNQUOTED_KEYS, Hint.WRITE_COMMENTS, Hint.WRITE_NEWLINES, Hint.WRITE_WHITESPACE);
+	public static JsonWriterOptions ONE_LINE = new JsonWriterOptions(Hint.UNQUOTED_KEYS, Hint.WRITE_COMMENTS, Hint.WRITE_WHITESPACE);
 	public static JsonWriterOptions STRICT = new JsonWriterOptions(Hint.WRITE_NEWLINES, Hint.WRITE_WHITESPACE); // TODO: Add strict hints
 	public static JsonWriterOptions INI_SON = new JsonWriterOptions(Hint.BARE_ROOT_OBJECT, Hint.KEY_EQUALS_VALUE, Hint.UNQUOTED_KEYS, Hint.OMIT_COMMAS, Hint.WRITE_NEWLINES, Hint.WRITE_WHITESPACE);
 	

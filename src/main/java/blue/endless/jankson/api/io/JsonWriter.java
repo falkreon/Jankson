@@ -214,8 +214,6 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 		write(']');
 		if (hint(WRITE_NEWLINES)) {
 			writeNewline();
-		} else if (hint(WRITE_WHITESPACE)) {
-			write(' ');
 		}
 		
 		arrayEndWritten();

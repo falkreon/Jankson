@@ -157,8 +157,12 @@ public abstract class PrimitiveElement implements ValueElement {
 				value == null ||
 				value instanceof String ||
 				value instanceof Boolean ||
+				value instanceof Character ||
+				value instanceof Byte ||
+				value instanceof Short ||
 				value instanceof Integer ||
 				value instanceof Long ||
+				value instanceof Float ||
 				value instanceof Double ||
 				value instanceof BigInteger ||
 				value instanceof BigDecimal;
@@ -167,11 +171,15 @@ public abstract class PrimitiveElement implements ValueElement {
 	public static PrimitiveElement box(Object value) throws IllegalArgumentException {
 		if (value==null) return ofNull();
 		
-		if (value instanceof String v)  return of(v);
-		if (value instanceof Boolean v) return of(v);
-		if (value instanceof Integer v) return of(v);
-		if (value instanceof Long v)    return of(v);
-		if (value instanceof Double v)  return of(v);
+		if (value instanceof String v)     return of(v);
+		if (value instanceof Boolean v)    return of(v);
+		if (value instanceof Character v)  return of(""+v); // We could have chosen Long but 1-character String is semantically closer
+		if (value instanceof Byte v)       return of(v);
+		if (value instanceof Short v)      return of(v);
+		if (value instanceof Integer v)    return of(v);
+		if (value instanceof Long v)       return of(v);
+		if (value instanceof Float v)      return of(v);
+		if (value instanceof Double v)     return of(v);
 		if (value instanceof BigInteger v) return of(v);
 		if (value instanceof BigDecimal v) return of(v);
 		
