@@ -22,16 +22,9 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.api.builder;
+package blue.endless.jankson.impl;
 
-import java.lang.reflect.Type;
-
-import blue.endless.jankson.api.io.StructuredDataReader;
-
-public class ObjectBuilder {
-	public static <T> T build(StructuredDataReader reader, Type type) {
-		return null;
-	}
-	
-	
+@FunctionalInterface
+public interface CheckedFunction<A, R, T extends Throwable> {
+	public R apply(A value) throws T;
 }

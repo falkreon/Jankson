@@ -30,8 +30,8 @@ import java.util.function.Consumer;
 
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.document.CommentElement;
-import blue.endless.jankson.api.io.ElementType;
 import blue.endless.jankson.api.io.JsonReaderOptions;
+import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.impl.io.LookaheadCodePointReader;
 
 public class ObjectParserContext implements ParserContext {
@@ -44,7 +44,7 @@ public class ObjectParserContext implements ParserContext {
 	}
 	
 	@Override
-	public void parse(LookaheadCodePointReader reader, BiConsumer<ElementType, Object> elementConsumer, Consumer<ParserContext> pusher) throws IOException, SyntaxError {
+	public void parse(LookaheadCodePointReader reader, Consumer<StructuredData> elementConsumer, Consumer<ParserContext> pusher) throws IOException, SyntaxError {
 		emitComments(reader, elementConsumer);
 		
 		if (!foundStart) {
@@ -52,7 +52,7 @@ public class ObjectParserContext implements ParserContext {
 			if (ch == '{') {
 				reader.read();
 				foundStart = true;
-				elementConsumer.accept(ElementType.OBJECT_START, null);
+				elementConsumer.accept(StructuredData.OBJECT_START);
 			} else if (ch == '}') {
 				throw new SyntaxError("End of object found before start.", reader.getLine(), reader.getCharacter());
 			} else {
@@ -70,7 +70,7 @@ public class ObjectParserContext implements ParserContext {
 			if (ch == '}') {
 				reader.read();
 				foundEnd = true;
-				elementConsumer.accept(ElementType.OBJECT_END, null);
+				elementConsumer.accept(StructuredData.OBJECT_END);
 			} else {
 				//This is either a comment or a key.
 				//if (CommentValueParser.canReadStatic(reader)) {
@@ -81,11 +81,11 @@ public class ObjectParserContext implements ParserContext {
 					if (StringValueParser.canReadStatic(reader)) {
 						//Read a quoted key
 						String s = StringValueParser.readStatic(reader);
-						elementConsumer.accept(ElementType.OBJECT_KEY, s);
+						elementConsumer.accept(StructuredData.objectKey(s));
 					} else {
 						//TODO: Accept bare String tokens
 						String token = TokenValueParser.readStatic(reader);
-						elementConsumer.accept(ElementType.OBJECT_KEY, token);
+						elementConsumer.accept(StructuredData.objectKey(token));
 					}
 					
 					//Look for the colon
@@ -95,7 +95,7 @@ public class ObjectParserContext implements ParserContext {
 						//Eat it and proceed to the value parsing
 						reader.read();
 						
-						elementConsumer.accept(ElementType.OBJECT_KEY_VALUE_SEPARATOR, null);
+						//elementConsumer.accept(ElementType.OBJECT_KEY_VALUE_SEPARATOR, null);
 						
 						emitComments(reader, elementConsumer);
 						
@@ -114,15 +114,15 @@ public class ObjectParserContext implements ParserContext {
 		}
 	}
 
-	private void emitComments(LookaheadCodePointReader reader, BiConsumer<ElementType, Object> elementConsumer) throws IOException, SyntaxError {
+	private void emitComments(LookaheadCodePointReader reader, Consumer<StructuredData> elementConsumer) throws IOException, SyntaxError {
 		skipNonBreakingWhitespace(reader);
 		while (CommentValueParser.canReadStatic(reader) || reader.peek()=='\n') {
 			if (reader.peek()=='\n') {
 				reader.read();
-				elementConsumer.accept(ElementType.NEWLINE, null);
+				elementConsumer.accept(StructuredData.NEWLINE);
 			} else {
 				CommentElement comment = CommentValueParser.readStatic(reader);
-				elementConsumer.accept(ElementType.COMMENT, comment);
+				elementConsumer.accept(new StructuredData(StructuredData.Type.COMMENT, comment));
 			}
 			skipNonBreakingWhitespace(reader);
 		}
@@ -134,7 +134,7 @@ public class ObjectParserContext implements ParserContext {
 	}
 	
 	
-	public void handleValue(LookaheadCodePointReader reader, BiConsumer<ElementType, Object> elementConsumer, Consumer<ParserContext> pusher) throws IOException, SyntaxError {
+	public void handleValue(LookaheadCodePointReader reader, Consumer<StructuredData> elementConsumer, Consumer<ParserContext> pusher) throws IOException, SyntaxError {
 		int ch = reader.peek();
 		if (ch=='{') {
 			pusher.accept(new ObjectParserContext(options));
@@ -142,22 +142,21 @@ public class ObjectParserContext implements ParserContext {
 			pusher.accept(new ArrayParserContext(options));
 		} else if (NumberValueParser.canReadStatic(reader)) {
 			Number value = NumberValueParser.readStatic(reader);
-			elementConsumer.accept(ElementType.PRIMITIVE, value);
+			elementConsumer.accept(StructuredData.primitive(value));
 		} else if (BooleanValueParser.canReadStatic(reader)) {
 			Boolean value = BooleanValueParser.readStatic(reader);
-			elementConsumer.accept(ElementType.PRIMITIVE, value);
+			elementConsumer.accept(StructuredData.primitive(value));
 		} else if (StringValueParser.canReadStatic(reader)) {
 			String value = StringValueParser.readStatic(reader);
-			elementConsumer.accept(ElementType.PRIMITIVE, value);
+			elementConsumer.accept(StructuredData.primitive(value));
 		} else {
 			String maybeNull = reader.peekString(4);
 			if (maybeNull.equals("null")) {
 				reader.readString(4);
-				elementConsumer.accept(ElementType.PRIMITIVE, null);
+				elementConsumer.accept(StructuredData.NULL);
 			} else {
 				String token = TokenValueParser.readStatic(reader);
-				
-				elementConsumer.accept(ElementType.PRIMITIVE, token);
+				elementConsumer.accept(StructuredData.primitive(token));
 				//TODO: Unquoted Strings etc.
 				//throw new SyntaxError("Expected a value here, but couldn't decode it.", reader.getLine(), reader.getCharacter());
 			}

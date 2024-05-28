@@ -29,7 +29,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import blue.endless.jankson.api.SyntaxError;
-import blue.endless.jankson.api.io.ElementType;
+import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.impl.io.LookaheadCodePointReader;
 
 public interface ParserContext {
@@ -40,7 +40,7 @@ public interface ParserContext {
 	 * @param elementConsumer elements submitted to this consumer will be seen by the reader in the order they are submitted in.
 	 * @param pusher submitting a ParserContext to this lambda will cause the parser to call that context until it is complete, and then return to this one.
 	 */
-	public void parse(LookaheadCodePointReader reader, BiConsumer<ElementType, Object> elementConsumer, Consumer<ParserContext> pusher) throws IOException, SyntaxError;
+	public void parse(LookaheadCodePointReader reader, Consumer<StructuredData> elementConsumer, Consumer<ParserContext> pusher) throws IOException, SyntaxError;
 	
 	/**
 	 * Returns true if the parser has assembled a complete result. This method may trigger lookahead but MUST NOT read.

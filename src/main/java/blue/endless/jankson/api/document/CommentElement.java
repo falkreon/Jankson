@@ -26,6 +26,7 @@ package blue.endless.jankson.api.document;
 
 import java.io.IOException;
 
+import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.StructuredDataWriter;
 
 public class CommentElement implements NonValueElement {
@@ -85,7 +86,7 @@ public class CommentElement implements NonValueElement {
 	
 	@Override
 	public void write(StructuredDataWriter writer) throws IOException {
-		writer.writeComment(value, commentType);
+		writer.write(new StructuredData(StructuredData.Type.COMMENT, this));
 	}
 	
 	@Override

@@ -37,6 +37,7 @@ import java.util.Set;
 import javax.annotation.Nullable;
 
 import blue.endless.jankson.api.io.JsonWriter;
+import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.StructuredDataWriter;
 
 public class ObjectElement implements ValueElement, Map<String, ValueElement> {
@@ -140,18 +141,13 @@ public class ObjectElement implements ValueElement, Map<String, ValueElement> {
 	public void write(StructuredDataWriter writer) throws IOException {
 		for(NonValueElement elem : prologue) elem.write(writer);
 		
-		writer.writeObjectStart();
+		writer.write(StructuredData.OBJECT_START);
 		
-		for(int i=0; i<entries.size(); i++) {
-			KeyValuePairElement elem = entries.get(i);
-			elem.write(writer);
-			
-			if (i<entries.size()-1) writer.nextValue();
-		}
+		for(KeyValuePairElement elem : entries) elem.write(writer);
 		
 		for(NonValueElement elem : footer) elem.write(writer);
 		
-		writer.writeObjectEnd();
+		writer.write(StructuredData.OBJECT_END);
 		
 		for(NonValueElement elem : epilogue) elem.write(writer);
 	}

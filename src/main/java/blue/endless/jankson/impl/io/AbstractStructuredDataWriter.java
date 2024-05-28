@@ -65,6 +65,7 @@ public abstract class AbstractStructuredDataWriter implements StructuredDataWrit
 	 */
 	protected void assertValue() {
 		State peek = context.peek();
+		
 		if (peek == State.ROOT && rootWritten) throw new IllegalStateException("Cannot write multiple values to the document root.");
 		
 		if (peek == State.ROOT || peek == State.ARRAY || peek == State.DICTIONARY_BEFORE_VALUE) return;
@@ -74,11 +75,12 @@ public abstract class AbstractStructuredDataWriter implements StructuredDataWrit
 	/**
 	 * Throws an exception if we're not ready to delimit values (i.e. write the comma between keyvalue-pairs or array elements)
 	 */
+	/*
 	protected void assertNextValue() {
 		State peek = context.peek();
 		if (peek == State.DICTIONARY_BEFORE_COMMA || peek == State.ARRAY_BEFORE_COMMA) return;
 		throw new IllegalStateException("Attempting to write a comma between values at an invalid location. (State is "+peek+")");
-	}
+	}*/
 	
 	/**
 	 * Throws an exception if we're not ready to write the closing brace for an object/dictionary.

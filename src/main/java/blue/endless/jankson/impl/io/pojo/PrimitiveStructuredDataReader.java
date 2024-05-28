@@ -22,58 +22,44 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.api.document;
+package blue.endless.jankson.impl.io.pojo;
 
 import java.io.IOException;
 
+import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.api.io.StructuredData;
-import blue.endless.jankson.api.io.StructuredDataWriter;
+import blue.endless.jankson.api.io.StructuredDataReader;
 
-public class FormattingElement implements NonValueElement {
-	public static FormattingElement NEWLINE = new FormattingElement("\n");
-	//TODO: Should we have additional elements such as INDENT and SPACE?
+public class PrimitiveStructuredDataReader implements StructuredDataReader {
 	
-	private String representation;
+	private boolean wasNexted = false;
+	private final StructuredData data;
 	
-	private FormattingElement(String representation) {
-		this.representation = representation;
+	public PrimitiveStructuredDataReader(Object o) {
+		data = StructuredData.primitive(o);
 	}
 	
-	public String asString() {
-		return representation;
+	public PrimitiveStructuredDataReader(PrimitiveElement p) {
+		data = StructuredData.primitive(p);
 	}
 	
-	@Override
-	public boolean isFormattingElement() {
-		return true;
-	}
-	
-	@Override
-	public FormattingElement asFormattingElement() {
-		return this;
+	public PrimitiveStructuredDataReader(StructuredData data) {
+		this.data = data;
 	}
 	
 	@Override
-	public FormattingElement clone() {
-		//Because formatting elements are singletons, cloning them just returns the same references to the singleton
-		return this;
-	}
-	
-	public boolean isDefault() {
-		return true;
-	}
-	
-	@Override
-	public void setDefault(boolean isDefault) {
-		//Ignore. Formatting is always considered default.
-	}
-	
-	@Override
-	public void write(StructuredDataWriter writer) throws IOException {
-		if (this == NEWLINE) {
-			writer.write(StructuredData.NEWLINE);
+	public StructuredData next() throws IOException {
+		if (wasNexted) {
+			return StructuredData.EOF;
 		} else {
-			writer.write(StructuredData.whitespace(representation));
+			wasNexted = true;
+			return data;
 		}
 	}
+
+	@Override
+	public boolean hasNext() {
+		return !wasNexted;
+	}
+
 }

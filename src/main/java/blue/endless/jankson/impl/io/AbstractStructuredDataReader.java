@@ -29,28 +29,17 @@ import java.io.Reader;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
-import blue.endless.jankson.api.SyntaxError;
-import blue.endless.jankson.api.io.ElementType;
+import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.StructuredDataReader;
 import blue.endless.jankson.impl.io.context.ParserContext;
 
 public abstract class AbstractStructuredDataReader implements StructuredDataReader {
 	protected final LookaheadCodePointReader src;
-	private final Deque<PendingOutput> readQueue = new ArrayDeque<>();
+	protected final StructuredDataPipe readQueue = new StructuredDataPipe();
 	private final Deque<ParserContext> contextStack = new ArrayDeque<>();
-	private Object latestValue = null;
 	
 	public AbstractStructuredDataReader(Reader src) {
 		this.src = new LookaheadCodePointReader(src);
-	}
-
-	@Override
-	public Object getLatestValue() {
-		return latestValue;
-	}
-	
-	protected void setLatestValue(Object o) {
-		this.latestValue = o;
 	}
 	
 	protected ParserContext getContext() {
@@ -65,8 +54,12 @@ public abstract class AbstractStructuredDataReader implements StructuredDataRead
 		contextStack.pop();
 	}
 	
-	protected void enqueueOutput(ElementType elem, Object obj) {
-		readQueue.addFirst(new PendingOutput(elem, obj));
+	protected void enqueueOutput(StructuredData.Type elem, Object obj) {
+		readQueue.push(elem, obj);
+	}
+	
+	protected void enqueueOutput(StructuredData value) {
+		readQueue.push(value);
 	}
 	
 	protected void skipNonBreakingWhitespace() throws IOException {
@@ -79,29 +72,24 @@ public abstract class AbstractStructuredDataReader implements StructuredDataRead
 		}
 	}
 	
-	protected abstract void readNext() throws IOException, SyntaxError;
+	protected abstract void readNext() throws IOException;
 	
 	@Override
 	public boolean hasNext() {
 		if (readQueue.isEmpty()) return true;
 		
-		return readQueue.peekLast().elementType() != ElementType.EOF;
+		return readQueue.peek().type() != StructuredData.Type.EOF;
 	}
 	
 	@Override
-	public ElementType next() throws IOException, SyntaxError {
-		while(readQueue.isEmpty()) readNext();
-		
-		PendingOutput pending = readQueue.peekLast();
-		if (pending.elementType==ElementType.EOF) return ElementType.EOF;
-		
-		pending = readQueue.removeLast();
-		//Should we update pending value?
-		if (pending.elementType==ElementType.COMMENT || pending.elementType==ElementType.OBJECT_KEY || pending.elementType==ElementType.PRIMITIVE) {
-			this.latestValue = pending.value();
+	public StructuredData next() throws IOException {
+		while(readQueue.isEmpty()) {
+			readNext();
 		}
-		return pending.elementType();
+		if (hasNext()) {
+			return readQueue.pop();
+		} else {
+			return StructuredData.EOF;
+		}
 	}
-	
-	private static record PendingOutput(ElementType elementType, Object value) {}
 }

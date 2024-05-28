@@ -29,13 +29,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.StructuredDataWriter;
 
 public class KeyValuePairElement implements DocumentElement, Map.Entry<String, ValueElement> {
 	protected boolean isDefault = false;
 	protected List<NonValueElement> preamble = new ArrayList<>();
 	protected String key;
-	protected List<NonValueElement> intermission = new ArrayList<>();
+	//protected List<NonValueElement> intermission = new ArrayList<>();
 	protected ValueElement value;
 	
 	public KeyValuePairElement(String key, ValueElement value) {
@@ -57,9 +58,9 @@ public class KeyValuePairElement implements DocumentElement, Map.Entry<String, V
 	 * Gets NonValueElements after the key, but before the colon that separates the key and value. Should be left empty
 	 * if possible.
 	 */
-	public List<NonValueElement> getIntermission() {
-		return intermission;
-	}
+	//public List<NonValueElement> getIntermission() {
+	//	return intermission;
+	//}
 	
 	@Override
 	public ValueElement getValue() {
@@ -79,7 +80,7 @@ public class KeyValuePairElement implements DocumentElement, Map.Entry<String, V
 	 */
 	public KeyValuePairElement stripFormatting() {
 		preamble.clear();
-		intermission.clear();
+		//intermission.clear();
 		
 		return this;
 	}
@@ -91,7 +92,7 @@ public class KeyValuePairElement implements DocumentElement, Map.Entry<String, V
 	 */
 	public KeyValuePairElement stripAllFormatting() {
 		preamble.clear();
-		intermission.clear();
+		//intermission.clear();
 		value.getPrologue().clear();
 		value.getEpilogue().clear();
 		
@@ -118,12 +119,7 @@ public class KeyValuePairElement implements DocumentElement, Map.Entry<String, V
 	public void write(StructuredDataWriter writer) throws IOException {
 		for(NonValueElement elem : preamble) elem.write(writer);
 		
-		writer.writeKey(key);
-		
-		for(NonValueElement elem : intermission) elem.write(writer);
-		
-		writer.writeKeyValueDelimiter();
-		
+		writer.write(StructuredData.objectKey(key));
 		value.write(writer);
 	}
 }

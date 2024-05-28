@@ -22,58 +22,33 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.api.document;
+package blue.endless.jankson.impl.io.pojo;
 
-import java.io.IOException;
+import java.lang.reflect.Array;
 
 import blue.endless.jankson.api.io.StructuredData;
-import blue.endless.jankson.api.io.StructuredDataWriter;
 
-public class FormattingElement implements NonValueElement {
-	public static FormattingElement NEWLINE = new FormattingElement("\n");
-	//TODO: Should we have additional elements such as INDENT and SPACE?
+class ArrayStructuredDataReader extends DelegatingStructuredDataReader {
 	
-	private String representation;
+	private final Object arr;
+	private int index = 0;
 	
-	private FormattingElement(String representation) {
-		this.representation = representation;
+	public ArrayStructuredDataReader(Object array) {
+		if (!array.getClass().isArray()) throw new IllegalArgumentException("This class can only be used with arrays.");
+		
+		this.arr = array;
+		prebuffer(StructuredData.ARRAY_START);
 	}
-	
-	public String asString() {
-		return representation;
-	}
-	
+
 	@Override
-	public boolean isFormattingElement() {
-		return true;
-	}
-	
-	@Override
-	public FormattingElement asFormattingElement() {
-		return this;
-	}
-	
-	@Override
-	public FormattingElement clone() {
-		//Because formatting elements are singletons, cloning them just returns the same references to the singleton
-		return this;
-	}
-	
-	public boolean isDefault() {
-		return true;
-	}
-	
-	@Override
-	public void setDefault(boolean isDefault) {
-		//Ignore. Formatting is always considered default.
-	}
-	
-	@Override
-	public void write(StructuredDataWriter writer) throws IOException {
-		if (this == NEWLINE) {
-			writer.write(StructuredData.NEWLINE);
+	protected void onDelegateEmpty() {
+		if (index >= Array.getLength(arr)) {
+			prebuffer(StructuredData.ARRAY_END);
+			prebuffer(StructuredData.EOF);
 		} else {
-			writer.write(StructuredData.whitespace(representation));
+			Object o = Array.get(arr, index);
+			index++;
+			setDelegate(ObjectStructuredDataReader.of(o));
 		}
 	}
 }

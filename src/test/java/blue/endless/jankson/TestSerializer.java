@@ -26,12 +26,18 @@ package blue.endless.jankson;
 
 import blue.endless.jankson.api.document.ObjectElement;
 import blue.endless.jankson.api.document.ValueElement;
+import blue.endless.jankson.api.io.JsonWriter;
 import blue.endless.jankson.api.io.JsonWriterOptions;
-import blue.endless.jankson.impl.ToStructuredDataFunction;
+import blue.endless.jankson.api.io.StructuredDataReader;
+import blue.endless.jankson.api.io.ValueElementWriter;
+import blue.endless.jankson.impl.ObjectToStructuredDataPipe;
+import blue.endless.jankson.impl.io.pojo.ObjectStructuredDataReader;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 import org.junit.jupiter.api.Assertions;
@@ -39,8 +45,34 @@ import org.junit.jupiter.api.Test;
 
 import blue.endless.jankson.api.Jankson;
 import blue.endless.jankson.api.MarshallerException;
+import blue.endless.jankson.api.SyntaxError;
 
 public class TestSerializer {
+	
+	@Test
+	public void testPrimitiveSerialization() throws IOException {
+		String actual = Jankson.writeJsonString(2, JsonWriterOptions.ONE_LINE);
+		Assertions.assertEquals("2", actual);
+	}
+	
+	@Test
+	public void testArraySerialization() throws IOException {
+		String actual = Jankson.writeJsonString(new String[] { "foo", "bar" }, JsonWriterOptions.ONE_LINE);
+		Assertions.assertEquals("[\"foo\", \"bar\"]", actual);
+	}
+	
+	@Test
+	public void testCollectionSerialization() throws IOException {
+		String listActual = Jankson.writeJsonString(List.of(1, 2, 3), JsonWriterOptions.ONE_LINE);
+		Assertions.assertEquals("[1, 2, 3]", listActual);
+		
+		// Testing Sets is harder because of undetermined or purposefully randomized iteration order
+		// LinkedHashSet fixes this by forcing insertion order
+		LinkedHashSet<Integer> testSet = new LinkedHashSet<>();
+		testSet.add(1); testSet.add(2); testSet.add(3);
+		String setActual = Jankson.writeJsonString(testSet, JsonWriterOptions.ONE_LINE);
+		Assertions.assertEquals("[1, 2, 3]", setActual);
+	}
 	
 	/*
 	
@@ -50,9 +82,10 @@ public class TestSerializer {
 		private String y = "Hello";
 	}*/
 	
+	/*
 	@Test
 	public void testArraySerialization() throws IOException, MarshallerException {
-		ValueElement array = ToStructuredDataFunction.toStructuredData(new int[] { 3, 2, 1 });
+		ValueElement array = ObjectStructuredDataWriter.toStructuredData(new int[] { 3, 2, 1 });
 		
 		String actual = Jankson.toJsonString(array, JsonWriterOptions.DEFAULTS);
 		
@@ -70,13 +103,11 @@ public class TestSerializer {
 	@Test
 	public void testVoidArraySerialization() throws IOException, MarshallerException {
 		Void[] voidArray = new Void[] {null, null}; // We must not simply break at the first sign of black magic.
-		ValueElement asValue = ToStructuredDataFunction.toStructuredData(voidArray);
+		ValueElement asValue = ObjectStructuredDataWriter.toStructuredData(voidArray);
 		
 		String actual = Jankson.toJsonString(asValue, JsonWriterOptions.ONE_LINE);
 		
-		/*
-		 * Note: This is a change from earlier behavior, which is "[ null, null ]". I felt this additional whitespace was unnecessary.
-		 */
+		// Note: This is a change from earlier behavior, which is "[ null, null ]". I felt this additional whitespace was unnecessary.
 		Assertions.assertEquals("[null, null]", actual);
 	}
 	
@@ -85,13 +116,11 @@ public class TestSerializer {
 		List<Double[]> doubleArrayList = new ArrayList<Double[]>();
 		doubleArrayList.add(new Double[] {1.0, 2.0, 3.0});
 		doubleArrayList.add(new Double[] {4.0, 5.0});
-		ValueElement asValue = ToStructuredDataFunction.toStructuredData(doubleArrayList);
+		ValueElement asValue = ObjectStructuredDataWriter.write(doubleArrayList);
 		
 		String actual = Jankson.toJsonString(asValue, JsonWriterOptions.ONE_LINE);
 		
-		/**
-		 * Again, change from original behavior which included whitespace around brackets
-		 */
+		// Again, change from original behavior which included whitespace around brackets
 		Assertions.assertEquals("[[1.0, 2.0, 3.0], [4.0, 5.0]]", actual);
 	}
 	
@@ -101,7 +130,7 @@ public class TestSerializer {
 		HashMap<String, Integer> intHashMap = new HashMap<>();
 		intHashMap.put("foo", 1);
 		intHashMap.put("bar", 2);
-		ValueElement asValue = ToStructuredDataFunction.toStructuredData(intHashMap);
+		ValueElement asValue = ObjectStructuredDataWriter.toStructuredData(intHashMap);
 		
 		Assertions.assertTrue(asValue instanceof ObjectElement);
 		
@@ -109,6 +138,7 @@ public class TestSerializer {
 		Assertions.assertEquals(1, obj.getPrimitive("foo").asInt().getAsInt());
 		Assertions.assertEquals(2, obj.getPrimitive("bar").asInt().getAsInt());
 	}
+	*/
 	
 	/*
 	private static class CommentedClass {

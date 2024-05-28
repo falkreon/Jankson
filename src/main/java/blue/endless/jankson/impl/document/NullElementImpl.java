@@ -35,6 +35,7 @@ import java.util.OptionalLong;
 import blue.endless.jankson.api.document.NonValueElement;
 import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.api.document.ValueElement;
+import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.StructuredDataWriter;
 
 public class NullElementImpl extends PrimitiveElement {
@@ -96,7 +97,7 @@ public class NullElementImpl extends PrimitiveElement {
 	@Override
 	public void write(StructuredDataWriter writer) throws IOException {
 		for(NonValueElement elem : prologue) elem.write(writer);
-		writer.writeNullLiteral();
+		writer.write(StructuredData.NULL);
 		for(NonValueElement elem : epilogue) elem.write(writer);
 	}
 	

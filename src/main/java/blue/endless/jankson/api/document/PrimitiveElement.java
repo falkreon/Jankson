@@ -169,7 +169,7 @@ public abstract class PrimitiveElement implements ValueElement {
 	}
 	
 	public static PrimitiveElement box(Object value) throws IllegalArgumentException {
-		if (value==null) return ofNull();
+		if (value == null) return ofNull();
 		
 		if (value instanceof String v)     return of(v);
 		if (value instanceof Boolean v)    return of(v);

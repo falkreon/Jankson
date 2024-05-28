@@ -27,6 +27,7 @@ package blue.endless.jankson.api.io;
 import java.io.IOException;
 import java.io.Writer;
 
+import blue.endless.jankson.api.document.CommentElement;
 import blue.endless.jankson.api.document.CommentType;
 import blue.endless.jankson.impl.io.AbstractStructuredDataWriter;
 
@@ -76,7 +77,48 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 	}
 	
 	@Override
-	public void writeComment(String value, CommentType type) throws IOException {
+	public void write(StructuredData data) throws IOException {
+		switch(data.type()) {
+			case PRIMITIVE -> {
+				if (data.value() == null) {
+					writeNullLiteral();
+				} else if (data.value() instanceof String val) {
+					writeStringLiteral(val);
+				} else if (data.value() instanceof Long val) {
+					writeLongLiteral(val);
+				} else if (data.value() instanceof Double val) {
+					writeDoubleLiteral(val);
+				} else if (data.value() instanceof Boolean val) {
+					writeBooleanLiteral(val);
+				} else {
+					throw new IOException("Found illegal value in a PRIMITIVE StructuredData element");
+				}
+			}
+			case ARRAY_START -> writeArrayStart();
+			case ARRAY_END -> writeArrayEnd();
+			case OBJECT_START -> writeObjectStart();
+			case OBJECT_END -> writeObjectEnd();
+			case OBJECT_KEY -> writeKey(data.value().toString());
+			case COMMENT -> {
+				if (data.value() == null) {
+					writeComment("", CommentType.MULTILINE);
+				} else if (data.value() instanceof CommentElement c) {
+					writeComment(c.getValue(), c.getCommentType());
+				} else {
+					writeComment(data.value().toString(), CommentType.MULTILINE);
+				}
+			}
+			case WHITESPACE -> {
+				writeWhitespace(
+						(data.value() == null) ? " " : data.value().toString()
+						);
+			}
+			case NEWLINE -> writeNewline();
+			case EOF -> { return; }
+		}
+	}
+	
+	private void writeComment(String value, CommentType type) throws IOException {
 		switch(type) {
 		case LINE_END:
 			write("//");
@@ -103,14 +145,12 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 			break;
 		}
 	}
-
-	@Override
-	public void writeWhitespace(String value) throws IOException {
+	
+	private void writeWhitespace(String value) throws IOException {
 		if (hint(WRITE_WHITESPACE)) write(value);
 	}
-
-	@Override
-	public void writeKey(String key) throws IOException {
+	
+	private void writeKey(String key) throws IOException {
 		assertKey();
 		
 		//TODO: escape parts of the key if needed, omit quotes if possible + configured
@@ -123,41 +163,36 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 			write("\" ");
 		}
 		
-		keyWritten();
-	}
-
-	@Override
-	public void writeKeyValueDelimiter() throws IOException {
-		assertKeyValueDelimiter();
-		
 		if (hint(KEY_EQUALS_VALUE)) {
 			write(" = ");
 		} else {
 			write(": ");
 		}
 		
-		keyValueDelimiterWritten();
+		keyWritten();
 	}
-
-	@Override
-	public void nextValue() throws IOException {
-		assertNextValue();
-		
-		if (!hint(OMIT_COMMAS)) {
-			write(',');
+	
+	private void addCommas() throws IOException {
+		State peek = context.peek();
+		if (peek == State.ARRAY_BEFORE_COMMA || peek == State.DICTIONARY_BEFORE_COMMA) {
+			// fixCommas is called before a value is written; a comma is needed here
+			if (!hint(OMIT_COMMAS)) {
+				write(',');
+			}
+			
+			if (hint(WRITE_NEWLINES)) {
+				writeNewline();
+			} else {
+				write(' ');
+			}
+			
+			context.pop();
 		}
-		
-		if (hint(WRITE_NEWLINES)) {
-			writeNewline();
-		} else {
-			write(' ');
-		}
-		
-		nextValueWritten();
 	}
-
-	@Override
-	public void writeObjectStart() throws IOException {
+	
+	private void writeObjectStart() throws IOException {
+		addCommas();
+		
 		assertValue();
 		if (peek()==State.ROOT && hint(BARE_ROOT_OBJECT)) {
 			//Do not write the brace, and do not increase the indent level.
@@ -172,9 +207,8 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 		}
 		objectStarted();
 	}
-
-	@Override
-	public void writeObjectEnd() throws IOException {
+	
+	private void writeObjectEnd() throws IOException {
 		assertObjectEnd();
 		
 		if (isWritingRoot() && hint(BARE_ROOT_OBJECT)) {
@@ -187,9 +221,10 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 		
 		objectEndWritten();
 	}
-
-	@Override
-	public void writeArrayStart() throws IOException {
+	
+	private void writeArrayStart() throws IOException {
+		addCommas();
+		
 		assertValue();
 		
 		write("["); //TODO: Consult hints for newline behavior
@@ -201,9 +236,8 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 		
 		arrayStarted();
 	}
-
-	@Override
-	public void writeArrayEnd() throws IOException {
+	
+	private void writeArrayEnd() throws IOException {
 		assertArrayEnd();
 		
 		if (hint(WRITE_NEWLINES)) {
@@ -219,8 +253,9 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 		arrayEndWritten();
 	}
 
-	@Override
-	public void writeStringLiteral(String value) throws IOException {
+	private void writeStringLiteral(String value) throws IOException {
+		addCommas();
+		
 		assertValue();
 		
 		write('"');
@@ -229,30 +264,34 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 		
 		valueWritten();
 	}
-
-	@Override
-	public void writeLongLiteral(long value) throws IOException {
+	
+	private void writeLongLiteral(long value) throws IOException {
+		addCommas();
+		
 		assertValue();
 		write(Long.toString(value));
 		valueWritten();
 	}
-
-	@Override
-	public void writeDoubleLiteral(double value) throws IOException {
+	
+	private void writeDoubleLiteral(double value) throws IOException {
+		addCommas();
+		
 		assertValue();
 		write(Double.toString(value));
 		valueWritten();
 	}
-
-	@Override
-	public void writeBooleanLiteral(boolean value) throws IOException {
+	
+	private void writeBooleanLiteral(boolean value) throws IOException {
+		addCommas();
+		
 		assertValue();
 		write(Boolean.toString(value));
 		valueWritten();
 	}
-
-	@Override
-	public void writeNullLiteral() throws IOException {
+	
+	private void writeNullLiteral() throws IOException {
+		addCommas();
+		
 		assertValue();
 		write("null");
 		valueWritten();

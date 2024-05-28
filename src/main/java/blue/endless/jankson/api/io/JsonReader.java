@@ -46,7 +46,7 @@ public class JsonReader extends AbstractStructuredDataReader {
 	}
 	
 	@Override
-	protected void readNext() throws IOException, SyntaxError {
+	protected void readNext() throws IOException {
 		ParserContext context = getContext();
 		//System.out.println("ReadNext > Context: "+context);
 		if (context==null) throw new IllegalStateException("Root context was popped");
@@ -54,14 +54,18 @@ public class JsonReader extends AbstractStructuredDataReader {
 			//System.out.println("IsComplete.");
 			popContext();
 			if (getContext()==null) {
-				enqueueOutput(ElementType.EOF, null);
+				readQueue.write(StructuredData.EOF);
 			}
 		} else {
+			try {
 			context.parse(
 					src,
 					this::enqueueOutput,
 					this::pushContext
 					);
+			} catch (SyntaxError err) {
+				throw new IOException(err);
+			}
 		}
 	}
 }

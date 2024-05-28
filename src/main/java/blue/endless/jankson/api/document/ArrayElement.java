@@ -33,6 +33,7 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 
+import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.StructuredDataWriter;
 
 public class ArrayElement extends AbstractList<ValueElement> implements ValueElement {
@@ -280,13 +281,20 @@ public class ArrayElement extends AbstractList<ValueElement> implements ValueEle
 	
 	@Override
 	public void write(StructuredDataWriter writer) throws IOException {
-		//TODO: Write comment preamble etc
-		writer.writeArrayStart();
+		for (NonValueElement elem : prologue) {
+			elem.write(writer);
+		}
+		writer.write(StructuredData.ARRAY_START);
 		for(int i=0; i<entries.size(); i++) {
 			entries.get(i).write(writer);
-			if (i<entries.size()-1) writer.nextValue();
 		}
 		
-		writer.writeArrayEnd();
+		for(NonValueElement elem : footer) {
+			elem.write(writer);
+		}
+		writer.write(StructuredData.ARRAY_END);
+		for(NonValueElement elem : epilogue) {
+			elem.write(writer);
+		}
 	}
 }

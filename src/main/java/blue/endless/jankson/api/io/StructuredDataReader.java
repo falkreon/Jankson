@@ -26,17 +26,7 @@ package blue.endless.jankson.api.io;
 
 import java.io.IOException;
 
-import javax.annotation.Nullable;
-
-import blue.endless.jankson.api.SyntaxError;
-
 public interface StructuredDataReader {
-	/**
-	 * This method is available after {@link #next()} returns {@link ElementType#PRIMITIVE}. Gets the primitive value
-	 * type that was just encountered by the Reader. This method can return null if null is specified as a primitive
-	 * value. If the Reader has not returned PRIMITIVE, the behavior is unspecified.
-	 */
-	public @Nullable Object getLatestValue();
 	
 	/**
 	 * Continues reading data until ready to report the next value or structural element. This represents a pre-order
@@ -44,7 +34,13 @@ public interface StructuredDataReader {
 	 * document from start to finish.
 	 * @return An ElementType corresponding to where we are in the object tree.
 	 */
-	public ElementType next() throws IOException, SyntaxError;
+	public StructuredData next() throws IOException;
 	
 	public boolean hasNext();
+	
+	public default void transferTo(StructuredDataWriter writer) throws IOException {
+		while(hasNext()) {
+			writer.write(next());
+		}
+	}
 }
