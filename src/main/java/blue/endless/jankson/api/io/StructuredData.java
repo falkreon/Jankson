@@ -71,6 +71,26 @@ public record StructuredData(Type type, @Nullable Object value) {
 	public static final StructuredData EOF          = new StructuredData(Type.EOF, null);
 	public static final StructuredData NULL         = new StructuredData(Type.PRIMITIVE, null);
 	
+	
+	public boolean isPrimitive() {
+		return type == Type.PRIMITIVE;
+	}
+	
+	public PrimitiveElement asPrimitive() {
+		if (type != Type.PRIMITIVE) throw new IllegalStateException();
+		return PrimitiveElement.box(value);
+	}
+	
+	public boolean isComment() {
+		return type == Type.COMMENT;
+	}
+	
+	public CommentElement asComment() {
+		if (type != Type.COMMENT) throw new IllegalStateException();
+		return (value instanceof CommentElement comment) ? comment : new CommentElement(value.toString(), CommentType.MULTILINE);
+	}
+	
+	
 	public static enum Type {
 		/**
 		 * A PrimitiveElement. StructuredData of this type describes the entire value - a null value indicates the 'null' literal.

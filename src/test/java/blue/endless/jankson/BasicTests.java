@@ -25,23 +25,13 @@
 package blue.endless.jankson;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Queue;
-
-import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import blue.endless.jankson.api.annotation.SerializedName;
 import blue.endless.jankson.api.document.ArrayElement;
 import blue.endless.jankson.api.document.KeyValuePairElement;
 import blue.endless.jankson.api.document.NonValueElement;
@@ -50,11 +40,7 @@ import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.api.document.ValueElement;
 import blue.endless.jankson.api.Jankson;
 import blue.endless.jankson.api.SyntaxError;
-import blue.endless.jankson.api.annotation.Comment;
-import blue.endless.jankson.impl.MarshallerImpl;
-import blue.endless.jankson.impl.TypeMagic;
 
-@SuppressWarnings("deprecation")
 public class BasicTests {
 	
 	@Test
@@ -70,7 +56,7 @@ public class BasicTests {
 		Assertions.assertNotEquals(PrimitiveElement.of(42.0), PrimitiveElement.of(42));
 	}
 	
-	/*
+	
 	@Test
 	public void testBasicComprehension() throws IOException, SyntaxError {
 		String before = "{ 'foo': 'bar', 'baz':'bux' }";
@@ -87,11 +73,11 @@ public class BasicTests {
 			//Keys that are not present should retrieve synthetic null elements.
 			Assertions.assertTrue(obj.getPrimitive("bar").isNull());
 		} else {
-			Assertions.fail();
+			Assertions.fail("Expected Object but found "+after.getClass().getSimpleName());
 		}
-	}*/
+	}
 	
-	/*
+	
 	@Test
 	public void testObjectContentCategories() throws IOException, SyntaxError {
 		String before = "{ 'a': 'hello', 'b': 42, 'c': 42.0, 'd': {}, 'e': [], 'f': true, 'g': false, 'h': null }";
@@ -111,9 +97,9 @@ public class BasicTests {
 		} else {
 			Assertions.fail();
 		}
-	}*/
+	}
 	
-	/*
+	
 	@Test
 	public void testArrayContentCategories() throws IOException, SyntaxError {
 		String before = "{ 'a': ['hello', 42, 42.0, {}, [], true, false, null] }";
@@ -138,19 +124,22 @@ public class BasicTests {
 		} else {
 			Assertions.fail();
 		}
-	}*/
+	}
+	
 	
 	/*
+	 * FIXME: This test does not work very well. We'll have to greatly improve this behavior
+	 */
 	@Test
 	public void testCommentAttribution() throws IOException, SyntaxError {
-		// A preamble is a list of all the non-value elements that occur before a value element within the same context. */
-		// String subjectString = "/* 1a */ /* 1b */ { /* 2a */ /* 2b */ 'foo' /* 3a */ /* 3b */ : /* 4a */ /* 4b */ true /* 5a */ /* 5b */ } /* 6a */ /* 6b */";
-		/*
+		// A preamble is a list of all the non-value elements that occur before a value element within the same context.
+		String subjectString = "/* 1a */ /* 1b */ { /* 2a */ /* 2b */ 'foo' /* 3a */ /* 3b */ : /* 4a */ /* 4b */ true /* 5a */ /* 5b */ } /* 6a */ /* 6b */";
+		
 		ObjectElement subject = Jankson.readJsonObject(subjectString);
 		
-		Assertions.assertEquals(2, subject.getPrologue().size());
-		Assertions.assertEquals("1a", subject.getPrologue().get(0).asCommentElement().getValue());
-		Assertions.assertEquals("1b", subject.getPrologue().get(1).asCommentElement().getValue());
+		//Assertions.assertEquals(2, subject.getPrologue().size());
+		//Assertions.assertEquals("1a", subject.getPrologue().get(0).asCommentElement().getValue());
+		//Assertions.assertEquals("1b", subject.getPrologue().get(1).asCommentElement().getValue());
 		
 		Map.Entry<String, ValueElement> entry = subject.entrySet().iterator().next();
 		if (entry instanceof KeyValuePairElement kvPair) { //TODO: Oh no! Is there no better way to acquire these objects??
@@ -172,9 +161,9 @@ public class BasicTests {
 			//Assertions.assertEquals("4b", valuePreamble.get(1).asCommentElement().getValue());
 			
 			//5a and 5b are technically value epilogues because they're not after a comma
-			Assertions.assertEquals(2, value.getEpilogue().size());
-			Assertions.assertEquals("5a", value.getEpilogue().get(0).asCommentElement().getValue());
-			Assertions.assertEquals("5b", value.getEpilogue().get(1).asCommentElement().getValue());
+			//Assertions.assertEquals(2, value.getEpilogue().size());
+			//Assertions.assertEquals("5a", value.getEpilogue().get(0).asCommentElement().getValue());
+			//Assertions.assertEquals("5b", value.getEpilogue().get(1).asCommentElement().getValue());
 		}
 		
 		//TODO: KNOWN ISSUE: Comments after the root object are not kept
@@ -182,9 +171,9 @@ public class BasicTests {
 		//Assertions.assertEquals("6a", subject.getEpilogue().get(0).asCommentElement().getValue());
 		//Assertions.assertEquals("6b", subject.getEpilogue().get(1).asCommentElement().getValue());
 	}
-	*/
+	
 
-	/*
+	
 	@Test
 	public void testDeepNesting() throws IOException, SyntaxError {
 		String subjectString = "{ a: { a: { a: { a: { a: { a: { a: { a: 'Hello' } } } } } } } }";
@@ -204,9 +193,9 @@ public class BasicTests {
 		
 		Assertions.assertTrue(result.isPresent());
 		Assertions.assertEquals("Hello", result.get());
-	}*/
+	}
 	
-	/*
+	
 	@Test
 	public void testSkippingPrimitiveMarshalling() throws IOException, SyntaxError {
 		String subjectString = "{ a: { a: { a: 'Hello' } } }";
@@ -233,9 +222,9 @@ public class BasicTests {
 				.getPrimitive("a")
 				.asDouble().getAsDouble();
 		Assertions.assertEquals(42.0, fortyTwoPointOh, 0.00001);
-	}*/
+	}
 	
-	/*
+	
 	@Test
 	public void testOmitCommasAndKeyQuotes() throws IOException, SyntaxError {
 		String subjectString = "{ mods: [{name: 'alf' version:'1.12.2_v143.6'} {name:'bux', version:false}]}";
@@ -263,7 +252,7 @@ public class BasicTests {
 					.asString()
 					.get()
 				);
-	}*/
+	}
 	
 	/* Unported 1.2.x tests */
 	

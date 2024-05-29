@@ -25,17 +25,12 @@
 package blue.endless.jankson.api.io;
 
 import java.io.IOException;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
 
-import blue.endless.jankson.api.document.ArrayElement;
-import blue.endless.jankson.api.document.CommentElement;
-import blue.endless.jankson.api.document.CommentType;
-import blue.endless.jankson.api.document.FormattingElement;
-import blue.endless.jankson.api.document.NonValueElement;
-import blue.endless.jankson.api.document.ObjectElement;
-import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.api.document.ValueElement;
+import blue.endless.jankson.impl.io.value.ArrayElementWriter;
+import blue.endless.jankson.impl.io.value.ObjectElementWriter;
+import blue.endless.jankson.impl.io.value.PrimitiveElementWriter;
+import blue.endless.jankson.impl.io.value.StrictValueElementWriter;
 
 /**
  * StructuredDataWriter that assembles a ValueElement. Much like StringWriter, this "captures" data
@@ -43,95 +38,48 @@ import blue.endless.jankson.api.document.ValueElement;
  */
 public class ValueElementWriter implements StructuredDataWriter {
 	
-	private ArrayList<NonValueElement> bufferedPrologue = new ArrayList<>();
-	private String bufferedKey = null;
-	private ArrayList<NonValueElement> interim = new ArrayList<>();
-	private ArrayDeque<ValueElement> contextStack = new ArrayDeque<>();
+	private StrictValueElementWriter delegate = null;
 	private ValueElement result = null;
-	
-	private void assertObject() throws IllegalStateException {
-		if (!(peekContext() instanceof ObjectElement)) throw new IllegalStateException("This operation requires the writer to be writing an Object.");
-	}
-	
-	private ArrayElement assertArray() throws IllegalStateException {
-		ValueElement v = peekContext();
-		if (v instanceof ArrayElement arr) return arr;
-		throw new IllegalStateException("This operation requires the writer to be writing an Array.");
-	}
-	
-	private void assertObjectOrArray() throws IllegalStateException {
-		ValueElement context = peekContext();
-		if (context instanceof ObjectElement || context instanceof ArrayElement) return;
-		throw new IllegalStateException("This operation requires the writer to be writing an Object or an Array.");
-	}
-	
-	private ValueElement peekContext() {
-		return contextStack.isEmpty() ? null : contextStack.getLast();
-	}
-	
-	private ValueElement popContext() {
-		return contextStack.isEmpty() ? null : contextStack.removeLast();
-	}
-	
-	/**
-	 * Pop and return the element. If the context stack is empty, or the top element on the stack is not the expected
-	 * class, throws.
-	 * @param <T>
-	 * @param clazz
-	 * @return
-	 */
-	@SuppressWarnings("unchecked")
-	private <T extends ValueElement> T popContext(Class<T> clazz) throws IllegalStateException {
-		if (contextStack.isEmpty()) throw new IllegalStateException("Expected "+clazz.getSimpleName()+" but found nothing!");
-		ValueElement v = contextStack.removeLast();
-		if (clazz.isAssignableFrom(v.getClass())) {
-			return (T) v;
-		} else {
-			throw new IllegalStateException("Expected '"+clazz.getSimpleName()+"' but found '"+v.getClass().getSimpleName()+"'!");
-		}
-	}
-	
-	private <T extends ValueElement> T pushContext(T elem) {
-		contextStack.addLast(elem);
-		return elem;
-	}
 	
 	@Override
 	public void write(StructuredData data) throws IOException {
-		switch(data.type()) {
-		case ARRAY_END -> {
-			ArrayElement v = assertArray();
-			popContext();
+		if (delegate != null) {
+			// After we've completed our data, we could potentially consume a trailer
+			if (delegate.isComplete()) {
+				
+			}
 			
-		}
-			
-		/*
-		case ARRAY_START:
-			break;
-		case COMMENT:
-			break;
-		case EOF:
-			break;
-		case NEWLINE:
-			break;
-		case OBJECT_END:
-			break;
-		case OBJECT_KEY:
-			break;
-		case OBJECT_START:
-			break;
-		case PRIMITIVE:
-			break;
-		case WHITESPACE:
-			break;
-		default:
-			break;
-		*/
+			delegate.write(data);
+			if (delegate.isComplete()) {
+				result = delegate.getValue();
+				delegate = null;
+			}
+		} else {
+		
+			switch(data.type()) {
+				case ARRAY_END -> throw new IOException("Illegal Array-End found");
+				case ARRAY_START -> delegate = new ArrayElementWriter();
+				case COMMENT -> {
+					//TODO: Handle prologues and epilogues
+				}
+				case EOF -> {}
+				case NEWLINE -> {}
+				case OBJECT_END -> throw new IOException("Illegal Object-End found");
+				case OBJECT_KEY -> throw new IOException("Illegal Object-Key found");
+				case OBJECT_START -> delegate = new ObjectElementWriter();
+				case PRIMITIVE -> delegate = new PrimitiveElementWriter();
+				case WHITESPACE -> {}
+			}
+			if (delegate != null) {
+				//We just set a delegate, consume the data
+				delegate.write(data);
+			}
+		
 		}
 		
 	}
 	
 	public ValueElement toValueElement() {
-		return PrimitiveElement.ofNull();
+		return result;
 	}
 }
