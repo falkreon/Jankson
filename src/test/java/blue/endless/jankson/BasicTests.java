@@ -137,36 +137,36 @@ public class BasicTests {
 		
 		ObjectElement subject = Jankson.readJsonObject(subjectString);
 		
+		// TODO: Issue in JsonReader which does not produce comments before the opening root brace
 		//Assertions.assertEquals(2, subject.getPrologue().size());
 		//Assertions.assertEquals("1a", subject.getPrologue().get(0).asCommentElement().getValue());
 		//Assertions.assertEquals("1b", subject.getPrologue().get(1).asCommentElement().getValue());
 		
 		Map.Entry<String, ValueElement> entry = subject.entrySet().iterator().next();
 		if (entry instanceof KeyValuePairElement kvPair) { //TODO: Oh no! Is there no better way to acquire these objects??
-			List<NonValueElement> preamble = kvPair.getPreamble();
+			// Assert that 2a and 2b are attributed to the first key-value pair
+			List<NonValueElement> preamble = kvPair.getPrologue();
 			Assertions.assertEquals(2, preamble.size());
 			Assertions.assertEquals("2a", preamble.get(0).asCommentElement().getValue());
 			Assertions.assertEquals("2b", preamble.get(1).asCommentElement().getValue());
 			
-			// TODO: DOES NOT WORK
-			//List<NonValueElement> intermission = kvPair.getIntermission();
-			//Assertions.assertEquals(2, intermission.size());
-			//Assertions.assertEquals("3a", intermission.get(0).asCommentElement().getValue());
-			//Assertions.assertEquals("3b", intermission.get(1).asCommentElement().getValue());
-			
+			// Assert that 3a and 3b get moved after the colon, and together with 4a and 4b all are attributed to the value's preamble
 			ValueElement value = kvPair.getValue();
-			//List<NonValueElement> valuePreamble = value.getPrologue();
-			//Assertions.assertEquals(2, valuePreamble.size());
-			//Assertions.assertEquals("4a", valuePreamble.get(0).asCommentElement().getValue());
-			//Assertions.assertEquals("4b", valuePreamble.get(1).asCommentElement().getValue());
-			
-			//5a and 5b are technically value epilogues because they're not after a comma
-			//Assertions.assertEquals(2, value.getEpilogue().size());
-			//Assertions.assertEquals("5a", value.getEpilogue().get(0).asCommentElement().getValue());
-			//Assertions.assertEquals("5b", value.getEpilogue().get(1).asCommentElement().getValue());
+			List<NonValueElement> valuePrologue = value.getPrologue();
+			Assertions.assertEquals(4, valuePrologue.size());
+			Assertions.assertEquals("3a", valuePrologue.get(0).asCommentElement().getValue());
+			Assertions.assertEquals("3b", valuePrologue.get(1).asCommentElement().getValue());
+			Assertions.assertEquals("4a", valuePrologue.get(2).asCommentElement().getValue());
+			Assertions.assertEquals("4b", valuePrologue.get(3).asCommentElement().getValue());
 		}
 		
-		//TODO: KNOWN ISSUE: Comments after the root object are not kept
+		// 5a and 5b are soup. They're not part of the previous value's epilogue, so they get buffered but never consumed.
+		// Assert that these two are part of the footer of the enclosing object
+		Assertions.assertEquals(2, subject.getFooter().size());
+		Assertions.assertEquals("5a", subject.getFooter().get(0).asCommentElement().getValue());
+		Assertions.assertEquals("5b", subject.getFooter().get(1).asCommentElement().getValue());
+		
+		//TODO: Issue, location unknown, comments after the root object are not kept
 		//Assertions.assertEquals(2, subject.getEpilogue().size());
 		//Assertions.assertEquals("6a", subject.getEpilogue().get(0).asCommentElement().getValue());
 		//Assertions.assertEquals("6b", subject.getEpilogue().get(1).asCommentElement().getValue());

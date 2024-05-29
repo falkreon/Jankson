@@ -25,9 +25,13 @@
 package blue.endless.jankson.impl.io.value;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import blue.endless.jankson.api.document.ArrayElement;
-import blue.endless.jankson.api.document.KeyValuePairElement;
+import blue.endless.jankson.api.document.CommentElement;
+import blue.endless.jankson.api.document.CommentType;
+import blue.endless.jankson.api.document.FormattingElement;
+import blue.endless.jankson.api.document.NonValueElement;
 import blue.endless.jankson.api.document.ValueElement;
 import blue.endless.jankson.api.io.StructuredData;
 
@@ -36,7 +40,8 @@ public class ArrayElementWriter implements StrictValueElementWriter {
 	private boolean initialBracketFound = false;
 	private boolean finalBracketFound =  false;
 	private ArrayElement value = new ArrayElement();
-	private StrictValueElementWriter subordinate;
+	private StrictValueElementWriter delegate;
+	private ArrayList<NonValueElement> bufferedValuePrologue = new ArrayList<>();
 	
 	@Override
 	public void write(StructuredData data) throws IOException {
@@ -44,6 +49,8 @@ public class ArrayElementWriter implements StrictValueElementWriter {
 			// There is only one valid type, ARRAY_START
 			if (data.type() == StructuredData.Type.ARRAY_START) {
 				initialBracketFound = true;
+			} else if (data.isComment()) {
+				value.getPrologue().add(data.asComment());
 			} else {
 				throw new IOException("Expected array start, found "+data.type().name());
 			}
@@ -52,35 +59,48 @@ public class ArrayElementWriter implements StrictValueElementWriter {
 		} else {
 			// Anything we receive here is an array element
 			
-			if (subordinate != null) {
-				subordinate.write(data);
+			if (delegate != null) {
+				delegate.write(data);
 				checkSubordinate();
 				
 				return;
 			}
 			
 			switch(data.type()) {
-				case ARRAY_END -> finalBracketFound = true;
+				case ARRAY_END -> {
+					finalBracketFound = true;
+					if (!bufferedValuePrologue.isEmpty()) {
+						value.getFooter().addAll(bufferedValuePrologue);
+						bufferedValuePrologue.clear();
+					}
+				}
 				case ARRAY_START -> {
-					subordinate = new ArrayElementWriter();
-					subordinate.write(data);
+					delegate = new ArrayElementWriter();
+					delegate.write(data);
 					checkSubordinate();
 				}
 				case OBJECT_START -> {
-					subordinate = new ObjectElementWriter();
-					subordinate.write(data);
+					delegate = new ObjectElementWriter();
+					delegate.write(data);
 					checkSubordinate();
 				}
 				case PRIMITIVE -> {
-					subordinate = new PrimitiveElementWriter();
-					subordinate.write(data);
+					delegate = new PrimitiveElementWriter();
+					delegate.write(data);
 					checkSubordinate();
 				}
-				case NEWLINE -> {}
+				case NEWLINE -> bufferedValuePrologue.add(FormattingElement.NEWLINE);
 				case EOF -> {}
-				case WHITESPACE -> {}
+				case WHITESPACE -> {} //bufferedValuePrologue.add(new FormattingElement(data.value()));
 				case COMMENT -> {
-					//TODO: Either apply this comment to the previous or next value depending on its type.
+					// Prefer to make line-end comments part of the previous value's epilogue - - if there is a previous value!
+					// Note that if we have even one thing in the epilogue, bump it down to the prologue of the next element.
+					CommentElement comment = data.asComment();
+					if (!value.isEmpty() && value.getLast().getEpilogue().isEmpty() && (comment.getCommentType() == CommentType.LINE_END || comment.getCommentType() == CommentType.OCTOTHORPE)) {
+						value.getLast().getEpilogue().add(comment);
+					} else {
+						bufferedValuePrologue.add(comment);
+					}
 				}
 				case OBJECT_KEY -> throw new IOException("Expected array element, but found an object key");
 				case OBJECT_END -> throw new IOException("Found an object ending brace, but we're inside an array!");
@@ -89,13 +109,13 @@ public class ArrayElementWriter implements StrictValueElementWriter {
 	}
 
 	private void checkSubordinate() throws IOException {
-		if (subordinate != null && subordinate.isComplete()) {
-			ValueElement result = subordinate.getValue();
-			//result.getPrologue().addAll(bufferedValuePreamble);
-			//bufferedValuePreamble.clear();
+		if (delegate != null && delegate.isComplete()) {
+			ValueElement result = delegate.getValue();
+			result.getPrologue().addAll(bufferedValuePrologue);
+			bufferedValuePrologue.clear();
 			value.add(result);
 			
-			subordinate = null;
+			delegate = null;
 		}
 	}
 	

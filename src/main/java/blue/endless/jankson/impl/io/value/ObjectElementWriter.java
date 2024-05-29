@@ -45,7 +45,7 @@ public class ObjectElementWriter implements StrictValueElementWriter {
 	private ObjectElement value = new ObjectElement();
 	private StrictValueElementWriter subordinate;
 	
-	private List<NonValueElement> bufferedPreamble = new ArrayList<>();
+	private List<NonValueElement> bufferedKeyPreamble = new ArrayList<>();
 	private List<NonValueElement> bufferedValuePreamble = new ArrayList<>();
 	private String bufferedKey;
 	
@@ -58,8 +58,12 @@ public class ObjectElementWriter implements StrictValueElementWriter {
 		} else {
 			if (!initialBraceFound) {
 				// Only accept OBJECT_START
-				if (data.type() != StructuredData.Type.OBJECT_START) throw new IOException("Required to start an object: OBJECT_START. Found: "+data.type().name());
-				initialBraceFound = true;
+				if (data.isComment()) {
+					value.getPrologue().add(data.asComment());
+				} else {
+					if (data.type() != StructuredData.Type.OBJECT_START) throw new IOException("Required to start an object: OBJECT_START. Found: "+data.type().name());
+					initialBraceFound = true;
+				}
 			} else if (!finalBraceFound) {
 				
 				if (bufferedKey == null) {
@@ -67,15 +71,19 @@ public class ObjectElementWriter implements StrictValueElementWriter {
 					switch(data.type()) {
 						case COMMENT -> {
 							if (data.value() instanceof CommentElement comment) {
-								bufferedPreamble.add(comment);
+								bufferedKeyPreamble.add(comment);
 							} else {
-								bufferedPreamble.add(new CommentElement(data.value().toString(), CommentType.MULTILINE));
+								bufferedKeyPreamble.add(new CommentElement(data.value().toString(), CommentType.MULTILINE));
 							}
 						}
 						
 						case OBJECT_KEY -> bufferedKey = data.value().toString();
 						
-						case OBJECT_END -> finalBraceFound = true;
+						case OBJECT_END -> {
+							finalBraceFound = true;
+							value.getFooter().addAll(bufferedKeyPreamble);
+							bufferedKeyPreamble.clear();
+						}
 						
 						default -> {
 							throw new IOException("Expected object key but found "+data.type().name());
@@ -120,7 +128,18 @@ public class ObjectElementWriter implements StrictValueElementWriter {
 					}
 				}
 			} else {
-				// No semantic data is allowed
+				// No semantic data is allowed after the ending brace
+				if (data.type().isSemantic()) {
+					throw new IOException("Illegal "+data.type().name()+" found after end of object body");
+				} else {
+					if (data.isComment()) {
+						value.getEpilogue().add(data.asComment());
+					} else if (data.type() == StructuredData.Type.NEWLINE) {
+						// This should technically be placed in the preamble of the next value, but if it's
+						// been presented to us, better to absorb it than lose it.
+						value.getEpilogue().add(FormattingElement.NEWLINE);
+					}
+				}
 			}
 		}
 		
@@ -133,8 +152,8 @@ public class ObjectElementWriter implements StrictValueElementWriter {
 			result.getPrologue().addAll(bufferedValuePreamble);
 			bufferedValuePreamble.clear();
 			KeyValuePairElement kvPair = new KeyValuePairElement(bufferedKey, result);
-			kvPair.getPreamble().addAll(bufferedPreamble);
-			bufferedPreamble.clear();
+			kvPair.getPrologue().addAll(bufferedKeyPreamble);
+			bufferedKeyPreamble.clear();
 			
 			value.add(kvPair);
 			

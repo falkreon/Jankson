@@ -34,7 +34,7 @@ import blue.endless.jankson.api.io.StructuredDataWriter;
 
 public class KeyValuePairElement implements DocumentElement, Map.Entry<String, ValueElement> {
 	protected boolean isDefault = false;
-	protected List<NonValueElement> preamble = new ArrayList<>();
+	protected List<NonValueElement> prologue = new ArrayList<>();
 	protected String key;
 	//protected List<NonValueElement> intermission = new ArrayList<>();
 	protected ValueElement value;
@@ -45,8 +45,8 @@ public class KeyValuePairElement implements DocumentElement, Map.Entry<String, V
 		this.value = value;
 	}
 	
-	public List<NonValueElement> getPreamble() {
-		return preamble;
+	public List<NonValueElement> getPrologue() {
+		return prologue;
 	}
 	
 	@Override
@@ -79,7 +79,7 @@ public class KeyValuePairElement implements DocumentElement, Map.Entry<String, V
 	 * @return this object.
 	 */
 	public KeyValuePairElement stripFormatting() {
-		preamble.clear();
+		prologue.clear();
 		//intermission.clear();
 		
 		return this;
@@ -91,7 +91,7 @@ public class KeyValuePairElement implements DocumentElement, Map.Entry<String, V
 	 * @return this object.
 	 */
 	public KeyValuePairElement stripAllFormatting() {
-		preamble.clear();
+		prologue.clear();
 		//intermission.clear();
 		value.getPrologue().clear();
 		value.getEpilogue().clear();
@@ -117,7 +117,7 @@ public class KeyValuePairElement implements DocumentElement, Map.Entry<String, V
 	
 	@Override
 	public void write(StructuredDataWriter writer) throws IOException {
-		for(NonValueElement elem : preamble) elem.write(writer);
+		for(NonValueElement elem : prologue) elem.write(writer);
 		
 		writer.write(StructuredData.objectKey(key));
 		value.write(writer);
