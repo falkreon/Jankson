@@ -40,7 +40,9 @@ public interface StructuredDataReader {
 	
 	public default void transferTo(StructuredDataWriter writer) throws IOException {
 		while(hasNext()) {
-			writer.write(next());
+			var d = next();
+			//System.out.println(d);
+			writer.write(d);
 		}
 	}
 }

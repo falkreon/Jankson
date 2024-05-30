@@ -126,10 +126,6 @@ public class BasicTests {
 		}
 	}
 	
-	
-	/*
-	 * FIXME: This test does not work very well. We'll have to greatly improve this behavior
-	 */
 	@Test
 	public void testCommentAttribution() throws IOException, SyntaxError {
 		// A preamble is a list of all the non-value elements that occur before a value element within the same context.
@@ -138,9 +134,9 @@ public class BasicTests {
 		ObjectElement subject = Jankson.readJsonObject(subjectString);
 		
 		// TODO: Issue in JsonReader which does not produce comments before the opening root brace
-		//Assertions.assertEquals(2, subject.getPrologue().size());
-		//Assertions.assertEquals("1a", subject.getPrologue().get(0).asCommentElement().getValue());
-		//Assertions.assertEquals("1b", subject.getPrologue().get(1).asCommentElement().getValue());
+		Assertions.assertEquals(2, subject.getPrologue().size());
+		Assertions.assertEquals("1a", subject.getPrologue().get(0).asCommentElement().getValue());
+		Assertions.assertEquals("1b", subject.getPrologue().get(1).asCommentElement().getValue());
 		
 		Map.Entry<String, ValueElement> entry = subject.entrySet().iterator().next();
 		if (entry instanceof KeyValuePairElement kvPair) { //TODO: Oh no! Is there no better way to acquire these objects??

@@ -29,29 +29,4 @@ import java.io.IOException;
 public interface StructuredDataWriter {
 	
 	public void write(StructuredData data) throws IOException;
-	/*
-	public void writeComment(String value, CommentType type) throws IOException;
-	
-	public void writeWhitespace(String value) throws IOException;
-	
-	public void writeKey(String key) throws IOException;
-	
-	public void writeObjectStart() throws IOException;
-	
-	public void writeObjectEnd() throws IOException;
-	
-	public void writeArrayStart() throws IOException;
-	
-	public void writeArrayEnd() throws IOException;
-	
-	public void writeStringLiteral(String value) throws IOException;
-	
-	public void writeLongLiteral(long value) throws IOException;
-	
-	public void writeDoubleLiteral(double value) throws IOException;
-	
-	public void writeBooleanLiteral(boolean value) throws IOException;
-	
-	public void writeNullLiteral() throws IOException;
-	*/
 }

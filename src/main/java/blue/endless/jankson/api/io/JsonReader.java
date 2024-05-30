@@ -48,10 +48,8 @@ public class JsonReader extends AbstractStructuredDataReader {
 	@Override
 	protected void readNext() throws IOException {
 		ParserContext context = getContext();
-		//System.out.println("ReadNext > Context: "+context);
 		if (context==null) throw new IllegalStateException("Root context was popped");
 		if (context.isComplete(src)) {
-			//System.out.println("IsComplete.");
 			popContext();
 			if (getContext()==null) {
 				readQueue.write(StructuredData.EOF);

@@ -34,7 +34,6 @@ import blue.endless.jankson.api.document.FormattingElement;
 import blue.endless.jankson.api.document.KeyValuePairElement;
 import blue.endless.jankson.api.document.NonValueElement;
 import blue.endless.jankson.api.document.ObjectElement;
-import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.api.document.ValueElement;
 import blue.endless.jankson.api.io.StructuredData;
 
@@ -59,6 +58,7 @@ public class ObjectElementWriter implements StrictValueElementWriter {
 			if (!initialBraceFound) {
 				// Only accept OBJECT_START
 				if (data.isComment()) {
+					System.out.println("Dealing with comment");
 					value.getPrologue().add(data.asComment());
 				} else {
 					if (data.type() != StructuredData.Type.OBJECT_START) throw new IOException("Required to start an object: OBJECT_START. Found: "+data.type().name());

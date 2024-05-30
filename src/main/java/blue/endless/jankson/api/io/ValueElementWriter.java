@@ -25,7 +25,9 @@
 package blue.endless.jankson.api.io;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
+import blue.endless.jankson.api.document.NonValueElement;
 import blue.endless.jankson.api.document.ValueElement;
 import blue.endless.jankson.impl.io.value.ArrayElementWriter;
 import blue.endless.jankson.impl.io.value.ObjectElementWriter;
@@ -40,18 +42,18 @@ public class ValueElementWriter implements StructuredDataWriter {
 	
 	private StrictValueElementWriter delegate = null;
 	private ValueElement result = null;
+	private ArrayList<NonValueElement> bufferedComments = new ArrayList<>();
 	
 	@Override
 	public void write(StructuredData data) throws IOException {
-		if (delegate != null) {
+		if (delegate != null && !delegate.isComplete()) {
 			// After we've completed our data, we could potentially consume a trailer
-			if (delegate.isComplete()) {
-				
-			}
 			
 			delegate.write(data);
 			if (delegate.isComplete()) {
 				result = delegate.getValue();
+				result.getPrologue().addAll(bufferedComments);
+				bufferedComments.clear();
 				delegate = null;
 			}
 		} else {
@@ -60,7 +62,12 @@ public class ValueElementWriter implements StructuredDataWriter {
 				case ARRAY_END -> throw new IOException("Illegal Array-End found");
 				case ARRAY_START -> delegate = new ArrayElementWriter();
 				case COMMENT -> {
-					//TODO: Handle prologues and epilogues
+					// Handle prologues and epilogues
+					if (result != null) {
+						result.getEpilogue().add(data.asComment());
+					} else {
+						bufferedComments.add(data.asComment());
+					}
 				}
 				case EOF -> {}
 				case NEWLINE -> {}
