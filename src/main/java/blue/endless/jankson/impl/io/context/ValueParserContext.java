@@ -32,10 +32,10 @@ import blue.endless.jankson.api.io.JsonReaderOptions;
 import blue.endless.jankson.api.io.JsonReaderOptions.Hint;
 import blue.endless.jankson.impl.io.LookaheadCodePointReader;
 
-@Deprecated(forRemoval=true)
 public class ValueParserContext {
 	private final JsonReaderOptions opts;
 	private final boolean isRoot;
+	private ParserContext delegate;
 	
 	public ValueParserContext(JsonReaderOptions opts) {
 		this.opts = opts;

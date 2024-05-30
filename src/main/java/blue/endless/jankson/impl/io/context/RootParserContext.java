@@ -28,16 +28,16 @@ import java.io.IOException;
 import java.util.function.Consumer;
 
 import blue.endless.jankson.api.SyntaxError;
-import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.JsonReaderOptions;
+import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.impl.io.LookaheadCodePointReader;
 
-public class ArrayParserContext implements ParserContext {
-	private JsonReaderOptions options;
-	private boolean foundStart = false;
-	private boolean foundEnd = false;
+public class RootParserContext implements ParserContext {
 	
-	public ArrayParserContext(JsonReaderOptions options) {
+	private final JsonReaderOptions options;
+	private boolean complete = false;
+	
+	public RootParserContext(JsonReaderOptions options) {
 		this.options = options;
 	}
 	
@@ -45,39 +45,39 @@ public class ArrayParserContext implements ParserContext {
 	public void parse(LookaheadCodePointReader reader, Consumer<StructuredData> elementConsumer, Consumer<ParserContext> pusher) throws IOException, SyntaxError {
 		emitComments(reader, elementConsumer);
 		
-		if (!foundStart) {
-			int ch = reader.peek();
-			if (ch=='[') {
-				reader.read();
-				foundStart = true;
-				elementConsumer.accept(StructuredData.ARRAY_START);
-			} else {
-				throw new SyntaxError("Unexpected input found while looking for an array.", reader.getLine(), reader.getCharacter());
+		int ch = reader.peek();
+		switch (ch) {
+			case -1 -> {
+				complete = true;
+				elementConsumer.accept(StructuredData.EOF);
 			}
-		} else {
-			if (!foundEnd) {
-				int ch = reader.peek();
-				if (ch==',') {
-					reader.read();
-					return;
+			case '{' -> pusher.accept(new ObjectParserContext(options));
+			case '[' -> pusher.accept(new ArrayParserContext(options));
+			default -> {
+				if (NumberValueParser.canReadStatic(reader)) {
+					Number value = NumberValueParser.readStatic(reader);
+					elementConsumer.accept(StructuredData.primitive(value));
+				} else if (BooleanValueParser.canReadStatic(reader)) {
+					Boolean value = BooleanValueParser.readStatic(reader);
+					elementConsumer.accept(StructuredData.primitive(value));
+				} else if (checkForNullLiteral(reader)) {
+					reader.readString(4); //Consume the null literal
+					elementConsumer.accept(StructuredData.NULL);
 				}
-				if (ch==']') {
-					reader.read();
-					foundEnd = true;
-					elementConsumer.accept(StructuredData.ARRAY_END);
-				} else {
-					handleValue(reader, elementConsumer, pusher, options);
-				}
-			} else {
-				//Do nothing. We shouldn't have been called.
 			}
-			
 		}
 	}
-
+	
+	private boolean checkForNullLiteral(LookaheadCodePointReader reader) throws IOException {
+		String maybeNull = reader.peekString(4);
+		int extra = reader.peek(5);
+		if (Character.isLetterOrDigit(extra)) return false; //some token *starts with* "null" but is not null.
+		return maybeNull.equals("null");
+	}
+	
 	@Override
 	public boolean isComplete(LookaheadCodePointReader reader) {
-		return foundStart && foundEnd;
+		return complete;
 	}
-
+	
 }

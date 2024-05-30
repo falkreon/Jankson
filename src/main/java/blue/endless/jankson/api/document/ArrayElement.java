@@ -163,6 +163,14 @@ public class ArrayElement extends AbstractList<ValueElement> implements ValueEle
 		}
 	}
 	
+	public Optional<PrimitiveElement> tryGetPrimitive(int index) {
+		if (entries.get(index) instanceof PrimitiveElement prim) {
+			return Optional.of(prim);
+		} else {
+			return Optional.empty();
+		}
+	}
+	
 	public ObjectElement getObject(int index) {
 		if (entries.get(index) instanceof ObjectElement obj) {
 			return obj;
@@ -171,11 +179,27 @@ public class ArrayElement extends AbstractList<ValueElement> implements ValueEle
 		}
 	}
 	
+	public Optional<ObjectElement> tryGetObject(int index) {
+		if (entries.get(index) instanceof ObjectElement obj) {
+			return Optional.of(obj);
+		} else {
+			return Optional.empty();
+		}
+	}
+	
 	public ArrayElement getArray(int index) {
 		if (entries.get(index) instanceof ArrayElement arr) {
 			return arr;
 		} else {
 			return new ArrayElement();
+		}
+	}
+	
+	public Optional<ArrayElement> tryGetArray(int index) {
+		if (entries.get(index) instanceof ArrayElement arr) {
+			return Optional.of(arr);
+		} else {
+			return Optional.empty();
 		}
 	}
 	

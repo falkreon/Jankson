@@ -52,6 +52,8 @@ public class JsonReader extends AbstractStructuredDataReader {
 		if (context.isComplete(src)) {
 			popContext();
 			if (getContext()==null) {
+				
+				
 				readQueue.write(StructuredData.EOF);
 			}
 		} else {

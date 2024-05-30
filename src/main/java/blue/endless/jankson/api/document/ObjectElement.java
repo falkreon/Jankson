@@ -32,6 +32,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.annotation.Nullable;
@@ -184,6 +185,22 @@ public class ObjectElement implements ValueElement, Map<String, ValueElement> {
 	}
 	
 	/**
+	 * Tries to get a PrimitiveElement value for the given key. If no element exists with the specified
+	 * key, or the element at the specified key is not a primitive, then an empty optional will be returned.
+	 * @param key the key whose corresponding value should be returned
+	 * @return An optional containing the PrimitiveElement if it exists, otherwise empty.
+	 */
+	public Optional<PrimitiveElement> tryGetPrimitive(String key) {
+		for(KeyValuePairElement entry : entries) {
+			if (entry.getKey().equals(key) && entry.getValue() instanceof PrimitiveElement prim) {
+				return Optional.of(prim);
+			}
+		}
+		
+		return Optional.empty();
+	}
+	
+	/**
 	 * Gets an array element if it exists in this object. If no element is mapped to the key, or if the value mapped to
 	 * the key is not an array, an empty array will be returned.
 	 * @param key the key whose corresponding value should be returned
@@ -200,6 +217,22 @@ public class ObjectElement implements ValueElement, Map<String, ValueElement> {
 	}
 	
 	/**
+	 * Tries to get an ArrayElement with the specified key. If no element exists with the specified key,
+	 * or that element is not an ArrayElement, then empty is returned.
+	 * @param key the key whose corresponding value should be returned
+	 * @return An optional containing the ArrayElement if it exists, otherwise empty.
+	 */
+	public Optional<ArrayElement> tryGetArray(String key) {
+		for(KeyValuePairElement entry : entries) {
+			if (entry.getKey().equals(key) && entry.getValue() instanceof ArrayElement arr) {
+				return Optional.of(arr);
+			}
+		}
+		
+		return Optional.empty();
+	}
+	
+	/**
 	 * Gets an object element if it exists in this object. If no element is mapped to the key, or if the value mapped to
 	 * the key is not an object, an empty object will be returned.
 	 * @param key the key whose corresponding value should be returned
@@ -213,6 +246,22 @@ public class ObjectElement implements ValueElement, Map<String, ValueElement> {
 		}
 		
 		return new ObjectElement();
+	}
+	
+	/**
+	 * Tries to get an ObjectElement with the specified key. If no element exists with the specified key,
+	 * or that element is not an ObjectElement, then empty is returned.
+	 * @param key the key whose corresponding value should be returned
+	 * @return an Optional containing the requested ObjectElement if it exists, otherwise empty.
+	 */
+	public Optional<ObjectElement> tryGetObject(String key) {
+		for(KeyValuePairElement entry : entries) {
+			if (entry.getKey().equals(key) && entry.getValue() instanceof ObjectElement obj) {
+				return Optional.of(obj);
+			}
+		}
+		
+		return Optional.empty();
 	}
 	
 	//implements Map {

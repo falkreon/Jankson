@@ -25,11 +25,9 @@
 package blue.endless.jankson.impl.io.context;
 
 import java.io.IOException;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import blue.endless.jankson.api.SyntaxError;
-import blue.endless.jankson.api.document.CommentElement;
 import blue.endless.jankson.api.io.JsonReaderOptions;
 import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.impl.io.LookaheadCodePointReader;
@@ -99,7 +97,7 @@ public class ObjectParserContext implements ParserContext {
 						
 						emitComments(reader, elementConsumer);
 						
-						handleValue(reader, elementConsumer, pusher);
+						handleValue(reader, elementConsumer, pusher, options);
 						//TODO: Maybe process the comma.
 						//foreach reader
 						//if we can read it, do and break.
@@ -114,52 +112,9 @@ public class ObjectParserContext implements ParserContext {
 		}
 	}
 
-	private void emitComments(LookaheadCodePointReader reader, Consumer<StructuredData> elementConsumer) throws IOException, SyntaxError {
-		skipNonBreakingWhitespace(reader);
-		while (CommentValueParser.canReadStatic(reader) || reader.peek()=='\n') {
-			if (reader.peek()=='\n') {
-				reader.read();
-				elementConsumer.accept(StructuredData.NEWLINE);
-			} else {
-				CommentElement comment = CommentValueParser.readStatic(reader);
-				elementConsumer.accept(new StructuredData(StructuredData.Type.COMMENT, comment));
-			}
-			skipNonBreakingWhitespace(reader);
-		}
-	}
-
 	@Override
 	public boolean isComplete(LookaheadCodePointReader reader) {
 		return foundStart && foundEnd;
 	}
 	
-	
-	public void handleValue(LookaheadCodePointReader reader, Consumer<StructuredData> elementConsumer, Consumer<ParserContext> pusher) throws IOException, SyntaxError {
-		int ch = reader.peek();
-		if (ch=='{') {
-			pusher.accept(new ObjectParserContext(options));
-		} else if (ch=='[') {
-			pusher.accept(new ArrayParserContext(options));
-		} else if (NumberValueParser.canReadStatic(reader)) {
-			Number value = NumberValueParser.readStatic(reader);
-			elementConsumer.accept(StructuredData.primitive(value));
-		} else if (BooleanValueParser.canReadStatic(reader)) {
-			Boolean value = BooleanValueParser.readStatic(reader);
-			elementConsumer.accept(StructuredData.primitive(value));
-		} else if (StringValueParser.canReadStatic(reader)) {
-			String value = StringValueParser.readStatic(reader);
-			elementConsumer.accept(StructuredData.primitive(value));
-		} else {
-			String maybeNull = reader.peekString(4);
-			if (maybeNull.equals("null")) {
-				reader.readString(4);
-				elementConsumer.accept(StructuredData.NULL);
-			} else {
-				String token = TokenValueParser.readStatic(reader);
-				elementConsumer.accept(StructuredData.primitive(token));
-				//TODO: Unquoted Strings etc.
-				//throw new SyntaxError("Expected a value here, but couldn't decode it.", reader.getLine(), reader.getCharacter());
-			}
-		}
-	}
 }
