@@ -22,7 +22,7 @@ apply plugin: "signing";
 
 group = "blue.endless";
 archivesBaseName = "Jankson";
-version = "2.0.0-alpha.1";
+version = "2.0.0-alpha.2";
 
 sourceCompatibility = 1.17;
 targetCompatibility = 1.17;
