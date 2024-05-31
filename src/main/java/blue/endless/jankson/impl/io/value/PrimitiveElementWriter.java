@@ -37,6 +37,7 @@ public class PrimitiveElementWriter implements StrictValueElementWriter {
 	
 	@Override
 	public void write(StructuredData data) throws IOException {
+		if (data.type() == StructuredData.Type.EOF && value != null) return;
 		if (!data.isPrimitive()) throw new IOException("Expected a primitive value, but found "+Objects.toString(data));
 		value = data.asPrimitive();
 		complete = true;

@@ -56,6 +56,15 @@ public class ValueElementWriter implements StructuredDataWriter {
 				delegate = null;
 			}
 		} else {
+			if (delegate != null && delegate.isComplete()) {
+				result = delegate.getValue();
+				delegate = null;
+				
+				if (data.type() == StructuredData.Type.EOF) return;
+				if (data.type().isSemantic()) throw new IOException("Illegal data after end of value: "+data);
+				if (data.isComment()) result.getEpilogue().add(data.asComment());
+			}
+			
 			switch(data.type()) {
 				case ARRAY_END -> throw new IOException("Illegal Array-End found");
 				case ARRAY_START -> delegate = new ArrayElementWriter();

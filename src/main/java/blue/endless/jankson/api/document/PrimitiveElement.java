@@ -172,7 +172,7 @@ public abstract class PrimitiveElement implements ValueElement {
 		if (value == null) return ofNull();
 		
 		if (value instanceof String v)     return of(v);
-		if (value instanceof Boolean v)    return of(v);
+		if (value instanceof Boolean v)    return of(v.booleanValue());
 		if (value instanceof Character v)  return of(""+v); // We could have chosen Long but 1-character String is semantically closer
 		if (value instanceof Byte v)       return of(v);
 		if (value instanceof Short v)      return of(v);
