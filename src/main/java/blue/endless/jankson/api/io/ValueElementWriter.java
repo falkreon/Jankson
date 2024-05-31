@@ -48,7 +48,6 @@ public class ValueElementWriter implements StructuredDataWriter {
 	public void write(StructuredData data) throws IOException {
 		if (delegate != null && !delegate.isComplete()) {
 			// After we've completed our data, we could potentially consume a trailer
-			System.out.println("delegate data: "+data);
 			delegate.write(data);
 			if (delegate.isComplete()) {
 				result = delegate.getValue();
@@ -57,7 +56,6 @@ public class ValueElementWriter implements StructuredDataWriter {
 				delegate = null;
 			}
 		} else {
-			System.out.println("no-delegate data: "+data);
 			switch(data.type()) {
 				case ARRAY_END -> throw new IOException("Illegal Array-End found");
 				case ARRAY_START -> delegate = new ArrayElementWriter();

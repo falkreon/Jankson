@@ -29,8 +29,8 @@ import java.io.Reader;
 
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.impl.io.AbstractStructuredDataReader;
-import blue.endless.jankson.impl.io.context.ObjectParserContext;
 import blue.endless.jankson.impl.io.context.ParserContext;
+import blue.endless.jankson.impl.io.context.RootParserContext;
 
 public class JsonReader extends AbstractStructuredDataReader {
 	private final JsonReaderOptions options;
@@ -42,7 +42,7 @@ public class JsonReader extends AbstractStructuredDataReader {
 	public JsonReader(Reader source, JsonReaderOptions options) {
 		super(source);
 		this.options = options;
-		pushContext(new ObjectParserContext(options)); //TODO: Push a root context first
+		pushContext(new RootParserContext(options));
 	}
 	
 	@Override

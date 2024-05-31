@@ -37,6 +37,8 @@ public class RootParserContext implements ParserContext {
 	private final JsonReaderOptions options;
 	private boolean complete = false;
 	
+	private String bufferedKey = null;
+	
 	public RootParserContext(JsonReaderOptions options) {
 		this.options = options;
 	}
@@ -49,7 +51,19 @@ public class RootParserContext implements ParserContext {
 		switch (ch) {
 			case -1 -> {
 				complete = true;
+				if (bufferedKey != null) {
+					// We buffered a String we found, but it seems to be the whole object value.
+					elementConsumer.accept(StructuredData.primitive(bufferedKey));
+					bufferedKey = null;
+				}
 				elementConsumer.accept(StructuredData.EOF);
+			}
+			case ':' -> {
+				if (bufferedKey != null && options.hasHint(JsonReaderOptions.Hint.ALLOW_BARE_ROOT_OBJECT)) {
+					elementConsumer.accept(StructuredData.objectKey(bufferedKey));
+					bufferedKey = null;
+					// Next thing will be a Value, but it'll be caught by the next parse call.
+				}
 			}
 			case '{' -> pusher.accept(new ObjectParserContext(options));
 			case '[' -> pusher.accept(new ArrayParserContext(options));
@@ -63,6 +77,15 @@ public class RootParserContext implements ParserContext {
 				} else if (checkForNullLiteral(reader)) {
 					reader.readString(4); //Consume the null literal
 					elementConsumer.accept(StructuredData.NULL);
+				} else if (StringValueParser.canReadStatic(reader)) {
+					String s = StringValueParser.readStatic(reader);
+					if (options.hasHint(JsonReaderOptions.Hint.ALLOW_BARE_ROOT_OBJECT)) {
+						// This could be either a key of a bare root object, or it could be a primitive String root object.
+						// Buffer it for now - if we find a colon later, it's a key.
+						bufferedKey = s;
+					} else {
+						elementConsumer.accept(StructuredData.primitive(s));
+					}
 				}
 			}
 		}

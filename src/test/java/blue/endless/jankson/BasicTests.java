@@ -163,9 +163,9 @@ public class BasicTests {
 		Assertions.assertEquals("5b", subject.getFooter().get(1).asCommentElement().getValue());
 		
 		//TODO: Issue, location unknown, comments after the root object are not kept
-		//Assertions.assertEquals(2, subject.getEpilogue().size());
-		//Assertions.assertEquals("6a", subject.getEpilogue().get(0).asCommentElement().getValue());
-		//Assertions.assertEquals("6b", subject.getEpilogue().get(1).asCommentElement().getValue());
+		Assertions.assertEquals(2, subject.getEpilogue().size());
+		Assertions.assertEquals("6a", subject.getEpilogue().get(0).asCommentElement().getValue());
+		Assertions.assertEquals("6b", subject.getEpilogue().get(1).asCommentElement().getValue());
 	}
 	
 
