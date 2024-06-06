@@ -49,7 +49,7 @@ public abstract class AbstractStructuredDataWriter implements StructuredDataWrit
 	 */
 	protected void assertKey() {
 		State peek = context.peek();
-		if (peek!=State.DICTIONARY) throw new IllegalStateException("Attempting to write a key at an invalid location. (State is "+peek+")");
+		if (peek != State.DICTIONARY) throw new IllegalStateException("Attempting to write a key at an invalid location. (State is "+peek+")");
 	}
 	
 	/**
@@ -126,13 +126,14 @@ public abstract class AbstractStructuredDataWriter implements StructuredDataWrit
 	}
 	
 	protected void keyWritten() {
-		push(State.DICTIONARY_BEFORE_DELIMITER);
+		push(State.DICTIONARY_BEFORE_VALUE);
 	}
 	
+	/*
 	protected void keyValueDelimiterWritten() {
 		pop();
 		push(State.DICTIONARY_BEFORE_VALUE);
-	}
+	}*/
 	
 	protected void nextValueWritten() {
 		pop();

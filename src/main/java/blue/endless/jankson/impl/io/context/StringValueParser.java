@@ -95,7 +95,7 @@ public class StringValueParser implements ValueParser {
 	 * @param in the stream
 	 * @param out the result
 	 */
-	private static void readEscapeSequence(LookaheadCodePointReader in, StringBuilder out) throws IOException, SyntaxError {
+	public static void readEscapeSequence(LookaheadCodePointReader in, StringBuilder out) throws IOException, SyntaxError {
 		int escape = in.read();
 		switch(escape) {
 			case 'b':

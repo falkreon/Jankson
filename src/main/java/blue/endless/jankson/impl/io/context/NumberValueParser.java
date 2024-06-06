@@ -119,7 +119,7 @@ public class NumberValueParser implements ValueParser {
 	}
 	
 	@Override
-	public Object read(LookaheadCodePointReader reader) throws IOException, SyntaxError {
+	public Number read(LookaheadCodePointReader reader) throws IOException, SyntaxError {
 		return readStatic(reader);
 	}
 }

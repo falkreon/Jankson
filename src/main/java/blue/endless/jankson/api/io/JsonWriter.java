@@ -151,6 +151,8 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 	}
 	
 	private void writeKey(String key) throws IOException {
+		addCommas();
+		
 		assertKey();
 		
 		//TODO: escape parts of the key if needed, omit quotes if possible + configured
@@ -160,7 +162,7 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 		}
 		dest.write(key);
 		if (quoted) {
-			write("\" ");
+			write('"');
 		}
 		
 		if (hint(KEY_EQUALS_VALUE)) {
@@ -214,8 +216,12 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 		if (isWritingRoot() && hint(BARE_ROOT_OBJECT)) {
 			//Do not write closing brace, and do not decrease the indent level.
 		} else {
-			indentLevel--;
-			writeNewline(); //TODO: Consult hints for newline behavior
+			if (hint(WRITE_NEWLINES)) {
+				indentLevel--;
+				writeNewline(); //TODO: Consult hints for newline behavior
+			} else {
+				if (hint(WRITE_WHITESPACE)) write(' ');
+			}
 			write('}');
 		}
 		
