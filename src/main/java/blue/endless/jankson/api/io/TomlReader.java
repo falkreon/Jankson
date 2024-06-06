@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Optional;
 
 import blue.endless.jankson.api.SyntaxError;
+import blue.endless.jankson.api.document.ArrayElement;
 import blue.endless.jankson.api.document.CommentElement;
 import blue.endless.jankson.api.document.ObjectElement;
 import blue.endless.jankson.api.document.PrimitiveElement;
@@ -44,14 +45,16 @@ import blue.endless.jankson.impl.io.context.TomlTripleQuotedStringValueParser;
 
 public class TomlReader extends AbstractStructuredDataReader {
 	
-	private List<String> tableContext = new ArrayList<>();
-	private boolean contextIsArray = false;
 	
 	/**
 	 * Unfortunately, because of the unpredictable order here, we need to crystallize the config down into an object before we can emit anything.
 	 */
 	private ObjectElement result = new ObjectElement();
 	private List<String> bufferedKey = new ArrayList<>();
+	
+	private List<String> tableContext = new ArrayList<>();
+	//private boolean contextIsArray = false;
+	private ObjectElement contextObj = result;
 	
 	private boolean hasReadInData = false;
 	
@@ -172,15 +175,19 @@ public class TomlReader extends AbstractStructuredDataReader {
 							src.read(); // Consume the rest of the table-array opener
 							//Read in table-array name
 							tableContext = readTomlKey();
-							contextIsArray = true;
+							//contextIsArray = true;
 							
 							skipNonBreakingWhitespace(); //Shouldn't be needed but just in case
 							if (src.read() != ']') throw new SyntaxError("Unclosed table-array name [["+formatTomlKey(tableContext)+"]]");
 							if (src.read() != ']') throw new SyntaxError("Unclosed table-array name [["+formatTomlKey(tableContext)+"]]");
+							
+							contextObj = getNewArrayContext(tableContext);
 						} else {
 							tableContext = readTomlKey();
-							contextIsArray = false;
+							//contextIsArray = false;
 							if (src.read() != ']') throw new SyntaxError("Unclosed table name ["+formatTomlKey(tableContext)+"]");
+							
+							contextObj = getObjectContext(tableContext);
 						}
 						
 					}
@@ -294,32 +301,80 @@ public class TomlReader extends AbstractStructuredDataReader {
 			Number val = NumberValueParser.readStatic(src);
 			commitKvPair(bufferedKey, PrimitiveElement.box(val));
 			bufferedKey.clear();
-		} //TODO: Parse arrays and inline-tables
-		
-		//array, inline-table, date-time
+			
+		//TODO: Parse arrays and inline-tables
+		} else {
+			throw new SyntaxError("Unknown value type", src.getLine(), src.getCharacter());
+		}
 	}
 	
-	private void commitKvPair(List<String> key, ValueElement value) {
-		if (key.isEmpty()) throw new IllegalArgumentException("Cannot set a value with no key");
-		
-		List<String> computedKey = new ArrayList<>();
-		computedKey.addAll(tableContext);
-		computedKey.addAll(key);
+	private ObjectElement getObjectContext(List<String> key) throws SyntaxError {
+		if (key.isEmpty()) throw new IllegalArgumentException("Cannot get a context object with no key");
 		
 		ObjectElement subject = result;
-		if (computedKey.size() > 1) for(int i=0; i<computedKey.size()-1; i++) {
-			Optional<ObjectElement> maybeNewSubject = subject.tryGetObject(computedKey.get(i));
+		for(String k : key) {
+			Optional<ObjectElement> maybeNewSubject = subject.tryGetObject(k);
 			if (maybeNewSubject.isPresent()) {
 				subject = maybeNewSubject.get();
 			} else {
+				if (subject.containsKey(k)) throw new SyntaxError("Expected ObjectElement, got "+subject.get(k).getClass().getSimpleName(), src.getLine(), src.getCharacter());
 				ObjectElement newSubject = new ObjectElement();
-				subject.put(computedKey.get(i), newSubject);
+				subject.put(k, newSubject);
 				subject = newSubject;
 			}
 		}
 		
-		String k = computedKey.getLast();
-		subject.put(k, value);
+		return subject;
+	}
+	
+	private ObjectElement getNewArrayContext(List<String> key) throws SyntaxError {
+		if (key.isEmpty()) throw new SyntaxError("Cannot get a context object with no key", src.getLine(), src.getCharacter());
+		
+		ObjectElement subject = result;
+		if (key.size() > 1) for(int i=0; i<key.size()-1; i++) {
+			Optional<ObjectElement> maybeNewSubject = subject.tryGetObject(key.get(i));
+			if (maybeNewSubject.isPresent()) {
+				subject = maybeNewSubject.get();
+			} else {
+				ObjectElement newSubject = new ObjectElement();
+				subject.put(key.get(i), newSubject);
+				subject = newSubject;
+			}
+		}
+		
+		String k = key.getLast();
+		Optional<ArrayElement> maybeArray = subject.tryGetArray(k);
+		if (maybeArray.isPresent()) {
+			subject = new ObjectElement();
+			maybeArray.get().add(subject);
+		} else {
+			if (subject.containsKey(k)) throw new SyntaxError("Expected ArrayElement, got "+subject.get(k).getClass().getSimpleName(), src.getLine(), src.getCharacter());
+			ArrayElement elem = new ArrayElement();
+			subject.put(k, elem);
+			subject = new ObjectElement();
+			elem.add(subject);
+		}
+		
+		return subject;
+	}
+	
+	private void commitKvPair(List<String> key, ValueElement value) throws SyntaxError {
+		if (key.isEmpty()) throw new IllegalArgumentException("Cannot set a value with no key");
+		
+		ObjectElement subject = contextObj;
+		if (key.size() > 1) for(int i=0; i<key.size()-1; i++) {
+			Optional<ObjectElement> maybeNewSubject = subject.tryGetObject(key.get(i));
+			if (maybeNewSubject.isPresent()) {
+				subject = maybeNewSubject.get();
+			} else {
+				if (subject.containsKey(key.get(i))) throw new SyntaxError("Expected ObjectElement, got "+subject.get(key.get(i)).getClass().getSimpleName(), src.getLine(), src.getCharacter());
+				ObjectElement newSubject = new ObjectElement();
+				subject.put(key.get(i), newSubject);
+				subject = newSubject;
+			}
+		}
+		
+		subject.put(key.getLast(), value);
 	}
 	
 }

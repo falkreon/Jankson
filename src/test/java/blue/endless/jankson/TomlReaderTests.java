@@ -89,4 +89,71 @@ public class TomlReaderTests {
 		
 		Assertions.assertEquals(expected.stripIndent().trim(), actual);
 	}
+	
+	@Test
+	public void testTable() throws IOException {
+		String tomlExample = """
+		[dog."tater.man"]
+		type.name = "pug"
+		""";
+		
+		String expected = """
+		{ "dog": { "tater.man": { "type": { "name": "pug" } } } }
+		""";
+		
+		TomlReader reader = new TomlReader(new StringReader(tomlExample));
+		StringWriter out = new StringWriter();
+		JsonWriter writer = new JsonWriter(out, STRICT_ONE_LINE);
+		reader.transferTo(writer);
+		String actual = out.toString();
+		
+		Assertions.assertEquals(expected.stripIndent().trim(), actual);
+	}
+	
+	/**
+	 * Jankson explicitly allows this, in deviation of the spec.
+	 */
+	@Test
+	public void testAllowDuplicateTables() throws IOException {
+		String tomlExample = """
+		# DO NOT DO THIS (unless you're using jankson)
+		
+		[fruit]
+		apple = "red"
+		
+		[fruit]
+		orange = "orange"
+		""";
+		
+		TomlReader reader = new TomlReader(new StringReader(tomlExample));
+		JsonWriter writer = new JsonWriter(new StringWriter(), STRICT_ONE_LINE);
+		
+		reader.transferTo(writer);
+	}
+	
+	/**
+	 * This is disallowed because in one breath we're saying both:
+	 * <p><pre>  fruit.apple = "red"</pre>
+	 * <p>and:
+	 * <p><pre>  fruit.apple = { texture = "smooth" }</pre>
+	 * 
+	 * <p>Both of these cannot be true, so the value is undefined, and we report an error.
+	 */
+	@Test
+	public void testForbidRedefiningTables() {
+		String tomlExample = """
+		# DO NOT DO THIS EITHER
+
+		[fruit]
+		apple = "red"
+		
+		[fruit.apple]
+		texture = "smooth"
+		""";
+		
+		TomlReader reader = new TomlReader(new StringReader(tomlExample));
+		JsonWriter writer = new JsonWriter(new StringWriter(), STRICT_ONE_LINE);
+		
+		Assertions.assertThrows(IOException.class, ()->reader.transferTo(writer));
+	}
 }
