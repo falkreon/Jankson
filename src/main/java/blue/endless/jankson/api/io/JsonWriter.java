@@ -40,6 +40,7 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 	private String resource = "";
 	private int line = 0;
 	private int column = 0;
+	private boolean skipNewline = false;
 	
 	public JsonWriter(Writer destination) {
 		this(destination, JsonWriterOptions.DEFAULTS);
@@ -121,28 +122,41 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 	private void writeComment(String value, CommentType type) throws IOException {
 		switch(type) {
 		case LINE_END:
+			addCommas();
 			write("//");
 			write(value);
 			writeNewline();
 			break;
 		
 		case OCTOTHORPE:
+			addCommas();
+			if (hint(WRITE_NEWLINES)) writeNewline();
 			write("#");
 			write(value);
+			skipNewline = false;
 			writeNewline();
 			break;
 		
 		case MULTILINE:
+			addCommas();
+			if (hint(WRITE_NEWLINES)) writeNewline();
 			write("/*");
 			write(value);
 			write("*/ "); //TODO: Figure out if we should write this extra space here
 			break;
 		
 		case DOC:
+			addCommas();
+			if (hint(WRITE_NEWLINES)) writeNewline();
 			write("/**");
 			write(value);
 			write("*/ "); //TODO: Figure out if we should write this extra space here
 			break;
+		}
+		
+		State peek = peek();
+		if (peek == State.ARRAY_BEFORE_COMMA || peek == State.DICTIONARY_BEFORE_COMMA) {
+			pop();
 		}
 	}
 	
@@ -176,13 +190,23 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 	
 	private void addCommas() throws IOException {
 		State peek = context.peek();
-		if (peek == State.ARRAY_BEFORE_COMMA || peek == State.DICTIONARY_BEFORE_COMMA) {
+		
+		if (peek == State.DICTIONARY || peek == State.ARRAY) {
+			if (hint(WRITE_NEWLINES)) {
+				writeNewline();
+			} else {
+				if (hint(WRITE_WHITESPACE)) write(' ');
+			}
+		} else if (peek == State.ARRAY_BEFORE_COMMA || peek == State.DICTIONARY_BEFORE_COMMA) {
 			// fixCommas is called before a value is written; a comma is needed here
 			if (!hint(OMIT_COMMAS)) {
 				write(',');
+			} else {
+				write(' ');
 			}
 			
 			if (hint(WRITE_NEWLINES)) {
+				skipNewline = false;
 				writeNewline();
 			} else {
 				write(' ');
@@ -196,32 +220,33 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 		addCommas();
 		
 		assertValue();
-		if (peek()==State.ROOT && hint(BARE_ROOT_OBJECT)) {
-			//Do not write the brace, and do not increase the indent level.
-		} else {
+		if (!isWritingRoot() || !hint(BARE_ROOT_OBJECT)) {
 			write('{');
-			if (hint(WRITE_NEWLINES)) {
-				indentLevel++;
-				writeNewline();
-			} else {
-				if (hint(WRITE_WHITESPACE)) write(' ');
-			}
+			indentLevel++;
 		}
+		
 		objectStarted();
+		skipNewline = false;
 	}
 	
 	private void writeObjectEnd() throws IOException {
 		assertObjectEnd();
 		
-		if (isWritingRoot() && hint(BARE_ROOT_OBJECT)) {
-			//Do not write closing brace, and do not decrease the indent level.
+		skipNewline = false;
+		if (!isWritingRoot() || !hint(BARE_ROOT_OBJECT)) {
+			indentLevel--;
+		}
+		if (peek() == State.DICTIONARY) { // No values yet
+			if (hint(WRITE_WHITESPACE)) write(' ');
 		} else {
 			if (hint(WRITE_NEWLINES)) {
-				indentLevel--;
-				writeNewline(); //TODO: Consult hints for newline behavior
+				writeNewline();
 			} else {
 				if (hint(WRITE_WHITESPACE)) write(' ');
 			}
+		}
+		
+		if (!isWritingRoot() || !hint(BARE_ROOT_OBJECT)) {
 			write('}');
 		}
 		
@@ -233,28 +258,25 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 		
 		assertValue();
 		
-		write("["); //TODO: Consult hints for newline behavior
-		if (hint(WRITE_NEWLINES)) {
-			indentLevel++;
-			writeNewline();
-			
-		}
+		write("[");
+		indentLevel++;
 		
 		arrayStarted();
+		skipNewline = false;
 	}
 	
 	private void writeArrayEnd() throws IOException {
 		assertArrayEnd();
 		
+		skipNewline = false;
+		indentLevel--;
 		if (hint(WRITE_NEWLINES)) {
-			indentLevel--;
 			writeNewline();
+		} else {
+			if (hint(WRITE_WHITESPACE)) write(' ');
 		}
 		
 		write(']');
-		if (hint(WRITE_NEWLINES)) {
-			writeNewline();
-		}
 		
 		arrayEndWritten();
 	}
@@ -304,7 +326,9 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 	}
 	
 	private void writeNewline() throws IOException {
+		if (skipNewline) return;
 		write('\n');
 		write(options.getIndent(indentLevel));
+		skipNewline = true;
 	}
 }

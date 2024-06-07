@@ -58,20 +58,20 @@ public class TestSerializer {
 	@Test
 	public void testArraySerialization() throws IOException {
 		String actual = Jankson.writeJsonString(new String[] { "foo", "bar" }, JsonWriterOptions.ONE_LINE);
-		Assertions.assertEquals("[\"foo\", \"bar\"]", actual);
+		Assertions.assertEquals("[ \"foo\", \"bar\" ]", actual);
 	}
 	
 	@Test
 	public void testCollectionSerialization() throws IOException {
 		String listActual = Jankson.writeJsonString(List.of(1, 2, 3), JsonWriterOptions.ONE_LINE);
-		Assertions.assertEquals("[1, 2, 3]", listActual);
+		Assertions.assertEquals("[ 1, 2, 3 ]", listActual);
 		
 		// Testing Sets is harder because of undetermined or purposefully randomized iteration order
 		// LinkedHashSet fixes this by forcing insertion order
 		LinkedHashSet<Integer> testSet = new LinkedHashSet<>();
 		testSet.add(1); testSet.add(2); testSet.add(3);
 		String setActual = Jankson.writeJsonString(testSet, JsonWriterOptions.ONE_LINE);
-		Assertions.assertEquals("[1, 2, 3]", setActual);
+		Assertions.assertEquals("[ 1, 2, 3 ]", setActual);
 	}
 	
 	/*

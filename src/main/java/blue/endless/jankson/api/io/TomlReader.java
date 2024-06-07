@@ -164,7 +164,7 @@ public class TomlReader extends AbstractStructuredDataReader {
 				switch(ch) {
 					case '#' -> {
 						CommentElement elem = CommentValueParser.readStatic(src);
-						readQueue.push(new StructuredData(StructuredData.Type.COMMENT, elem));
+						contextObj.getPrologue().add(elem);
 					}
 					
 					case '[' -> {

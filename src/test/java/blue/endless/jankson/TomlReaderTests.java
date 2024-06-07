@@ -156,4 +156,48 @@ public class TomlReaderTests {
 		
 		Assertions.assertThrows(IOException.class, ()->reader.transferTo(writer));
 	}
+	
+	@Test
+	public void testTableArrays() throws IOException {
+		String tomlExample = """
+		[[products]]
+		name = "Hammer"
+		sku = 738594937
+		
+		[[products]]  # empty table within the array
+		
+		[[products]]
+		name = "Nail"
+		sku = 284758393
+		
+		color = "gray"
+		""";
+		
+		// TODO: LOOK AT THAT BUSTED COMMENT BEHAVIOR OMG
+		String expected = """
+		{
+			"products": [
+				{
+					"name": "Hammer",
+					"sku": 738594937
+				},
+				# empty table within the array
+				{ },
+				{
+					"name": "Nail",
+					"sku": 284758393,
+					"color": "gray"
+				}
+			]
+		}
+		""";
+		
+		TomlReader reader = new TomlReader(new StringReader(tomlExample));
+		StringWriter out = new StringWriter();
+		JsonWriter writer = new JsonWriter(out, JsonWriterOptions.STRICT);
+		reader.transferTo(writer);
+		String actual = out.toString();
+		
+		Assertions.assertEquals(expected.trim(), actual);
+	}
 }
