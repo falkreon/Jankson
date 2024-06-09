@@ -173,7 +173,6 @@ public class TomlReaderTests {
 		color = "gray"
 		""";
 		
-		// TODO: LOOK AT THAT BUSTED COMMENT BEHAVIOR OMG
 		String expected = """
 		{
 			"products": [
@@ -187,6 +186,127 @@ public class TomlReaderTests {
 					"name": "Nail",
 					"sku": 284758393,
 					"color": "gray"
+				}
+			]
+		}
+		""";
+		
+		TomlReader reader = new TomlReader(new StringReader(tomlExample));
+		StringWriter out = new StringWriter();
+		JsonWriter writer = new JsonWriter(out, JsonWriterOptions.STRICT);
+		reader.transferTo(writer);
+		String actual = out.toString();
+		
+		Assertions.assertEquals(expected.trim(), actual);
+	}
+	
+	@Test
+	public void testNestedTableArrays() throws IOException {
+		String tomlExample = """
+		[[fruits]]
+		name = "apple"
+		
+		[fruits.physical]
+		color = "red"
+		shape = "round"
+		
+		[[fruits.varieties]]
+		name = "red delicious"
+		
+		[[fruits.varieties]]
+		name = "granny smith"
+		
+		
+		[[fruits]]
+		name = "banana"
+		
+		[[fruits.varieties]]
+		name = "plantain"
+		""";
+		
+		String expected = """
+		{
+			"fruits": [
+				{
+					"name": "apple",
+					"physical": {
+						"color": "red",
+						"shape": "round"
+					},
+					"varieties": [
+						{
+							"name": "red delicious"
+						},
+						{
+							"name": "granny smith"
+						}
+					]
+				},
+				{
+					"name": "banana",
+					"varieties": [
+						{
+							"name": "plantain"
+						}
+					]
+				}
+			]
+		}
+		""";
+		
+		TomlReader reader = new TomlReader(new StringReader(tomlExample));
+		StringWriter out = new StringWriter();
+		JsonWriter writer = new JsonWriter(out, JsonWriterOptions.STRICT);
+		reader.transferTo(writer);
+		String actual = out.toString();
+		
+		Assertions.assertEquals(expected.trim(), actual);
+	}
+	
+	@Test
+	public void testInlineArrays() throws IOException {
+		String tomlExample = """
+		foo = [ 1, 2, 3, true, "foo" ]
+		""";
+		
+		String expected = """
+		{ "foo": [ 1, 2, 3, true, "foo" ] }
+		""";
+		
+		TomlReader reader = new TomlReader(new StringReader(tomlExample));
+		StringWriter out = new StringWriter();
+		JsonWriter writer = new JsonWriter(out, STRICT_ONE_LINE);
+		reader.transferTo(writer);
+		String actual = out.toString();
+		
+		Assertions.assertEquals(expected.stripIndent().trim(), actual);
+	}
+	
+	@Test
+	public void testArrayOfInlineTables() throws IOException {
+		String tomlExample = """
+		points = [ { x = 1, y = 2, z = 3 },
+		           { x = 7, y = 8, z = 9 },
+		           { x = 2, y = 4, z = 8 } ]
+		""";
+		
+		String expected = """
+		{
+			"points": [
+				{
+					"x": 1,
+					"y": 2,
+					"z": 3
+				},
+				{
+					"x": 7,
+					"y": 8,
+					"z": 9
+				},
+				{
+					"x": 2,
+					"y": 4,
+					"z": 8
 				}
 			]
 		}

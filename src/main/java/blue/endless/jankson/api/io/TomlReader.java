@@ -198,7 +198,7 @@ public class TomlReader extends AbstractStructuredDataReader {
 						skipNonBreakingWhitespace();
 						if (src.read() != '=')  throw new SyntaxError("Expected equals sign, found '"+Character.toString(src.peek())+"'", src.getLine(), src.getCharacter());
 						skipNonBreakingWhitespace();
-						readValue();
+						readAndCommitValue();
 					}
 				}
 			} catch (SyntaxError err) {
@@ -259,6 +259,7 @@ public class TomlReader extends AbstractStructuredDataReader {
 	}
 	
 	private String formatTomlKey(List<String> key) {
+		if (key.isEmpty()) return "(empty)";
 		StringBuilder result = new StringBuilder();
 		boolean first = true;
 		for(String s : key) {
@@ -279,7 +280,46 @@ public class TomlReader extends AbstractStructuredDataReader {
 		return result.toString();
 	}
 	
-	private void readValue() throws IOException, SyntaxError {
+	private String formatCharacter(int codePoint) {
+		if (codePoint == '\t') return "'\\t' (tab)";
+		if (codePoint == '\r') return "'\\r' (carriage return)";
+		if (codePoint == '\n') return "'\\n' (newline / form feed)";
+		if (codePoint == '\'') return "'\\'' (single-quote)";
+		if (codePoint>=0x21 && codePoint<=0x7E) return "'"+Character.toString(codePoint)+"'";
+		
+		return "'"+Character.toString(codePoint)+"' (0x" + Integer.toHexString(codePoint) + ")";
+	}
+	
+	private ValueElement readValue() throws IOException, SyntaxError {
+		if (TomlTripleQuotedStringValueParser.canReadStatic(src)) {
+			return PrimitiveElement.of(TomlTripleQuotedStringValueParser.readStatic(src));
+		//TODO: PARSE "LITERAL" (single-quoted) STRINGS
+		} else if (StringValueParser.canReadStatic(src)) {
+			return PrimitiveElement.of(StringValueParser.readStatic(src));
+		} else if (BooleanValueParser.canReadStatic(src)) {
+			return PrimitiveElement.of(BooleanValueParser.readStatic(src));
+		//} else if ( TODO: CAN WE PARSE DATES ) {
+			// TODO: Parse dates
+			// Do this at a higher priority than numbers because we might get false positives
+		} else if (NumberValueParser.canReadStatic(src)) {
+			return PrimitiveElement.box(NumberValueParser.readStatic(src));
+		} else if (src.peek() == '[') {
+			return readInlineArray();
+		//TODO: Parse inline tables
+		} else if (src.peek() == '{') {
+			return readInlineTable();
+		} else {
+			throw new SyntaxError("Unknown value type", src.getLine(), src.getCharacter());
+		}
+	}
+	
+	private void readAndCommitValue() throws IOException, SyntaxError {
+		ValueElement val = readValue();
+		commitKvPair(bufferedKey, val);
+		bufferedKey.clear();
+	}
+	/*	
+	private void readAndCommitValue() throws IOException, SyntaxError {
 		if (TomlTripleQuotedStringValueParser.canReadStatic(src)) {
 			String val = TomlTripleQuotedStringValueParser.readStatic(src);
 			commitKvPair(bufferedKey, PrimitiveElement.of(val));
@@ -303,8 +343,106 @@ public class TomlReader extends AbstractStructuredDataReader {
 			bufferedKey.clear();
 			
 		//TODO: Parse arrays and inline-tables
+		} else if (src.peek() == '[') {
+			commitKvPair(bufferedKey, readInlineArray());
+			bufferedKey.clear();
 		} else {
 			throw new SyntaxError("Unknown value type", src.getLine(), src.getCharacter());
+		}
+	}*/
+	
+	private ArrayElement readInlineArray() throws IOException, SyntaxError {
+		ArrayElement result = new ArrayElement();
+		
+		int openBracket = src.read();
+		if (openBracket != '[') throw new SyntaxError("Expected open-bracket ('['), got "+formatCharacter(openBracket), src.getLine(), src.getCharacter());
+		
+		while(Character.isWhitespace(src.peek())) src.read();
+		
+		while(src.peek() != ']') {
+			result.add(readValue());
+			
+			while(Character.isWhitespace(src.peek())) src.read();
+			if (src.peek() == ',') {
+				src.read();
+				while(Character.isWhitespace(src.peek())) src.read();
+			}
+		}
+		
+		src.read(); // consume closing bracket
+		
+		return result;
+	}
+	
+	private ObjectElement readInlineTable() throws IOException, SyntaxError {
+		ObjectElement result = new ObjectElement();
+		
+		int openBrace = src.read();
+		if (openBrace != '{') throw new SyntaxError("Expected open-brace ('{'), got "+formatCharacter(openBrace), src.getLine(), src.getCharacter());
+		
+		while(Character.isWhitespace(src.peek())) src.read();
+		
+		while(src.peek() != '}') {
+			List<String> key = readTomlKey();
+			if (key.isEmpty()) throw new SyntaxError("Expected a key, got "+formatCharacter(src.peek()), src.getLine(), src.getCharacter());
+			
+			skipNonBreakingWhitespace();
+			
+			if (src.peek() != '=') throw new SyntaxError("Expected equals sign ('='), got "+formatCharacter(src.peek()), src.getLine(), src.getCharacter());
+			src.read(); //Consume the equals sign
+			
+			skipNonBreakingWhitespace();
+			
+			ValueElement val = readValue();
+			
+			ObjectElement subject = result;
+			
+			if (key.size() > 1) for (int i = 0; i<key.size()-1; i++) {
+				subject = getObjectContext(subject, key.get(i));
+			}
+			
+			String k = key.getLast();
+			
+			subject.put(k, val);
+			
+			while(Character.isWhitespace(src.peek())) src.read();
+			if (src.peek() == ',') {
+				src.read();
+				while(Character.isWhitespace(src.peek())) src.read();
+			}
+		}
+		
+		src.read(); // consume closing bracket
+		
+		return result;
+	}
+	
+	private ObjectElement getObjectContext(ObjectElement subject, String key) throws SyntaxError {
+		Optional<ObjectElement> maybeNewSubject = subject.tryGetObject(key);
+		if (maybeNewSubject.isPresent()) {
+			return maybeNewSubject.get();
+		} else {
+			Optional<ArrayElement> maybeArraySubject = subject.tryGetArray(key);
+			if (maybeArraySubject.isPresent()) {
+				ArrayElement arr = maybeArraySubject.get();
+				if (arr.size() == 0) {
+					ObjectElement newSubject = new ObjectElement();
+					arr.add(newSubject);
+					return newSubject;
+				} else {
+					ValueElement newSubject = arr.getLast();
+					if (newSubject instanceof ObjectElement obj) {
+						return obj;
+					} else {
+						throw new SyntaxError("Expected Object or Array, got "+subject.get(key).getClass().getSimpleName(), src.getLine(), src.getCharacter());
+					}
+				}
+			} else {
+				if (subject.containsKey(key)) throw new SyntaxError("Expected ObjectElement for key '"+key+"', got "+subject.get(key).getClass().getSimpleName(), src.getLine(), src.getCharacter());
+				ObjectElement newSubject = new ObjectElement();
+				subject.put(key, newSubject);
+				return newSubject;
+			}
 		}
 	}
 	
@@ -313,15 +451,34 @@ public class TomlReader extends AbstractStructuredDataReader {
 		
 		ObjectElement subject = result;
 		for(String k : key) {
+			subject = getObjectContext(subject, k);
+			/*
 			Optional<ObjectElement> maybeNewSubject = subject.tryGetObject(k);
 			if (maybeNewSubject.isPresent()) {
 				subject = maybeNewSubject.get();
 			} else {
-				if (subject.containsKey(k)) throw new SyntaxError("Expected ObjectElement, got "+subject.get(k).getClass().getSimpleName(), src.getLine(), src.getCharacter());
-				ObjectElement newSubject = new ObjectElement();
-				subject.put(k, newSubject);
-				subject = newSubject;
-			}
+				Optional<ArrayElement> maybeArraySubject = subject.tryGetArray(k);
+				if (maybeArraySubject.isPresent()) {
+					ArrayElement arr = maybeArraySubject.get();
+					if (arr.size() == 0) {
+						ObjectElement newSubject = new ObjectElement();
+						arr.add(newSubject);
+						subject = newSubject;
+					} else {
+						ValueElement newSubject = arr.getLast();
+						if (newSubject instanceof ObjectElement obj) {
+							subject = obj;
+						} else {
+							throw new SyntaxError("Expected ObjectElement, got "+subject.get(k).getClass().getSimpleName(), src.getLine(), src.getCharacter());
+						}
+					}
+				} else {
+					if (subject.containsKey(k)) throw new SyntaxError("Expected ObjectElement for key '"+k+"', got "+subject.get(k).getClass().getSimpleName(), src.getLine(), src.getCharacter());
+					ObjectElement newSubject = new ObjectElement();
+					subject.put(k, newSubject);
+					subject = newSubject;
+				}
+			}*/
 		}
 		
 		return subject;
@@ -332,14 +489,35 @@ public class TomlReader extends AbstractStructuredDataReader {
 		
 		ObjectElement subject = result;
 		if (key.size() > 1) for(int i=0; i<key.size()-1; i++) {
+			subject = getObjectContext(subject, key.get(i));
+			/*
 			Optional<ObjectElement> maybeNewSubject = subject.tryGetObject(key.get(i));
 			if (maybeNewSubject.isPresent()) {
 				subject = maybeNewSubject.get();
 			} else {
-				ObjectElement newSubject = new ObjectElement();
-				subject.put(key.get(i), newSubject);
-				subject = newSubject;
-			}
+				Optional<ArrayElement> maybeArraySubject = subject.tryGetArray(key.get(i));
+				if (maybeArraySubject.isPresent()) {
+					ArrayElement arr = maybeArraySubject.get();
+					if (arr.size() == 0) {
+						ObjectElement newSubject = new ObjectElement();
+						arr.add(newSubject);
+						subject = newSubject;
+					} else {
+						ValueElement newSubject = arr.getLast();
+						if (newSubject instanceof ObjectElement obj) {
+							subject = obj;
+						} else {
+							throw new SyntaxError("Expected ObjectElement, got "+subject.get(key.get(i)).getClass().getSimpleName(), src.getLine(), src.getCharacter());
+						}
+					}
+				} else {
+					if (subject.containsKey(key.get(i))) throw new SyntaxError("Expected Object or Aray, got "+subject.get(key.get(i)).getClass().getSimpleName(), src.getLine(), src.getCharacter());
+					
+					ObjectElement newSubject = new ObjectElement();
+					subject.put(key.get(i), newSubject);
+					subject = newSubject;
+				}
+			}*/
 		}
 		
 		String k = key.getLast();
