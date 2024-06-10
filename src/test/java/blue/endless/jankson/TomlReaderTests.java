@@ -320,4 +320,44 @@ public class TomlReaderTests {
 		
 		Assertions.assertEquals(expected.trim(), actual);
 	}
+	
+	@Test
+	public void testDateValues() throws IOException {
+		String tomlExample = """
+		odt1 = 1979-05-27T07:32:00Z
+		odt2 = 1979-05-27T00:32:00-07:00
+		odt3 = 1979-05-27T00:32:00.999999-07:00
+		odt4 = 1979-05-27 07:32:00Z
+		
+		ldt1 = 1979-05-27T07:32:00
+		ldt2 = 1979-05-27T00:32:00.999999
+		
+		ld1 = 1979-05-27
+		
+		lt1 = 07:32:00
+		lt2 = 00:32:00.999999
+		""";
+		
+		String expected = """
+		{
+			"odt1": "1979-05-27T07:32:00Z",
+			"odt2": "1979-05-27T00:32:00-07:00",
+			"odt3": "1979-05-27T00:32:00.999999-07:00",
+			"odt4": "1979-05-27 07:32:00Z",
+			"ldt1": "1979-05-27T07:32:00",
+			"ldt2": "1979-05-27T00:32:00.999999",
+			"ld1": "1979-05-27",
+			"lt1": "07:32:00",
+			"lt2": "00:32:00.999999"
+		}
+		""";
+		
+		TomlReader reader = new TomlReader(new StringReader(tomlExample));
+		StringWriter out = new StringWriter();
+		JsonWriter writer = new JsonWriter(out, JsonWriterOptions.STRICT);
+		reader.transferTo(writer);
+		String actual = out.toString();
+		
+		Assertions.assertEquals(expected.trim(), actual);
+	}
 }

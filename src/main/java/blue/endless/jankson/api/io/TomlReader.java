@@ -41,7 +41,8 @@ import blue.endless.jankson.impl.io.context.BooleanValueParser;
 import blue.endless.jankson.impl.io.context.CommentValueParser;
 import blue.endless.jankson.impl.io.context.NumberValueParser;
 import blue.endless.jankson.impl.io.context.StringValueParser;
-import blue.endless.jankson.impl.io.context.TomlTripleQuotedStringValueParser;
+import blue.endless.jankson.impl.io.context.toml.DateValueParser;
+import blue.endless.jankson.impl.io.context.toml.TomlTripleQuotedStringValueParser;
 
 public class TomlReader extends AbstractStructuredDataReader {
 	
@@ -292,20 +293,23 @@ public class TomlReader extends AbstractStructuredDataReader {
 	
 	private ValueElement readValue() throws IOException, SyntaxError {
 		if (TomlTripleQuotedStringValueParser.canReadStatic(src)) {
+			//Also parses literal multiline strings
 			return PrimitiveElement.of(TomlTripleQuotedStringValueParser.readStatic(src));
-		//TODO: PARSE "LITERAL" (single-quoted) STRINGS
+		} else if (src.peek() == '\'') {
+			//Parse literal strings
+			return readLiteralString();
 		} else if (StringValueParser.canReadStatic(src)) {
 			return PrimitiveElement.of(StringValueParser.readStatic(src));
 		} else if (BooleanValueParser.canReadStatic(src)) {
 			return PrimitiveElement.of(BooleanValueParser.readStatic(src));
-		//} else if ( TODO: CAN WE PARSE DATES ) {
+		} else if (DateValueParser.canReadStatic(src)) {
+			return PrimitiveElement.of(DateValueParser.readStatic(src));
 			// TODO: Parse dates
 			// Do this at a higher priority than numbers because we might get false positives
 		} else if (NumberValueParser.canReadStatic(src)) {
 			return PrimitiveElement.box(NumberValueParser.readStatic(src));
 		} else if (src.peek() == '[') {
 			return readInlineArray();
-		//TODO: Parse inline tables
 		} else if (src.peek() == '{') {
 			return readInlineTable();
 		} else {
@@ -318,38 +322,19 @@ public class TomlReader extends AbstractStructuredDataReader {
 		commitKvPair(bufferedKey, val);
 		bufferedKey.clear();
 	}
-	/*	
-	private void readAndCommitValue() throws IOException, SyntaxError {
-		if (TomlTripleQuotedStringValueParser.canReadStatic(src)) {
-			String val = TomlTripleQuotedStringValueParser.readStatic(src);
-			commitKvPair(bufferedKey, PrimitiveElement.of(val));
-			bufferedKey.clear();
-		//TODO: PARSE "LITERAL" (single-quoted) STRINGS
-		} else if (StringValueParser.canReadStatic(src)) {
-			String val = StringValueParser.readStatic(src);
-			commitKvPair(bufferedKey, PrimitiveElement.of(val));
-			bufferedKey.clear();
-		} else if (BooleanValueParser.canReadStatic(src)) {
-			boolean val = BooleanValueParser.readStatic(src);
-			commitKvPair(bufferedKey, PrimitiveElement.of(val));
-			bufferedKey.clear();
-			
-		//} else if ( TODO: CAN WE PARSE DATES ) {
-			// TODO: Parse dates
-			// Do this at a higher priority than numbers because we might get false positives
-		} else if (NumberValueParser.canReadStatic(src)) {
-			Number val = NumberValueParser.readStatic(src);
-			commitKvPair(bufferedKey, PrimitiveElement.box(val));
-			bufferedKey.clear();
-			
-		//TODO: Parse arrays and inline-tables
-		} else if (src.peek() == '[') {
-			commitKvPair(bufferedKey, readInlineArray());
-			bufferedKey.clear();
-		} else {
-			throw new SyntaxError("Unknown value type", src.getLine(), src.getCharacter());
+	
+	private PrimitiveElement readLiteralString() throws IOException, SyntaxError {
+		src.read(); //discard starting quote
+		StringBuilder value = new StringBuilder();
+		
+		while(src.peek() != '\'') {
+			value.appendCodePoint(src.read());
 		}
-	}*/
+		
+		src.read(); //discard ending quote
+		
+		return PrimitiveElement.of(value.toString());
+	}
 	
 	private ArrayElement readInlineArray() throws IOException, SyntaxError {
 		ArrayElement result = new ArrayElement();

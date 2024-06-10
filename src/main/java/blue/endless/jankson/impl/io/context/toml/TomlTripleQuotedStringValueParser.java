@@ -22,16 +22,19 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.impl.io.context;
+package blue.endless.jankson.impl.io.context.toml;
 
 import java.io.IOException;
 
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.impl.io.Lookahead;
 import blue.endless.jankson.impl.io.LookaheadCodePointReader;
+import blue.endless.jankson.impl.io.context.StringValueParser;
+import blue.endless.jankson.impl.io.context.ValueParser;
 
 public class TomlTripleQuotedStringValueParser implements ValueParser {
 	private static final String TRIPLE_QUOTE = "\"\"\"";
+	private static final String TRIPLE_APOSTROPHE = "'''";
 	
 	@Override
 	public boolean canRead(Lookahead lookahead) throws IOException {
@@ -44,12 +47,14 @@ public class TomlTripleQuotedStringValueParser implements ValueParser {
 	}
 	
 	public static boolean canReadStatic(Lookahead lookahead) throws IOException {
-		return lookahead.peekString(3).equals(TRIPLE_QUOTE);
+		String str = lookahead.peekString(3);
+		return str.equals(TRIPLE_QUOTE) || str.equals(TRIPLE_APOSTROPHE);
 	}
 
 	
 	public static String readStatic(LookaheadCodePointReader reader) throws IOException, SyntaxError {
-		reader.readString(3); // Consume the initial triple-quote
+		String initial = reader.readString(3); // Consume the initial triple-quote
+		boolean literal = (initial.equals(TRIPLE_APOSTROPHE));
 		
 		StringBuilder result = new StringBuilder();
 		
@@ -58,9 +63,9 @@ public class TomlTripleQuotedStringValueParser implements ValueParser {
 			reader.read(); // If the first character after the triple quote is a newline, discard it.
 		}
 		
-		while(!reader.peekString(3).equals(TRIPLE_QUOTE)) {
+		while(!reader.peekString(3).equals(initial)) {
 			int ch = reader.read();
-			if (ch == '\\') {
+			if (ch == '\\' && !literal) {
 				// This is an escaped character
 				int peek = reader.peek();
 				if (peek == '\n' || peek == '\r') {
