@@ -437,33 +437,6 @@ public class TomlReader extends AbstractStructuredDataReader {
 		ObjectElement subject = result;
 		for(String k : key) {
 			subject = getObjectContext(subject, k);
-			/*
-			Optional<ObjectElement> maybeNewSubject = subject.tryGetObject(k);
-			if (maybeNewSubject.isPresent()) {
-				subject = maybeNewSubject.get();
-			} else {
-				Optional<ArrayElement> maybeArraySubject = subject.tryGetArray(k);
-				if (maybeArraySubject.isPresent()) {
-					ArrayElement arr = maybeArraySubject.get();
-					if (arr.size() == 0) {
-						ObjectElement newSubject = new ObjectElement();
-						arr.add(newSubject);
-						subject = newSubject;
-					} else {
-						ValueElement newSubject = arr.getLast();
-						if (newSubject instanceof ObjectElement obj) {
-							subject = obj;
-						} else {
-							throw new SyntaxError("Expected ObjectElement, got "+subject.get(k).getClass().getSimpleName(), src.getLine(), src.getCharacter());
-						}
-					}
-				} else {
-					if (subject.containsKey(k)) throw new SyntaxError("Expected ObjectElement for key '"+k+"', got "+subject.get(k).getClass().getSimpleName(), src.getLine(), src.getCharacter());
-					ObjectElement newSubject = new ObjectElement();
-					subject.put(k, newSubject);
-					subject = newSubject;
-				}
-			}*/
 		}
 		
 		return subject;
@@ -475,34 +448,6 @@ public class TomlReader extends AbstractStructuredDataReader {
 		ObjectElement subject = result;
 		if (key.size() > 1) for(int i=0; i<key.size()-1; i++) {
 			subject = getObjectContext(subject, key.get(i));
-			/*
-			Optional<ObjectElement> maybeNewSubject = subject.tryGetObject(key.get(i));
-			if (maybeNewSubject.isPresent()) {
-				subject = maybeNewSubject.get();
-			} else {
-				Optional<ArrayElement> maybeArraySubject = subject.tryGetArray(key.get(i));
-				if (maybeArraySubject.isPresent()) {
-					ArrayElement arr = maybeArraySubject.get();
-					if (arr.size() == 0) {
-						ObjectElement newSubject = new ObjectElement();
-						arr.add(newSubject);
-						subject = newSubject;
-					} else {
-						ValueElement newSubject = arr.getLast();
-						if (newSubject instanceof ObjectElement obj) {
-							subject = obj;
-						} else {
-							throw new SyntaxError("Expected ObjectElement, got "+subject.get(key.get(i)).getClass().getSimpleName(), src.getLine(), src.getCharacter());
-						}
-					}
-				} else {
-					if (subject.containsKey(key.get(i))) throw new SyntaxError("Expected Object or Aray, got "+subject.get(key.get(i)).getClass().getSimpleName(), src.getLine(), src.getCharacter());
-					
-					ObjectElement newSubject = new ObjectElement();
-					subject.put(key.get(i), newSubject);
-					subject = newSubject;
-				}
-			}*/
 		}
 		
 		String k = key.getLast();
