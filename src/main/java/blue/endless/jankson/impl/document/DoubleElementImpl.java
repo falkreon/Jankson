@@ -31,6 +31,7 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import java.util.function.DoubleFunction;
 
 import blue.endless.jankson.api.document.NonValueElement;
 import blue.endless.jankson.api.document.PrimitiveElement;
@@ -66,7 +67,7 @@ public class DoubleElementImpl extends PrimitiveElement {
 
 	@Override
 	public Optional<String> asString() {
-		return Optional.empty();
+		return Optional.of(Double.toString(value));
 	}
 
 	@Override
@@ -97,6 +98,10 @@ public class DoubleElementImpl extends PrimitiveElement {
 	@Override
 	public Optional<BigDecimal> asBigDecimal() {
 		return Optional.of(BigDecimal.valueOf(value));
+	}
+	
+	public <T> Optional<T> mapAsDouble(DoubleFunction<T> d) {
+		return Optional.of(d.apply(value));
 	}
 	
 	@Override

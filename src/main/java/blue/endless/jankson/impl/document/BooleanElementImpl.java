@@ -31,6 +31,7 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import java.util.function.Function;
 
 import blue.endless.jankson.api.document.NonValueElement;
 import blue.endless.jankson.api.document.PrimitiveElement;
@@ -66,7 +67,7 @@ public class BooleanElementImpl extends PrimitiveElement {
 
 	@Override
 	public Optional<String> asString() {
-		return Optional.empty();
+		return Optional.of(Boolean.toString(value));
 	}
 
 	@Override
@@ -88,7 +89,12 @@ public class BooleanElementImpl extends PrimitiveElement {
 	public OptionalInt asInt() {
 		return OptionalInt.empty();
 	}
-
+	
+	@Override
+	public <T> Optional<T> mapAsBoolean(Function<Boolean, T> mapper) {
+		return Optional.of(mapper.apply(value));
+	}
+	
 	@Override
 	public Optional<BigInteger> asBigInteger() {
 		return Optional.empty();
@@ -98,7 +104,7 @@ public class BooleanElementImpl extends PrimitiveElement {
 	public Optional<BigDecimal> asBigDecimal() {
 		return Optional.empty();
 	}
-
+	
 	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof BooleanElementImpl v) {

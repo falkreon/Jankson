@@ -31,6 +31,7 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import java.util.function.Function;
 
 import blue.endless.jankson.api.document.NonValueElement;
 import blue.endless.jankson.api.document.PrimitiveElement;
@@ -76,19 +77,36 @@ public class StringElementImpl extends PrimitiveElement {
 
 	@Override
 	public OptionalDouble asDouble() {
+		try {
+			return OptionalDouble.of(Double.parseDouble(value));
+		} catch (NumberFormatException nfe) {}
+		
 		return OptionalDouble.empty();
 	}
 
 	@Override
 	public OptionalLong asLong() {
+		try {
+			return OptionalLong.of(Long.parseLong(value));
+		} catch (NumberFormatException nfe) {}
+		
 		return OptionalLong.empty();
 	}
 
 	@Override
 	public OptionalInt asInt() {
+		try {
+			return OptionalInt.of(Integer.parseInt(value));
+		} catch (NumberFormatException nfe) {}
+		
 		return OptionalInt.empty();
 	}
-
+	
+	@Override
+	public <T> Optional<T> mapAsString(Function<String, T> mapper) {
+		return Optional.of(mapper.apply(value));
+	}
+	
 	@Override
 	public Optional<BigInteger> asBigInteger() {
 		try {

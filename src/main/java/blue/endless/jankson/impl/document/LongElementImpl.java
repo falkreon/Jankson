@@ -31,6 +31,7 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import java.util.function.LongFunction;
 
 import blue.endless.jankson.api.document.NonValueElement;
 import blue.endless.jankson.api.document.PrimitiveElement;
@@ -92,7 +93,12 @@ public class LongElementImpl extends PrimitiveElement {
 			return OptionalInt.empty();
 		}
 	}
-
+	
+	@Override
+	public <T> Optional<T> mapAsLong(LongFunction<T> mapper) {
+		return Optional.of(mapper.apply(value));
+	}
+	
 	@Override
 	public Optional<BigInteger> asBigInteger() {
 		return Optional.of(BigInteger.valueOf(value));

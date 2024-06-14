@@ -32,6 +32,10 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import java.util.function.DoubleFunction;
+import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.function.LongFunction;
 
 import blue.endless.jankson.impl.document.BooleanElementImpl;
 import blue.endless.jankson.impl.document.DoubleElementImpl;
@@ -101,6 +105,72 @@ public abstract class PrimitiveElement implements ValueElement {
 	 * </ul>
 	 */
 	public abstract OptionalInt asInt();
+	
+	/**
+	 * If this value can be interpreted as a boolean, map it and return a new optional with the
+	 * mapped value. If not, returns an empty optional.
+	 * Identical to {@code asBoolean().map(mapper)}.
+	 * @param <T> The destination type of the mapper
+	 * @param mapper A function to convert the value into an object of a different type
+	 * @return The mapped object, or empty if the value cannot be interpreted this way.
+	 */
+	public <T> Optional<T> mapAsBoolean(Function<Boolean, T> mapper) {
+		return asBoolean().map(mapper);
+	}
+	
+	/**
+	 * If this value can be interpreted as a double, map it and return a new optional with the
+	 * mapped value. If not, returns an empty optional.
+	 * @param <T> The destination type of the mapper
+	 * @param mapper A function to convert the value into an object of a different type
+	 * @return The mapped object, or empty if the value cannot be interpreted this way.
+	 */
+	public <T> Optional<T> mapAsDouble(DoubleFunction<T> mapper) {
+		OptionalDouble doubleValue = asDouble();
+		if (!doubleValue.isPresent()) return Optional.empty();
+		
+		return Optional.of(mapper.apply(doubleValue.getAsDouble()));
+	}
+	
+	/**
+	 * If this value can be interpreted as an integer, map it and return a new optional with the
+	 * mapped value. If not, returns an empty optional.
+	 * @param <T> The destination type of the mapper
+	 * @param mapper A function to convert the value into an object of a different type
+	 * @return The mapped object, or empty if the value cannot be interpreted this way.
+	 */
+	public <T> Optional<T> mapAsInt(IntFunction<T> mapper) {
+		OptionalInt intValue = asInt();
+		if (!intValue.isPresent()) return Optional.empty();
+		
+		return Optional.of(mapper.apply(intValue.getAsInt()));
+	}
+	
+	/**
+	 * If this value can be interpreted as a long, map it and return a new optional with the
+	 * mapped value. If not, returns an empty optional.
+	 * @param <T> The destination type of the mapper
+	 * @param mapper A function to convert the value into an object of a different type
+	 * @return The mapped object, or empty if the value cannot be interpreted this way.
+	 */
+	public <T> Optional<T> mapAsLong(LongFunction<T> mapper) {
+		OptionalLong longValue = asLong();
+		if (!longValue.isPresent()) return Optional.empty();
+		
+		return Optional.of(mapper.apply(longValue.getAsLong()));
+	}
+	
+	/**
+	 * If this value can be interpreted as a String, map it and return a new optional with the
+	 * mapped value. If not, returns an empty optional. Null values will always return empty.
+	 * Identical to {@code asString().map(mapper)}.
+	 * @param <T> The destination type of the mapper
+	 * @param mapper A function to convert the value into an object of a different type
+	 * @return The mapped object, or empty if the value cannot be interpreted this way.
+	 */
+	public <T> Optional<T> mapAsString(Function<String, T> mapper) {
+		return asString().map(mapper);
+	}
 	
 	/**
 	 * If this value is a base-16 String which can be parsed as a valid BigInteger, this method returns that value.

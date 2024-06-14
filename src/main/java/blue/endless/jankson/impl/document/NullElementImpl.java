@@ -31,6 +31,9 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.function.LongFunction;
 
 import blue.endless.jankson.api.document.NonValueElement;
 import blue.endless.jankson.api.document.PrimitiveElement;
@@ -82,6 +85,20 @@ public class NullElementImpl extends PrimitiveElement {
 	@Override
 	public OptionalInt asInt() {
 		return OptionalInt.empty();
+	}
+	
+	@Override
+	public <T> Optional<T> mapAsInt(IntFunction<T> mapper) {
+		return Optional.empty();
+	}
+	
+	@Override
+	public <T> Optional<T> mapAsLong(LongFunction<T> mapper) {
+		return Optional.empty();
+	}
+	
+	public <T> Optional<T> mapAsString(Function<String, T> mapper) {
+		return Optional.empty();
 	}
 
 	@Override

@@ -36,7 +36,7 @@ import blue.endless.jankson.api.io.JsonWriterOptions;
 import blue.endless.jankson.api.io.TomlReader;
 import blue.endless.jankson.api.io.JsonWriterOptions.Hint;
 
-public class TomlReaderTests {
+public class TestTomlReader {
 	
 	private static final JsonWriterOptions STRICT_ONE_LINE = new JsonWriterOptions(Hint.WRITE_WHITESPACE);
 	
