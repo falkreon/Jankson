@@ -26,12 +26,23 @@ package blue.endless.jankson;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.lang.reflect.AnnotatedType;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import blue.endless.jankson.api.io.JsonReader;
 import blue.endless.jankson.api.io.ObjectWriter;
+import blue.endless.jankson.impl.TypeMagic;
+import blue.endless.jankson.impl.magic.ClassHierarchy;
 
 public class TestObjectWriter {
 	
@@ -124,4 +135,41 @@ public class TestObjectWriter {
 		
 		Assertions.assertEquals(expected, actual);
 	}
+	
+	private static class ObfuscatingList<T> extends ArrayList<String> {
+		private static final long serialVersionUID = 1L;
+	}
+	
+	@Test
+	public void testGettingCollectionMemberType() throws Throwable {
+		record P(ObfuscatingList<Short> value) {};
+		Type genericType = P.class.getRecordComponents()[0].getGenericType();
+		
+		Type t = ClassHierarchy.getCollectionTypeArgument(genericType);
+		Assertions.assertEquals(String.class, t);
+	}
+	
+	@Test
+	public void testGettingMapMemberTypes() {
+		record P(Map<String, float[]> value) {};
+		Type genericType = P.class.getRecordComponents()[0].getGenericType();
+		
+		var results = ClassHierarchy.getMapTypeArguments(genericType);
+		
+		Assertions.assertEquals(String.class, results.keyType());
+		Assertions.assertEquals(float[].class, results.valueType());
+	}
+	
+	@Test
+	public void testNestedGenerics() {
+		record P(Map<String, List<Float>> value) {};
+		Type genericType = P.class.getRecordComponents()[0].getGenericType();
+		
+		Type valueType = ClassHierarchy.getMapTypeArguments(genericType).valueType();
+		Type elementType = ClassHierarchy.getCollectionTypeArgument(valueType);
+		
+		Assertions.assertEquals(Float.class, elementType);
+	}
+	
+	
 }

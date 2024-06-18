@@ -26,6 +26,7 @@ package blue.endless.jankson.impl;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
@@ -201,7 +202,8 @@ public class TypeMagic {
 		}
 		
 		try {
-			boolean available = noArg.isAccessible();
+			boolean available = noArg.canAccess(null);
+			//boolean available = noArg.isAccessible();
 			if (!available) noArg.setAccessible(true);
 			U u = noArg.newInstance();
 			if (!available) noArg.setAccessible(false); //restore accessibility
@@ -350,4 +352,96 @@ public class TypeMagic {
 		
 		return Nullity.UNKNOWN;
 	}
+	
+	
+	
+	
+	/**
+	 * Get the erased class corresponding to a type, or null if there is no corresponding Class for this type.
+	 * 
+	 * @see <a href="https://www.artima.com/weblogs/viewpost.jsp?thread=208860">
+	 *      https://www.artima.com/weblogs/viewpost.jsp?thread=208860
+	 *      </a>
+	 * @param type the type
+	 * @return the underlying class
+	 */
+	public static Class<?> getErasedClass(Type type) {
+		// Original impl returned the member type of generic arrays as 
+		if (type instanceof Class clazz) {
+			return clazz;
+		} else if (type instanceof ParameterizedType pt) {
+			// We just want to erase the type parameters. But while erasing the type parameters
+			// will usually give us a Class, it could also give us something else we need to unpack,
+			// which then needs to be unpacked, so just feed it back through.
+			return getErasedClass(pt.getRawType());
+		} else if (type instanceof GenericArrayType gen) {
+			// For arrays, there's no way around getting the member type, making a new instance,
+			// and getting the class of that instance, unfortunately.
+			Type memberType = gen.getGenericComponentType();
+			Class<?> erasedMemberType = getErasedClass(memberType);
+			if (erasedMemberType == null) return null;
+			return Array.newInstance(erasedMemberType, 0).getClass();
+		} else {
+			return null;
+		}
+	}
+	
+	/**
+	 * Get the actual type arguments a child class has used to extend a generic base class.
+	 *
+	 * @see <a href="https://www.artima.com/weblogs/viewpost.jsp?thread=208860">
+	 *      https://www.artima.com/weblogs/viewpost.jsp?thread=208860
+	 *      </a>
+	 * @param baseClass the base class
+	 * @param childClass the child class
+	 * @return a list of the raw classes for the actual type arguments.
+	 */
+	/*
+	public static <T> List<Type> getTypeArguments(Type baseType, Class<?> interfaceType) {
+		Map<Type, Type> resolvedTypes = new HashMap<Type, Type>();
+		// start walking up the inheritance hierarchy until we hit baseClass
+		Type type = baseType;
+		while (! type.equals(interfaceType)) {
+			if (type == Object.class) {
+				return null;
+			}
+			
+			if (type instanceof Class) {
+				// there is no useful information for us in raw types, so just keep going.
+				type = ((Class<?>) type).getGenericSuperclass();
+			} else {
+				ParameterizedType parameterizedType = (ParameterizedType) type;
+				Class<?> rawType = (Class<?>) parameterizedType.getRawType();
+
+				Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
+				TypeVariable<?>[] typeParameters = rawType.getTypeParameters();
+				for (int i = 0; i < actualTypeArguments.length; i++) {
+					resolvedTypes.put(typeParameters[i], actualTypeArguments[i]);
+				}
+
+				if (!rawType.equals(baseClass)) {
+					type = rawType.getGenericSuperclass();
+				}
+			}
+		}
+
+		// finally, for each actual type argument provided to baseClass, determine (if possible)
+		// the raw class for that type argument.
+		Type[] actualTypeArguments;
+		if (type instanceof Class) {
+			actualTypeArguments = ((Class) type).getTypeParameters();
+		}
+		else {
+			actualTypeArguments = ((ParameterizedType) type).getActualTypeArguments();
+		}
+		List<Class<?>> typeArgumentsAsClasses = new ArrayList<Class<?>>();
+		// resolve types by chasing down type variables.
+		for (Type baseType: actualTypeArguments) {
+			while (resolvedTypes.containsKey(baseType)) {
+				baseType = resolvedTypes.get(baseType);
+			}
+			typeArgumentsAsClasses.add(getClass(baseType));
+		}
+		return typeArgumentsAsClasses;
+	}*/
 }
