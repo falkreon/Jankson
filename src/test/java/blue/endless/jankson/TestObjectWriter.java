@@ -171,5 +171,43 @@ public class TestObjectWriter {
 		Assertions.assertEquals(Float.class, elementType);
 	}
 	
+	@Test
+	public void testCollection() throws IOException {
+		
+		String subject =
+				"""
+				[ 1, 12, 13, 2, 4 ]
+				""";
+		JsonReader reader = new JsonReader(new StringReader(subject));
+		
+		record P(List<Integer> value) {}
+		Type targetType = P.class.getRecordComponents()[0].getGenericType();
+		
+		var writer = new ObjectWriter<ArrayList<Integer>>(targetType);
+		reader.transferTo(writer);
+		
+		ArrayList<Integer> actual = writer.toObject();
+		
+		Assertions.assertEquals(List.of(1, 12, 13, 2, 4), actual);
+	}
 	
+	@Test
+	public void testNestedCollection() throws IOException {
+		String subject =
+				"""
+				{
+					"value": [ 1, 12, 13, 2, 4 ]
+				}
+				""";
+		JsonReader reader = new JsonReader(new StringReader(subject));
+		
+		record P(List<Integer> value) {}
+		
+		var writer = new ObjectWriter<>(P.class);
+		reader.transferTo(writer);
+		
+		P actual = writer.toObject();
+		
+		Assertions.assertEquals(new P(List.of(1, 12, 13, 2, 4)), actual);
+	}
 }

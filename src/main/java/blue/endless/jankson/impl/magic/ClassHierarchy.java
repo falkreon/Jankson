@@ -49,7 +49,9 @@ public class ClassHierarchy {
 	 * @return the underlying class
 	 */
 	public static Class<?> getErasedClass(Type type) {
-		// Original impl returned the member type of generic arrays as 
+		if (type instanceof SyntheticType synth) return synth.getErasure();
+		if (type instanceof AnnotatedType anno) type = anno.getType();
+		
 		if (type instanceof Class clazz) {
 			return clazz;
 		} else if (type instanceof ParameterizedType pt) {

@@ -24,50 +24,100 @@
 
 package blue.endless.jankson.impl.io.objectwriter;
 
-import java.lang.reflect.AnnotatedType;
-import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Type;
 import java.util.Collection;
 
 import blue.endless.jankson.api.SyntaxError;
+import blue.endless.jankson.api.io.ObjectWriter;
 import blue.endless.jankson.api.io.StructuredData;
+import blue.endless.jankson.impl.magic.ClassHierarchy;
 
 public class CollectionFunction<V, T extends Collection<V>> extends SingleValueFunction<Collection<V>>{
 	
-	private Collection<V> result;
+	private final Type memberType;
+	private final T result;
 	
-	public CollectionFunction(Collection<V> result) {
+	private boolean startFound = false;
+	private boolean endFound = false;
+	
+	private StructuredDataFunction<V> delegate = null;
+	
+	public CollectionFunction(T result, Type memberType) {
 		this.result = result;
+		this.memberType = memberType;
 	}
 	
-	public CollectionFunction(Type resultType) {
-		if (resultType instanceof AnnotatedType anno) {
-			resultType = anno.getType(); // Discard the annotations and extract the class or generic type
-		}
-		
-		if (resultType instanceof ParameterizedType generic) {
-			Type[] typeArgs = generic.getActualTypeArguments();
-			Type genericClass = generic.getRawType();
-			if (genericClass instanceof Class clazz) {
-				
-			}
-		}
-		//if (resultType instanceof GenericClass generic) {
-			
-		//}
-		
+	public CollectionFunction(Type resultType) throws IllegalArgumentException {
+		this(createObject(resultType), ClassHierarchy.getCollectionTypeArgument(resultType));
 	}
 	
 	@Override
 	public Collection<V> getResult() {
-		// TODO Auto-generated method stub
-		return null;
+		return result;
 	}
-
+	
+	private void checkDelegate() {
+		if (delegate == null) return;
+		if (delegate.isComplete()) {
+			result.add(delegate.getResult());
+			delegate = null;
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
 	@Override
 	protected void process(StructuredData data) throws SyntaxError {
-		// TODO Auto-generated method stub
+		if (delegate != null) {
+			delegate.accept(data);
+			checkDelegate();
+			return;
+		}
 		
+		if (!startFound) {
+			if (data.type() == StructuredData.Type.ARRAY_START) {
+				startFound = true;
+				return;
+			} else {
+				if (data.type().isSemantic()) throw new SyntaxError("Expected an array, found "+data.type());
+			}
+		} else if (!endFound) {
+			switch(data.type()) {
+				case ARRAY_END -> {
+					endFound = true;
+				}
+				
+				case EOF -> {
+					throw new SyntaxError("Expected a value or end of array. Found EOF instead!");
+				}
+				
+				default -> {
+					delegate = (StructuredDataFunction<V>) ObjectWriter.getObjectWriter(memberType, data, null);
+					delegate.accept(data);
+					checkDelegate();
+				}
+			}
+			
+		} else {
+			if (data.type().isSemantic() && data.type() != StructuredData.Type.EOF) {
+				throw new SyntaxError("Data found past end of array.");
+			}
+		}
 	}
-
+	
+	@SuppressWarnings("unchecked")
+	private static <V> V createObject(Type t) throws IllegalArgumentException {
+		try {
+			Constructor<V> zeroArgConstructor = (Constructor<V>) ClassHierarchy.getErasedClass(t).getConstructor();
+			
+			boolean access = zeroArgConstructor.canAccess(null);
+			if (!access) zeroArgConstructor.setAccessible(true);
+			V result = zeroArgConstructor.newInstance();
+			if (!access) zeroArgConstructor.setAccessible(false);
+			return result;
+			
+		} catch (Throwable throwable) {
+			throw new IllegalArgumentException("Could not create the collection");
+		}
+	}
 }

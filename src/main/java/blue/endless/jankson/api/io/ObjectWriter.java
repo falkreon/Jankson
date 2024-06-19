@@ -25,25 +25,34 @@
 package blue.endless.jankson.api.io;
 
 import java.io.IOException;
-import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Queue;
+import java.util.Set;
 import java.util.function.Function;
 
 import javax.annotation.Nullable;
 
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.document.PrimitiveElement;
+import blue.endless.jankson.impl.io.objectwriter.CollectionFunction;
 import blue.endless.jankson.impl.io.objectwriter.RecordFunction;
 import blue.endless.jankson.impl.io.objectwriter.StructuredDataFunction;
 import blue.endless.jankson.impl.io.objectwriter.ToPrimitiveFunction;
+import blue.endless.jankson.impl.magic.ClassHierarchy;
 
 @SuppressWarnings("unchecked")
 public class ObjectWriter<T> implements StructuredDataWriter {
@@ -54,6 +63,11 @@ public class ObjectWriter<T> implements StructuredDataWriter {
 	private StructuredDataFunction<Object> delegate = null;
 	
 	//private Function<Object, Optional<T>> mapper = it -> (Optional<T>) Optional.of(it);
+	
+	public ObjectWriter(Type subjectType, T subject) {
+		this.subject = subject;
+		this.type = subjectType;
+	}
 	
 	public ObjectWriter(T subject) {
 		this.subject = subject;
@@ -80,15 +94,58 @@ public class ObjectWriter<T> implements StructuredDataWriter {
 	public static StructuredDataFunction<?> getObjectWriter(Type type, StructuredData data, @Nullable Object subject) {
 		if (!data.type().isSemantic()) throw new IllegalArgumentException();
 		
-		if (type instanceof Class clazz) {
-			if (clazz.isRecord()) {
-				return new RecordFunction<>(clazz);
+		Class<?> targetClass = ClassHierarchy.getErasedClass(type);
+		if (Collection.class.isAssignableFrom(targetClass)) {
+			Type elementType = ClassHierarchy.getCollectionTypeArgument(type);
+			
+			if (subject instanceof Collection coll) {
+				return new CollectionFunction<>(coll, elementType);
 			}
 			
-			Function<PrimitiveElement, Optional<Object>> selectedMapper = primitiveMappers.get(clazz);
-			if (selectedMapper != null) {
-				return new StructuredDataFunction.Mapper<>(new ToPrimitiveFunction(), selectedMapper);
+			if (targetClass.isInterface()) {
+				// Pick a "typical" implementation of popular interfaces
+				Collection<?> coll = null;
+				if (Set.class.isAssignableFrom(targetClass)) {
+					coll = new HashSet<>();
+				} else if (List.class.isAssignableFrom(targetClass)) {
+					coll = new ArrayList<>();
+				} else if (Queue.class.isAssignableFrom(targetClass)) { // Includes Deque
+					coll = new ArrayDeque<>();
+				} else if (targetClass.equals(Collection.class)) {
+					// Defined too broadly but we can deal with it
+					coll = new ArrayList<>();
+				} else {
+					// We can't create an instance of this interface, and we can't make it 
+					throw new IllegalArgumentException("Can't get an implementation for unknown collection interface \""+targetClass.getCanonicalName()+"\"");
+				}
+				
+				return new CollectionFunction<>(coll, elementType);
+			} else {
+				// Attempt to create an instance using the target type's no-arg constructor - just
+				// about every Collection type has one. If not, give a clear indication of the problem
+				
+				try {
+					Constructor<?> cons = targetClass.getConstructor();
+					boolean access = cons.canAccess(null);
+					
+					if (!access) cons.setAccessible(true);
+					Collection<?> coll = (Collection<?>) cons.newInstance();
+					if (!access) cons.setAccessible(false);
+					
+					return new CollectionFunction<>(coll, elementType);
+				} catch (Throwable t) {
+					throw new IllegalArgumentException("Could not create an instance of collection type, \""+type.getTypeName()+"\". Is there a zero-argument constructor?", t);
+				}
 			}
+		}
+		
+		if (targetClass.isRecord()) {
+			return new RecordFunction<>(targetClass);
+		}
+		
+		Function<PrimitiveElement, Optional<Object>> selectedMapper = primitiveMappers.get(targetClass);
+		if (selectedMapper != null) {
+			return new StructuredDataFunction.Mapper<>(new ToPrimitiveFunction(), selectedMapper);
 		}
 		
 		return null;
