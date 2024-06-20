@@ -49,9 +49,10 @@ import javax.annotation.Nullable;
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.impl.io.objectwriter.CollectionFunction;
+import blue.endless.jankson.impl.io.objectwriter.MapFunction;
 import blue.endless.jankson.impl.io.objectwriter.RecordFunction;
 import blue.endless.jankson.impl.io.objectwriter.StructuredDataFunction;
-import blue.endless.jankson.impl.io.objectwriter.ToPrimitiveFunction;
+import blue.endless.jankson.impl.io.objectwriter.PrimitiveFunction;
 import blue.endless.jankson.impl.magic.ClassHierarchy;
 
 @SuppressWarnings("unchecked")
@@ -139,13 +140,41 @@ public class ObjectWriter<T> implements StructuredDataWriter {
 			}
 		}
 		
+		if (Map.class.isAssignableFrom(targetClass)) {
+			if (subject instanceof Map map) {
+				// Map<Object, Object> is incorrect, but we cannot construct MapFunction<?, ?>
+				return new MapFunction<Object, Object>(type, (Map<Object, Object>) subject);
+			}
+			
+			if (targetClass.isInterface()) {
+				return new MapFunction<Object, Object>(type);
+			} else {
+				// Attempt to create an instance using the target type's no-arg constructor - as
+				// with Collection, just about every Map type has one. If not, give a clear
+				// indication of the problem
+				try {
+					Constructor<?> cons = targetClass.getConstructor();
+					boolean access = cons.canAccess(null);
+					
+					if (!access) cons.setAccessible(true);
+					Map<Object, Object> coll = (Map<Object, Object>) cons.newInstance();
+					if (!access) cons.setAccessible(false);
+					
+					return new MapFunction<Object, Object>(type, coll);
+				} catch (Throwable t) {
+					throw new IllegalArgumentException("Could not create an instance of collection type, \""+type.getTypeName()+"\". Is there a zero-argument constructor?", t);
+				}
+			}
+			
+		}
+		
 		if (targetClass.isRecord()) {
 			return new RecordFunction<>(targetClass);
 		}
 		
 		Function<PrimitiveElement, Optional<Object>> selectedMapper = primitiveMappers.get(targetClass);
 		if (selectedMapper != null) {
-			return new StructuredDataFunction.Mapper<>(new ToPrimitiveFunction(), selectedMapper);
+			return new StructuredDataFunction.Mapper<>(new PrimitiveFunction(), selectedMapper);
 		}
 		
 		return null;

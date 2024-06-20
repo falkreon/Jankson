@@ -24,25 +24,31 @@
 
 package blue.endless.jankson.impl.io.objectwriter;
 
-import java.util.Collection;
-
+import blue.endless.jankson.api.SyntaxError;
+import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.api.io.StructuredData;
 
-public class ToCollectionFunction<E, T extends Collection<E>> extends SingleValueFunction<T> {
-	private boolean foundStart = false;
-	private boolean foundEnd = false;
-	private T result;
+/**
+ * Turns this value into a PrimitiveElement. If this value should *not* be a Primitive, throws a
+ * SyntaxError. PrimitiveElement supports a number of different flexible marshalling tasks, so there's
+ * no need for individual long/String/double/boolean functions.
+ */
+public class PrimitiveFunction extends SingleValueFunction<PrimitiveElement> {
+	PrimitiveElement value = null;
 	
 	@Override
-	public T getResult() {
-		// TODO Auto-generated method stub
-		return null;
+	public PrimitiveElement getResult() {
+		return value;
 	}
 
 	@Override
-	protected void process(StructuredData data) {
-		// TODO Auto-generated method stub
-		
+	protected void process(StructuredData data) throws SyntaxError {
+		if (data.type() == StructuredData.Type.PRIMITIVE) {
+			value = data.asPrimitive();
+		} else {
+			// If it's not a primitive, but it's a comment or newline, then we're still okay.
+			if (data.type().isSemantic()) throw new SyntaxError("Expected primitive value, found "+data.type().name());
+		}
 	}
 
 }

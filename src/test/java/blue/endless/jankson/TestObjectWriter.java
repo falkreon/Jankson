@@ -210,4 +210,31 @@ public class TestObjectWriter {
 		
 		Assertions.assertEquals(new P(List.of(1, 12, 13, 2, 4)), actual);
 	}
+	
+	@Test
+	public void testMap() throws IOException {
+		
+		String subject =
+				"""
+				{
+					"test": "Everything's going to be fine.",
+					"test2": "Electric boogaloo"
+				}
+				""";
+		JsonReader reader = new JsonReader(new StringReader(subject));
+		
+		record P(Map<String, String> value) {}
+		Type targetType = P.class.getRecordComponents()[0].getGenericType();
+		
+		var writer = new ObjectWriter<Map<String, String>>(targetType);
+		reader.transferTo(writer);
+		
+		Map<String, String> expected = Map.of(
+				"test", "Everything's going to be fine.",
+				"test2", "Electric boogaloo"
+				);
+		Map<String, String> actual = writer.toObject();
+		
+		Assertions.assertEquals(expected, actual);
+	}
 }
