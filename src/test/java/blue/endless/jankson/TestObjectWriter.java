@@ -26,13 +26,8 @@ package blue.endless.jankson;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.lang.reflect.AnnotatedType;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
-import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -41,7 +36,6 @@ import org.junit.jupiter.api.Test;
 
 import blue.endless.jankson.api.io.JsonReader;
 import blue.endless.jankson.api.io.ObjectWriter;
-import blue.endless.jankson.impl.TypeMagic;
 import blue.endless.jankson.impl.magic.ClassHierarchy;
 
 public class TestObjectWriter {
@@ -118,6 +112,11 @@ public class TestObjectWriter {
 		Assertions.assertEquals(Boolean.TRUE, writer.toObject());
 	}
 	
+	/*
+	 * Records are really great for serialization! We treat them as first-class citizens in 2.x, so
+	 * if this breaks it's a Big Deal.
+	 */
+	
 	@Test
 	public void testSimpleRecord() throws IOException {
 		record Point(double x, double y, double z) {};
@@ -135,6 +134,16 @@ public class TestObjectWriter {
 		
 		Assertions.assertEquals(expected, actual);
 	}
+	
+	/*
+	 * These tests kind of belong in a seprate class, but in order to unpack many objects,
+	 * ObjectWriter needs to have a great understanding of reified generics. The following test
+	 * group ensures that we maintain a correct and thorough understanding of Java's type system.
+	 * 
+	 * In particular, ObfuscatingList illustrates why we can't just, e.g., rely on the single type
+	 * argument of a collection to know its element type, we have to actually walk the type
+	 * hierarchy and build a mapping of type-variables to type-arguments as we go.
+	 */
 	
 	private static class ObfuscatingList<T> extends ArrayList<String> {
 		private static final long serialVersionUID = 1L;
@@ -170,6 +179,8 @@ public class TestObjectWriter {
 		
 		Assertions.assertEquals(Float.class, elementType);
 	}
+	
+	
 	
 	@Test
 	public void testCollection() throws IOException {

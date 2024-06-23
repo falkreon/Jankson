@@ -25,6 +25,8 @@
 package blue.endless.jankson.api.io;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
 
 import blue.endless.jankson.api.SyntaxError;
@@ -43,6 +45,10 @@ public class JsonReader extends AbstractStructuredDataReader {
 		super(source);
 		this.options = options;
 		pushContext(new RootParserContext(options));
+	}
+	
+	public JsonReader(InputStream source, JsonReaderOptions options) {
+		this(new InputStreamReader(source), options);
 	}
 	
 	@Override

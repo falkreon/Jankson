@@ -25,7 +25,6 @@
 package blue.endless.jankson.impl.io.objectwriter;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
