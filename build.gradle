@@ -24,11 +24,12 @@ group = "blue.endless";
 archivesBaseName = "Jankson";
 version = "2.0.0-alpha.2";
 
-sourceCompatibility = 1.17;
-targetCompatibility = 1.17;
-
 repositories {
 	mavenCentral();
+}
+
+java {
+	sourceCompatibility = targetCompatibility = JavaVersion.VERSION_21
 }
 
 jar {
