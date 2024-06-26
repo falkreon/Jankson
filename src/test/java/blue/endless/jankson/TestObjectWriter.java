@@ -277,4 +277,28 @@ public class TestObjectWriter {
 		Assertions.assertEquals(25565, actual.portNumber);
 		Assertions.assertEquals("localhost", actual.hostName);
 	}
+	
+	public static class LightConfounder {
+		public Map<String, List<Integer>> mapOfLists;
+	}
+	
+	@Test
+	public void testConfigWithEmbeddedListMap() throws IOException {
+		String subject =
+				"""
+				{
+					"mapOfLists": {
+						"a": [ 1, 2, 3]
+					}
+				}
+				""";
+		JsonReader reader = new JsonReader(new StringReader(subject));
+		
+		var writer = new ObjectWriter<>(LightConfounder.class);
+		reader.transferTo(writer);
+		
+		LightConfounder actual = writer.toObject();
+		
+		Assertions.assertEquals(Map.of("a", List.of(1, 2, 3)), actual.mapOfLists);
+	}
 }

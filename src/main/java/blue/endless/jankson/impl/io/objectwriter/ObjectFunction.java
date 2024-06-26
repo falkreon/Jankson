@@ -64,18 +64,16 @@ public class ObjectFunction<T> extends SingleValueFunction<T>{
 	}
 	
 	private void checkDelegate() throws SyntaxError {
-		if (delegate != null && delegate.isComplete()) {
-			Object o = delegate.getResult();
-			if (delegateKey != null) {
+		if (delegate != null && delegate.isComplete() && delegateKey != null) {
 				try {
+					Object o = delegate.getResult();
 					wrapper.setField(delegateKey, o);
 				} catch (ReflectiveOperationException e) {
 					throw new SyntaxError("Could not write to field \""+delegateKey+"\"", e);
+				} finally {
+					delegateKey = null;
+					delegate = null;
 				}
-			}
-			
-			delegate = null;
-			delegateKey = null;
 		}
 	}
 	
@@ -91,7 +89,11 @@ public class ObjectFunction<T> extends SingleValueFunction<T>{
 	@SuppressWarnings("unchecked")
 	@Override
 	protected void process(StructuredData data) throws SyntaxError {
-		checkDelegate();
+		if (delegate != null) {
+			delegate.accept(data);
+			checkDelegate();
+			return;
+		}
 		
 		if (!foundStart) {
 			if (data.type() == StructuredData.Type.OBJECT_START) {
@@ -124,6 +126,8 @@ public class ObjectFunction<T> extends SingleValueFunction<T>{
 				}
 				
 				default -> {
+					if (!data.type().isSemantic()) return;
+					
 					Type fieldType = wrapper.getType(delegateKey);
 					if (fieldType == null) {
 						delegate = SingleValueFunction.discard();
@@ -136,6 +140,8 @@ public class ObjectFunction<T> extends SingleValueFunction<T>{
 					delegate = (StructuredDataFunction<Object>) ObjectWriter.getObjectWriter(fieldType, data, null);
 					if (delegate != null) {
 						delegate.accept(data);
+					} else {
+						throw new IllegalStateException("Oops");
 					}
 				}
 			}

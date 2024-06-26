@@ -115,6 +115,12 @@ public class MapFunction<K, V> extends SingleValueFunction<Map<K, V>> {
 	@SuppressWarnings("unchecked")
 	@Override
 	protected void process(StructuredData data) throws SyntaxError {
+		if (delegate != null) {
+			delegate.accept(data);
+			checkDelegate();
+			return;
+		}
+		
 		if (!startFound) {
 			if (data.type() == StructuredData.Type.OBJECT_START) {
 				startFound = true;

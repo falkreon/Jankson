@@ -94,7 +94,7 @@ public class ObjectWriter<T> implements StructuredDataWriter {
 	 * @return
 	 */
 	public static StructuredDataFunction<?> getObjectWriter(Type type, StructuredData data, @Nullable Object subject) {
-		if (!data.type().isSemantic()) throw new IllegalArgumentException();
+		if (!data.type().isSemantic()) throw new IllegalArgumentException("Can't get objectWriter for "+data);
 		
 		Class<?> targetClass = ClassHierarchy.getErasedClass(type);
 		if (Collection.class.isAssignableFrom(targetClass)) {
