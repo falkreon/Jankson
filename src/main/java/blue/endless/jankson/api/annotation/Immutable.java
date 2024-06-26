@@ -29,8 +29,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Indicates to Jankson that a type is immutable.
+ * 
+ * <p>Immutable types 
+ */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.FIELD, ElementType.PARAMETER })
-public @interface SerializedName {
-	String value();
+@Target({ ElementType.FIELD, ElementType.PARAMETER, ElementType.TYPE })
+public @interface Immutable {
 }

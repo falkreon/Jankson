@@ -29,8 +29,23 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Indicates to Jankson that the object is mutable.
+ * 
+ * <p>If this annotation is present, all non-transient fields on this class and all its superclasses
+ * MUST either:
+ * <ul>
+ *   <li>Be public
+ *   <li>For fields named "x", have a setter named "setX" which takes a single argument of the type
+ *   or a subtype of the field. The return type of such a method may be either void or the type
+ *   (or a supertype) of the class it's declared on.
+ * </ul>
+ * The type held in each field need not be mutable, just the field itself.
+ * 
+ * <p>This annotation can be used as a hint to Jankson to operate in streaming mode when
+ * deserializing objects / fields of this type.
+ */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.FIELD, ElementType.PARAMETER })
-public @interface SerializedName {
-	String value();
+@Target({ ElementType.FIELD, ElementType.PARAMETER, ElementType.TYPE })
+public @interface Mutable {
 }

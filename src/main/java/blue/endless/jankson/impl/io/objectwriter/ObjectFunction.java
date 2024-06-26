@@ -34,86 +34,117 @@ import java.util.Map;
 import java.util.Set;
 
 import blue.endless.jankson.api.SyntaxError;
+import blue.endless.jankson.api.io.ObjectWriter;
 import blue.endless.jankson.api.io.StructuredData;
+import blue.endless.jankson.impl.io.objectwriter.factory.ObjectWrapper;
 
 public class ObjectFunction<T> extends SingleValueFunction<T>{
 	
-	private Class<T> clazz;
+	private final Type tType;
 	private boolean foundStart = false;
 	private boolean foundEnd = false;
-	private T result = null;
-	private Map<String, Object> values = new HashMap<>();
-	private Map<String, String> serializedNameToFieldName = new HashMap<>();
-	private Set<String> requiredValues = new HashSet<>();
 	private String delegateKey = null;
 	private StructuredDataFunction<Object> delegate = null;
 	
+	private ObjectWrapper<T> wrapper;
+	
 	public ObjectFunction(Type t) {
-		
+		tType = t;
+		wrapper = ObjectWrapper.of(t, null);
 	}
 	
 	public ObjectFunction(Class<T> clazz) {
-		this.clazz = clazz;
-		configureForType();
+		tType = clazz;
+		wrapper = ObjectWrapper.of(clazz, null);
 	}
 	
-	private void configureForType() {
-		
+	public ObjectFunction(Type t, T result) {
+		tType = t;
+		wrapper = ObjectWrapper.of(t, result);
 	}
 	
 	private void checkDelegate() throws SyntaxError {
 		if (delegate != null && delegate.isComplete()) {
 			Object o = delegate.getResult();
-			String fieldName = serializedNameToFieldName.get(delegateKey);
-			if (fieldName != null) {
-				values.put(fieldName, delegate.getResult());
-				requiredValues.remove(fieldName);
+			if (delegateKey != null) {
+				try {
+					wrapper.setField(delegateKey, o);
+				} catch (ReflectiveOperationException e) {
+					throw new SyntaxError("Could not write to field \""+delegateKey+"\"", e);
+				}
 			}
 			
 			delegate = null;
 			delegateKey = null;
 		}
-		
-		
-		if (result == null && requiredValues.isEmpty()) {
-			// Create a new object
-			/*
-			HashSet<Field> fields = new HashSet<>();
-			fields.addAll(fields)
-			
-			
-			RecordComponent[] components = clazz.getRecordComponents();
-			
-			Class<?>[] types = new Class<?>[components.length];
-			Object[] args = new Object[components.length];
-			for(int i = 0; i<components.length; i++) {
-				RecordComponent component = components[i];
-				types[i] = component.getType();
-				args[i] = values.get(component.getName());
-			}
-			try {
-				Constructor<T> c = getCanonicalConstructor();
-				boolean accessible = c.canAccess(null);
-				if (!accessible) c.setAccessible(true);
-				result = c.newInstance(args);
-				if (!accessible) c.setAccessible(false);
-			} catch (Throwable t) {
-				throw new SyntaxError("Could not create record of type '"+clazz.getSimpleName()+"'.", t);
-			}
-			*/
-		}
 	}
 	
 	@Override
 	public T getResult() {
-		// TODO Auto-generated method stub
-		return null;
+		try {
+			return wrapper.getResult();
+		} catch (InstantiationException ex) {
+			throw new RuntimeException(ex);
+		}
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	protected void process(StructuredData data) throws SyntaxError {
-		// TODO Auto-generated method stub
+		checkDelegate();
 		
+		if (!foundStart) {
+			if (data.type() == StructuredData.Type.OBJECT_START) {
+				foundStart = true;
+			} else {
+				if (data.type().isSemantic()) throw new SyntaxError("Expected object-start when unpacking an object of type "+tType.getTypeName()+", found "+data.type().name());
+			}
+		} else if (!foundEnd) {
+			
+			switch(data.type()) {
+				case EOF -> {
+					if (delegateKey == null) {
+						throw new SyntaxError("Found end of file while looking for the next key or the end of an object.");
+					} else {
+						throw new SyntaxError("Missing value for key \""+delegateKey+"\" (found EOF)");
+					}
+				}
+				
+				case OBJECT_KEY -> {
+					if (delegateKey != null) throw new SyntaxError(
+							"Missing value for key \""+delegateKey+
+							"\" - we seem to have skipped ahead to \""+data.value().toString()+"\".");
+					
+					delegateKey = data.value().toString();
+				}
+				
+				case OBJECT_END -> {
+					foundEnd = true;
+					if (delegateKey != null) throw new SyntaxError("Missing value for key \""+delegateKey+"\" (found end of object)");
+				}
+				
+				default -> {
+					Type fieldType = wrapper.getType(delegateKey);
+					if (fieldType == null) {
+						delegate = SingleValueFunction.discard();
+						delegate.accept(data);
+						checkDelegate();
+						return;
+					}
+					
+					// TODO: Hand over the instance to start with
+					delegate = (StructuredDataFunction<Object>) ObjectWriter.getObjectWriter(fieldType, data, null);
+					if (delegate != null) {
+						delegate.accept(data);
+					}
+				}
+			}
+			
+		} else {
+			if (data.type() != StructuredData.Type.EOF && data.type().isSemantic()) {
+				throw new SyntaxError("Found additional data past the end of an object while unpacking an object type");
+			}
+		}
 	}
 
 }

@@ -22,15 +22,31 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.api.annotation;
+package blue.endless.jankson.impl.io.objectwriter.factory;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.reflect.Constructor;
+import java.util.Map;
 
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.FIELD, ElementType.PARAMETER })
-public @interface SerializedName {
-	String value();
+public class ConstructorInstanceFactory<T> implements InstanceFactory<T> {
+	private final Constructor<T> constructor;
+	
+	public ConstructorInstanceFactory(Constructor<T> constructor) {
+		this.constructor = constructor;
+	}
+	
+	@Override
+	public T newInstance(Map<String, Object> arguments) throws InstantiationException {
+		Object[] arrangedArguments = InstanceFactory.arrangeArguments(constructor, arguments);
+		
+		try {
+			boolean access = constructor.canAccess(null);
+			if (!access) constructor.setAccessible(true);
+			T result = constructor.newInstance(arrangedArguments);
+			if (!access) constructor.setAccessible(false);
+			return result;
+		} catch (Throwable t) {
+			String typeName = constructor.getAnnotatedReturnType().getType().getTypeName();
+			throw new InstantiationException("Could not create an instance of class \""+typeName+"\"");
+		}
+	}
 }

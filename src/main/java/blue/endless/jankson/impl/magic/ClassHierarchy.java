@@ -24,15 +24,20 @@
 
 package blue.endless.jankson.impl.magic;
 
+import java.lang.reflect.AccessFlag;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class ClassHierarchy {
 	public record MapTypeArguments(Type keyType, Type valueType) {};
@@ -179,5 +184,29 @@ public class ClassHierarchy {
 		
 		Map<String, Type> realTypeArguments = getActualTypeArguments(mapType, Map.class);
 		return new MapTypeArguments(realTypeArguments.get("K"), realTypeArguments.get("V"));
+	}
+	
+	/**
+	 * Gets every Field in the provided type, as well as every superclass of the provided type, such
+	 * that all serializeable state is represented in the returned List.
+	 * @param type The type to find fields for
+	 * @return a List of all serializeable fields in this Type
+	 */
+	public static List<Field> getAllFields(Type type) {
+		List<Field> result = new ArrayList<>();
+		
+		Class<?> clazz = getErasedClass(type);
+		if (clazz.isInterface()) return result; // Interfaces have no fields
+		while (clazz != Object.class) {
+			for(Field f : clazz.getDeclaredFields()) {
+				Set<AccessFlag> flags = f.accessFlags();
+				if (flags.contains(AccessFlag.TRANSIENT)) continue;
+				if (flags.contains(AccessFlag.STATIC)) continue;
+				result.add(f);
+			}
+			clazz = clazz.getSuperclass();
+		}
+		
+		return result;
 	}
 }

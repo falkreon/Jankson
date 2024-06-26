@@ -34,6 +34,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import blue.endless.jankson.api.annotation.SerializedName;
 import blue.endless.jankson.api.io.JsonReader;
 import blue.endless.jankson.api.io.ObjectWriter;
 import blue.endless.jankson.impl.magic.ClassHierarchy;
@@ -247,5 +248,33 @@ public class TestObjectWriter {
 		Map<String, String> actual = writer.toObject();
 		
 		Assertions.assertEquals(expected, actual);
+	}
+	
+	public static class PojoConfig {
+		@SerializedName("port-number")
+		public int portNumber;
+		
+		@SerializedName("host-name")
+		public String hostName;
+	}
+	
+	@Test
+	public void testConfigPojo() throws IOException {
+		String subject =
+				"""
+				{
+					"port-number": 25565,
+					"host-name": "localhost"
+				}
+				""";
+		JsonReader reader = new JsonReader(new StringReader(subject));
+		
+		var writer = new ObjectWriter<>(PojoConfig.class);
+		reader.transferTo(writer);
+		
+		PojoConfig actual = writer.toObject();
+		
+		Assertions.assertEquals(25565, actual.portNumber);
+		Assertions.assertEquals("localhost", actual.hostName);
 	}
 }

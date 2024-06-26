@@ -50,6 +50,7 @@ import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.impl.io.objectwriter.CollectionFunction;
 import blue.endless.jankson.impl.io.objectwriter.MapFunction;
+import blue.endless.jankson.impl.io.objectwriter.ObjectFunction;
 import blue.endless.jankson.impl.io.objectwriter.RecordFunction;
 import blue.endless.jankson.impl.io.objectwriter.StructuredDataFunction;
 import blue.endless.jankson.impl.io.objectwriter.PrimitiveFunction;
@@ -177,7 +178,7 @@ public class ObjectWriter<T> implements StructuredDataWriter {
 			return new StructuredDataFunction.Mapper<>(new PrimitiveFunction(), selectedMapper);
 		}
 		
-		return null;
+		return new ObjectFunction<Object>(type);
 	}
 	
 	/*
@@ -303,7 +304,12 @@ public class ObjectWriter<T> implements StructuredDataWriter {
 		primitiveMappers.put(Double.class,  (prim) -> prim.mapAsDouble((it)-> it));
 		primitiveMappers.put(Float.class,   (prim) -> prim.mapAsDouble((it) -> (float) it));
 		primitiveMappers.put(Boolean.class, (prim) -> prim.mapAsBoolean((it) -> it));
+		primitiveMappers.put(Integer.TYPE,  (prim) -> prim.mapAsInt((it)-> it));
+		primitiveMappers.put(Long.TYPE,     (prim) -> prim.mapAsLong((it)-> it));
 		primitiveMappers.put(Double.TYPE,   (prim) -> prim.mapAsDouble((it) -> it));
+		primitiveMappers.put(Short.TYPE,    (prim) -> prim.mapAsInt((it) -> (short) it));
+		primitiveMappers.put(Float.TYPE,    (prim) -> prim.mapAsDouble((it) -> (float) it));
+		primitiveMappers.put(Boolean.TYPE,  (prim) -> prim.mapAsBoolean((it) -> it));
 		
 		// This one's complex because no good canonical serialization makes sense
 		primitiveMappers.put(Character.class, (prim) -> {
