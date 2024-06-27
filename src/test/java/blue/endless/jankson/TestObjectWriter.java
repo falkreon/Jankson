@@ -301,4 +301,20 @@ public class TestObjectWriter {
 		
 		Assertions.assertEquals(Map.of("a", List.of(1, 2, 3)), actual.mapOfLists);
 	}
+	
+	@Test
+	public void testArrays() throws IOException {
+		String subject =
+				"""
+				[ 96, 112, 24]
+				""";
+		JsonReader reader = new JsonReader(new StringReader(subject));
+		
+		var writer = new ObjectWriter<>(int[].class);
+		reader.transferTo(writer);
+		
+		int[] actual = writer.toObject();
+		
+		Assertions.assertArrayEquals(new int[] { 96, 112, 24 }, actual);
+	}
 }

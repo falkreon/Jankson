@@ -48,6 +48,7 @@ import javax.annotation.Nullable;
 
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.document.PrimitiveElement;
+import blue.endless.jankson.impl.io.objectwriter.ArrayFunction;
 import blue.endless.jankson.impl.io.objectwriter.CollectionFunction;
 import blue.endless.jankson.impl.io.objectwriter.MapFunction;
 import blue.endless.jankson.impl.io.objectwriter.ObjectFunction;
@@ -171,6 +172,10 @@ public class ObjectWriter<T> implements StructuredDataWriter {
 		
 		if (targetClass.isRecord()) {
 			return new RecordFunction<>(targetClass);
+		}
+		
+		if (targetClass.isArray()) {
+			return new ArrayFunction<>(targetClass);
 		}
 		
 		Function<PrimitiveElement, Optional<Object>> selectedMapper = primitiveMappers.get(targetClass);
