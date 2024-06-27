@@ -40,6 +40,7 @@ import blue.endless.jankson.api.io.JsonReader;
 import blue.endless.jankson.api.io.JsonReaderOptions;
 import blue.endless.jankson.api.io.JsonWriter;
 import blue.endless.jankson.api.io.JsonWriterOptions;
+import blue.endless.jankson.api.io.ObjectWriter;
 import blue.endless.jankson.api.io.StructuredDataReader;
 import blue.endless.jankson.api.io.ValueElementWriter;
 import blue.endless.jankson.impl.io.pojo.ObjectStructuredDataReader;
@@ -197,15 +198,45 @@ public class Jankson {
 		return readJsonObject(in, JsonReaderOptions.UNSPECIFIED);
 	}
 	
-	// TODO: This is kind of the pinnacle of end-to-end Jankson behavior. It'll take some time before it's testable.
-	/*
-	@SuppressWarnings("unchecked")
-	public static <T> T readObject(String s, JsonReaderOptions opts, Type type) throws IOException, SyntaxError {
-		JsonReader reader = new JsonReader(new StringReader(s));
-		ObjectStructuredDataWriter writer = new ObjectStructuredDataWriter(type);
+	/**
+	 * Reads in json character data and produces an object of the specified Type. This object will be
+	 * cast to T and returned, so it's best if T==type.
+	 * @param <T> the type of object to produce
+	 * @param r a Reader supplying json character data
+	 * @param opts hints and settings to control the reading process
+	 * @param type the type of object to produce
+	 * @return an object of type Type, cast to T, carrying the data represented in the json input
+	 * @throws IOException if there was a problem reading in data
+	 * @throws SyntaxError if there was a problem with the json data, or if there was a problem creating the object
+	 */
+	public static <T> T readJson(Reader r, JsonReaderOptions opts, Type type) throws IOException, SyntaxError {
+		JsonReader reader = new JsonReader(r);
+		ObjectWriter<T> writer = new ObjectWriter<>(type);
 		reader.transferTo(writer);
-		return (T) writer.toObject();
-	}*/
+		return writer.toObject();
+	}
+	
+	/**
+	 * Reads in json character data and produces an object of the specified Class. This is the preferred
+	 * "simple" method to read in config data.
+	 * 
+	 * @param <T> The type of object to produce
+	 * @param r a Reader supplying json character data
+	 * @param opts hints and settings to control the reading process
+	 * @param clazz the Class of the object to produce
+	 * @return an object of the specified Class, configured with the data represented in the json input
+	 * @throws IOException if there was a problem reading in data
+	 * @throws SyntaxError if there was a problem with the json data, or if there was a problem creating the object
+	 * 
+	 * @see #readJsonObject(Reader, JsonReaderOptions)
+	 * @see #writeJson(Object, Writer, JsonWriterOptions)
+	 */
+	public static <T> T readJson(Reader r, JsonReaderOptions opts, Class<T> clazz) throws IOException, SyntaxError {
+		JsonReader reader = new JsonReader(r);
+		ObjectWriter<T> writer = new ObjectWriter<>(clazz);
+		reader.transferTo(writer);
+		return writer.toObject();
+	}
 	
 	public static void writeJson(Object obj, Writer writer, JsonWriterOptions options) throws IOException {
 		try {

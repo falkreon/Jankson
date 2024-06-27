@@ -57,7 +57,6 @@ public class ArrayFunction<V> extends SingleValueFunction<Object> {
 			Array.set(resultArray, i, v);
 		}
 		return resultArray;
-		//return resultArray;
 	}
 	
 	private void checkDelegate() {
