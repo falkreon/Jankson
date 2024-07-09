@@ -12,7 +12,7 @@ buildscript {
 }
 
 plugins {
-    id 'org.cadixdev.licenser' version '0.6.1'
+	id 'org.cadixdev.licenser' version '0.6.1'
 }
 
 apply plugin: "java";
@@ -45,14 +45,17 @@ task sourcesJar(type: Jar, dependsOn: classes) {
 	from sourceSets.main.allSource
 }
 
+/*
 task javadocJar(type: Jar, dependsOn: javadoc) {
 	archiveClassifier = "javadoc"
 	from javadoc.destinationDir
-}
+}*/
 
 javadoc {
 	failOnError false
-    options.addStringOption('Xdoclint:none', '-quiet')
+	//options.addBooleanOption("Xdoclint:none", true)
+	options.addStringOption("Xdoclint:none", "-quiet")
+	options.addStringOption("Xmaxwarns", "1")
 }
 
 def versionSuffix = ''
@@ -64,16 +67,19 @@ tasks.withType(JavaCompile) {
 	options.encoding = "UTF-8"
 }
 
+
+
 publishing {
 	publications {
 		mavenPrimary(MavenPublication) {
 			from components.java;
+			
 
 			groupId project.group;
 			artifactId "jankson";
 			version project.version+versionSuffix;
 			artifact sourcesJar;
-			artifact javadocJar;
+			//artifact javadocJar;
 			
 			pom {
 				name = "Jankson";
@@ -143,6 +149,14 @@ signing {
 		println("Key credentials found. Enabling jar signing.");
 		sign configurations.archives;
 		sign publishing.publications.mavenPrimary
+		
+		
+		// Use the big hammer to establish dependencies that should already be there
+		tasks.named("publish").configure { dependsOn("signArchives") }
+		tasks.named("publishAllPublicationsToMavenRepository").configure { dependsOn("signArchives") }
+		tasks.named("publishMavenPrimaryPublicationToMavenLocal").configure { dependsOn("signArchives") }
+		tasks.named("publishMavenPrimaryPublicationToMavenRepository").configure { dependsOn("signArchives") }
+		tasks.named("publishToMavenLocal").configure { dependsOn("signArchives") }
 	} else {
 		println("Skipping jar signing");
 	}

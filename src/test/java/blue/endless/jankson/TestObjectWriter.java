@@ -26,6 +26,7 @@ package blue.endless.jankson;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,8 +35,10 @@ import java.util.Map;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import blue.endless.jankson.api.Jankson;
 import blue.endless.jankson.api.annotation.SerializedName;
 import blue.endless.jankson.api.io.JsonReader;
+import blue.endless.jankson.api.io.JsonWriterOptions;
 import blue.endless.jankson.api.io.ObjectWriter;
 import blue.endless.jankson.impl.magic.ClassHierarchy;
 
@@ -317,4 +320,15 @@ public class TestObjectWriter {
 		
 		Assertions.assertArrayEquals(new int[] { 96, 112, 24 }, actual);
 	}
+	
+	/**
+	 * Reproduction of issue reported via Discord. Fix in progress.
+	 */
+	/*
+	@Test
+	public void testFull() throws IOException {
+		StringWriter writer = new StringWriter();
+		Jankson.writeJson(new LightConfounder(), writer, JsonWriterOptions.DEFAULTS);
+		
+	}*/
 }
