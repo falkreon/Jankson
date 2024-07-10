@@ -324,11 +324,24 @@ public class TestObjectWriter {
 	/**
 	 * Reproduction of issue reported via Discord. Fix in progress.
 	 */
-	/*
+	
 	@Test
 	public void testFull() throws IOException {
-		StringWriter writer = new StringWriter();
-		Jankson.writeJson(new LightConfounder(), writer, JsonWriterOptions.DEFAULTS);
+		String expected =
+			"""
+			{
+				port-number: 65535,
+				host-name: "localhost"
+			}
+			""".trim(); //Get rid of trailing newline
 		
-	}*/
+		StringWriter writer = new StringWriter();
+		PojoConfig config = new PojoConfig();
+		config.hostName = "localhost";
+		config.portNumber = 65535;
+		Jankson.writeJson(config, writer, JsonWriterOptions.DEFAULTS);
+		String actual = writer.toString();
+		
+		Assertions.assertEquals(expected, actual);
+	}
 }

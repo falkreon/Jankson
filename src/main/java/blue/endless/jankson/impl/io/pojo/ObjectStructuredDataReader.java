@@ -24,15 +24,19 @@
 
 package blue.endless.jankson.impl.io.pojo;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
+import blue.endless.jankson.api.annotation.SerializedName;
 import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.StructuredDataReader;
+import blue.endless.jankson.impl.TypeMagic;
 
 /**
  * StructuredDataReader which reads data directly from an arbitrary Java object.
@@ -52,29 +56,45 @@ public class ObjectStructuredDataReader extends DelegatingStructuredDataReader {
 		for(Field f : obj.getClass().getDeclaredFields()) {
 			if (alreadyTaken.contains(f.getName())) continue;
 			alreadyTaken.add(f.getName());
-			pendingFields.addFirst(f);
+			pendingFields.addLast(f);
 		}
 		for(Field f : obj.getClass().getFields()) {
 			if (alreadyTaken.contains(f.getName())) continue;
 			alreadyTaken.add(f.getName());
-			pendingFields.addFirst(f);
+			pendingFields.addLast(f);
 		}
 	}
 	
 	@Override
-	protected void onDelegateEmpty() {
+	protected void onDelegateEmpty() throws IOException {
 		if (pendingFields.isEmpty()) {
 			prebuffer(StructuredData.OBJECT_END);
 			prebuffer(StructuredData.EOF);
+			return;
 		}
 		
-		//TODO: supply pending fields
+		Field cur = pendingFields.removeFirst();
+		String fieldName = cur.getName();
+		SerializedName[] serializedNames = cur.getDeclaredAnnotationsByType(SerializedName.class);
+		if (serializedNames.length > 0) fieldName = serializedNames[0].value();
+		prebuffer(StructuredData.objectKey(fieldName));
+		try {
+			Object value = TypeMagic.getFieldValue(cur, obj);
+			if (value == null) {
+				prebuffer(StructuredData.NULL);
+			} else {
+				setDelegate(ObjectStructuredDataReader.of(value));
+			}
+		} catch (Throwable t) {
+			throw new IOException("Could not access field data for field \""+fieldName+"\" ("+cur.getName()+").", t);
+		}
 	}
 	
 	public static StructuredDataReader of(Object o) {
-		if (PrimitiveElement.canBox(o)) return new PrimitiveStructuredDataReader(o);
 		if (o.getClass().isArray()) return new ArrayStructuredDataReader(o);
 		if (o instanceof Collection val) return new CollectionStructuredDataReader(val);
-		throw new IllegalArgumentException("Unknown object type");
+		if (o instanceof Map val) throw new UnsupportedOperationException("Maps not yet implemented.");
+		if (PrimitiveElement.canBox(o)) return new PrimitiveStructuredDataReader(o);
+		return new ObjectStructuredDataReader(o);
 	}
 }

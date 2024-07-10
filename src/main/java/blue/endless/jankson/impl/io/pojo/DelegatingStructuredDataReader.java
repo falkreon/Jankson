@@ -125,5 +125,5 @@ public abstract class DelegatingStructuredDataReader implements StructuredDataRe
 	 * 
 	 * <p>When in doubt, if you have nothing left to buffer, buffer EOF.
 	 */
-	protected abstract void onDelegateEmpty();
+	protected abstract void onDelegateEmpty() throws IOException;
 }
