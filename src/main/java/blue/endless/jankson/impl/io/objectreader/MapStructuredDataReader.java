@@ -25,41 +25,37 @@
 package blue.endless.jankson.impl.io.objectreader;
 
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Objects;
 
-import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.api.io.StructuredData;
-import blue.endless.jankson.api.io.StructuredDataReader;
 
-public class PrimitiveStructuredDataReader implements StructuredDataReader {
+public class MapStructuredDataReader extends DelegatingStructuredDataReader {
+	private final Map<Object, Object> map;
+	private final Iterator<Map.Entry<Object, Object>> iterator;
 	
-	private boolean wasNexted = false;
-	private final StructuredData data;
-	
-	public PrimitiveStructuredDataReader(Object o) {
-		data = StructuredData.primitive(o);
-	}
-	
-	public PrimitiveStructuredDataReader(PrimitiveElement p) {
-		data = StructuredData.primitive(p);
-	}
-	
-	public PrimitiveStructuredDataReader(StructuredData data) {
-		this.data = data;
+	@SuppressWarnings("unchecked")
+	public MapStructuredDataReader(Map<?, ?> map) {
+		this.map = (Map<Object, Object>) map;
+		this.iterator = this.map.entrySet().iterator();
+		
+		this.prebuffer(StructuredData.OBJECT_START);
 	}
 	
 	@Override
-	public StructuredData next() throws IOException {
-		if (wasNexted) {
-			return StructuredData.EOF;
-		} else {
-			wasNexted = true;
-			return data;
+	protected void onDelegateEmpty() throws IOException {
+		if (!iterator.hasNext()) {
+			prebuffer(StructuredData.OBJECT_END);
+			prebuffer(StructuredData.EOF);
+			return;
 		}
-	}
-
-	@Override
-	public boolean hasNext() {
-		return !wasNexted;
+		
+		Map.Entry<Object, Object> entry = iterator.next();
+		prebuffer(StructuredData.objectKey(
+				Objects.toString(entry.getKey())
+				));
+		setDelegate(ObjectStructuredDataReader.of(entry.getValue()));
 	}
 
 }

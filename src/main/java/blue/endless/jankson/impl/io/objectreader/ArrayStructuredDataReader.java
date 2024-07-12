@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.impl.io.pojo;
+package blue.endless.jankson.impl.io.objectreader;
 
 import java.lang.reflect.Array;
 

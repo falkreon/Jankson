@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.impl.io.pojo;
+package blue.endless.jankson.impl.io.objectreader;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -93,7 +93,7 @@ public class ObjectStructuredDataReader extends DelegatingStructuredDataReader {
 	public static StructuredDataReader of(Object o) {
 		if (o.getClass().isArray()) return new ArrayStructuredDataReader(o);
 		if (o instanceof Collection val) return new CollectionStructuredDataReader(val);
-		if (o instanceof Map val) throw new UnsupportedOperationException("Maps not yet implemented.");
+		if (o instanceof Map val) return new MapStructuredDataReader(val);
 		if (PrimitiveElement.canBox(o)) return new PrimitiveStructuredDataReader(o);
 		return new ObjectStructuredDataReader(o);
 	}

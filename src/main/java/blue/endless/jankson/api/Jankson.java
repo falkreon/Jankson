@@ -43,7 +43,7 @@ import blue.endless.jankson.api.io.JsonWriterOptions;
 import blue.endless.jankson.api.io.ObjectWriter;
 import blue.endless.jankson.api.io.StructuredDataReader;
 import blue.endless.jankson.api.io.ValueElementWriter;
-import blue.endless.jankson.impl.io.pojo.ObjectStructuredDataReader;
+import blue.endless.jankson.impl.io.objectreader.ObjectStructuredDataReader;
 
 
 public class Jankson {
