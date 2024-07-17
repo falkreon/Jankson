@@ -6,7 +6,6 @@ jobs:
   publish:
     name: Publish `-SNAPSHOT` artifact to Sleeping Town maven
     runs-on: ubuntu-latest
-    needs: build
     if: (github.event_name == 'push' && github.ref_name == 'main')
     environment: publishing
     steps:
