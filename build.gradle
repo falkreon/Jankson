@@ -45,13 +45,13 @@ task sourcesJar(type: Jar, dependsOn: classes) {
 	from sourceSets.main.allSource
 }
 
-/*
+
 task javadocJar(type: Jar, dependsOn: javadoc) {
 	archiveClassifier = "javadoc"
 	from javadoc.destinationDir
-}*/
+}
 
-javadoc {
+tasks.withType(org.gradle.api.tasks.javadoc.Javadoc) {
 	failOnError false
 	//options.addBooleanOption("Xdoclint:none", true)
 	options.addStringOption("Xdoclint:none", "-quiet")
@@ -79,7 +79,7 @@ publishing {
 			artifactId "jankson";
 			version project.version+versionSuffix;
 			artifact sourcesJar;
-			//artifact javadocJar;
+			artifact javadocJar;
 			
 			pom {
 				name = "Jankson";
@@ -123,6 +123,17 @@ publishing {
 					password = ossrhPassword
 				}
 				
+			}
+		}
+		
+		if (project.hasProperty("sleepingUsername")) {
+			maven {
+				url "https://repo-api.sleeping.town/"
+				
+				credentials {
+					username = sleepingUsername
+					password = sleepingPassword
+				}
 			}
 		}
 	}
