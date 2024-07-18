@@ -7,8 +7,11 @@ plugins {
 }
 
 group = "blue.endless";
-archivesBaseName = "Jankson";
 version = "2.0.0-alpha.3";
+
+base {
+	archivesName = "Jankson";
+}
 
 repositories {
 	mavenCentral();
