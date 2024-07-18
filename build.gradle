@@ -59,15 +59,16 @@ tasks.withType(org.gradle.api.tasks.javadoc.Javadoc) {
 }
 
 def versionSuffix = ''
+if (project.hasProperty("versionSuffix")) {
+	versionSuffix += '-'+project.versionSuffix
+}
 if (System.env.BUILD_NUMBER) {
-	versionSuffix = '-'+System.env.BUILD_NUMBER;
+	versionSuffix += '-'+System.env.BUILD_NUMBER;
 }
 
 tasks.withType(JavaCompile) {
 	options.encoding = "UTF-8"
 }
-
-
 
 publishing {
 	publications {

@@ -1,6 +1,9 @@
 name: Build and publish snapshot
 
-on: [push]
+on:
+  push:
+    paths-ignore:
+      - 'docs'
 
 jobs:
   publish:
@@ -21,4 +24,4 @@ jobs:
       - name: Publish with Gradle
         uses: gradle/gradle-build-action@v2.4.2
         with:
-          arguments: clean build publish --info --stacktrace -PsleepingUsername=${{secrets.SLEEPING_USERNAME}} -PsleepingPassword=${{secrets.SLEEPING_PASSWORD}}
+          arguments: clean build publish --info --stacktrace -PsleepingUsername=${{secrets.SLEEPING_USERNAME}} -PsleepingPassword=${{secrets.SLEEPING_PASSWORD}} -PversionSuffix=SNAPSHOT
