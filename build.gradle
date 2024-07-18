@@ -28,7 +28,7 @@ jar {
 	}
 }
 
-tasks.withType(Javadoc) {
+tasks.withType(Javadoc).configureEach {
 	failOnError false
 	//options.addBooleanOption("Xdoclint:none", true)
 	options.addStringOption("Xdoclint:none", "-quiet")
@@ -43,7 +43,7 @@ if (System.env.BUILD_NUMBER) {
 	versionSuffix += '-'+System.env.BUILD_NUMBER;
 }
 
-tasks.withType(JavaCompile) {
+tasks.withType(JavaCompile).configureEach {
 	options.encoding = "UTF-8"
 }
 
