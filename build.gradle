@@ -7,7 +7,21 @@ plugins {
 }
 
 group = "blue.endless";
-version = "2.0.0-alpha.3";
+version = "2.0.0";
+def versionSuffix = '-alpha.3'
+
+if (project.hasProperty("versionSuffix")) {
+	versionSuffix = '-'+project.versionSuffix;
+}
+if (project.hasProperty("buildNumber")) {
+	versionSuffix += '-'+project.buildNumber;
+}
+
+version += versionSuffix;
+
+tasks.withType(JavaCompile).configureEach {
+	options.encoding = "UTF-8"
+}
 
 base {
 	archivesName = "Jankson";
@@ -38,18 +52,6 @@ tasks.withType(Javadoc).configureEach {
 	options.addStringOption("Xmaxwarns", "1")
 }
 
-def versionSuffix = ''
-if (project.hasProperty("versionSuffix")) {
-	versionSuffix += '-'+project.versionSuffix
-}
-if (System.env.BUILD_NUMBER) {
-	versionSuffix += '-'+System.env.BUILD_NUMBER;
-}
-
-tasks.withType(JavaCompile).configureEach {
-	options.encoding = "UTF-8"
-}
-
 publishing {
 	publications {
 		mavenPrimary(MavenPublication) {
@@ -58,7 +60,7 @@ publishing {
 
 			groupId project.group;
 			artifactId "jankson";
-			version project.version+versionSuffix;
+			version project.version;
 			
 			pom {
 				name = "Jankson";
