@@ -1,24 +1,10 @@
-buildscript {
-	repositories {
-		mavenCentral();
-		maven {
-			name = "sonatype";
-			url = "https://oss.sonatype.org/content/repositories/snapshots/";
-		}
-		maven {
-			url "https://plugins.gradle.org/m2/";
-		}
-	}
-}
-
 plugins {
+	id 'java'
+	id 'eclipse'
+	id 'maven-publish'
+	id 'signing'
 	id 'org.cadixdev.licenser' version '0.6.1'
 }
-
-apply plugin: "java";
-apply plugin: "eclipse";
-apply plugin: "maven-publish";
-apply plugin: "signing";
 
 group = "blue.endless";
 archivesBaseName = "Jankson";
