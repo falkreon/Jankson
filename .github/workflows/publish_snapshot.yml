@@ -3,7 +3,7 @@ name: Build and publish snapshot
 on:
   push:
     paths-ignore:
-      - 'docs'
+      - 'docs/**'
 
 jobs:
   publish:
