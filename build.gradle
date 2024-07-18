@@ -28,7 +28,7 @@ jar {
 	}
 }
 
-tasks.withType(org.gradle.api.tasks.javadoc.Javadoc) {
+tasks.withType(Javadoc) {
 	failOnError false
 	//options.addBooleanOption("Xdoclint:none", true)
 	options.addStringOption("Xdoclint:none", "-quiet")
