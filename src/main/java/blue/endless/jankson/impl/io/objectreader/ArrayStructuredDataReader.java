@@ -37,14 +37,14 @@ class ArrayStructuredDataReader extends DelegatingStructuredDataReader {
 		if (!array.getClass().isArray()) throw new IllegalArgumentException("This class can only be used with arrays.");
 		
 		this.arr = array;
-		prebuffer(StructuredData.ARRAY_START);
+		buffer(StructuredData.ARRAY_START);
 	}
 
 	@Override
 	protected void onDelegateEmpty() {
 		if (index >= Array.getLength(arr)) {
-			prebuffer(StructuredData.ARRAY_END);
-			prebuffer(StructuredData.EOF);
+			buffer(StructuredData.ARRAY_END);
+			buffer(StructuredData.EOF);
 		} else {
 			Object o = Array.get(arr, index);
 			index++;

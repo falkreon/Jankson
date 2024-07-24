@@ -34,14 +34,14 @@ public class CollectionStructuredDataReader extends DelegatingStructuredDataRead
 	
 	public CollectionStructuredDataReader(Collection<?> collection) {
 		iter = collection.iterator();
-		prebuffer(StructuredData.ARRAY_START);
+		buffer(StructuredData.ARRAY_START);
 	}
 
 	@Override
 	protected void onDelegateEmpty() {
 		if (!iter.hasNext()) {
-			prebuffer(StructuredData.ARRAY_END);
-			prebuffer(StructuredData.EOF);
+			buffer(StructuredData.ARRAY_END);
+			buffer(StructuredData.EOF);
 		} else {
 			this.setDelegate(ObjectStructuredDataReader.of(iter.next()));
 		}

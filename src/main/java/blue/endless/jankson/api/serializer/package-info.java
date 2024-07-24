@@ -22,22 +22,4 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.api;
-
-import blue.endless.jankson.api.io.JsonIOException;
-import blue.endless.jankson.impl.serializer.InternalDeserializerFunction;
-
-@FunctionalInterface
-public interface DeserializerFunction<A,B> extends InternalDeserializerFunction<B> {
-	public B apply(A a, Marshaller m) throws JsonIOException;
-	
-	@SuppressWarnings("unchecked")
-	@Override
-	default B deserialize(Object a, Marshaller m) throws JsonIOException {
-		try {
-			return apply((A)a, m);
-		} catch (ClassCastException ex) {
-			throw new JsonIOException(ex);
-		}
-	}
-}
+package blue.endless.jankson.api.serializer;

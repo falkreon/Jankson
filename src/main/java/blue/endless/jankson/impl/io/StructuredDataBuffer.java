@@ -24,7 +24,6 @@
 
 package blue.endless.jankson.impl.io;
 
-import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Optional;
@@ -37,7 +36,7 @@ import blue.endless.jankson.api.io.StructuredDataWriter;
  * A FIFO queue / buffer that acts as both a reader and a writer, such that data written will be
  * later visible on reads.
  */
-public class StructuredDataPipe implements StructuredDataWriter, StructuredDataReader {
+public class StructuredDataBuffer implements StructuredDataWriter, StructuredDataReader {
 	private Deque<StructuredData> data = new ArrayDeque<>();
 	
 	/**
@@ -95,14 +94,14 @@ public class StructuredDataPipe implements StructuredDataWriter, StructuredDataR
 
 	// implements StructuredDataWriter {
 		@Override
-		public void write(StructuredData value) throws IOException {
+		public void write(StructuredData value) {
 			data.addLast(value);
 		}
 	// }
 	
 	// implements StructuredDataReader {
 		@Override
-		public StructuredData next() throws IOException {
+		public StructuredData next() {
 			if (data.isEmpty()) return StructuredData.EOF;
 			return data.removeFirst();
 		}

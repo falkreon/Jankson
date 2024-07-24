@@ -50,7 +50,7 @@ public class ObjectStructuredDataReader extends DelegatingStructuredDataReader {
 	
 	private ObjectStructuredDataReader(Object object) {
 		this.obj = object;
-		this.prebuffer(StructuredData.OBJECT_START);
+		this.buffer(StructuredData.OBJECT_START);
 		
 		Set<String> alreadyTaken = new HashSet<>();
 		for(Field f : obj.getClass().getDeclaredFields()) {
@@ -68,8 +68,8 @@ public class ObjectStructuredDataReader extends DelegatingStructuredDataReader {
 	@Override
 	protected void onDelegateEmpty() throws IOException {
 		if (pendingFields.isEmpty()) {
-			prebuffer(StructuredData.OBJECT_END);
-			prebuffer(StructuredData.EOF);
+			buffer(StructuredData.OBJECT_END);
+			buffer(StructuredData.EOF);
 			return;
 		}
 		
@@ -77,11 +77,11 @@ public class ObjectStructuredDataReader extends DelegatingStructuredDataReader {
 		String fieldName = cur.getName();
 		SerializedName[] serializedNames = cur.getDeclaredAnnotationsByType(SerializedName.class);
 		if (serializedNames.length > 0) fieldName = serializedNames[0].value();
-		prebuffer(StructuredData.objectKey(fieldName));
+		buffer(StructuredData.objectKey(fieldName));
 		try {
 			Object value = TypeMagic.getFieldValue(cur, obj);
 			if (value == null) {
-				prebuffer(StructuredData.NULL);
+				buffer(StructuredData.NULL);
 			} else {
 				setDelegate(ObjectStructuredDataReader.of(value));
 			}

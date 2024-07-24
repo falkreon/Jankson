@@ -26,10 +26,6 @@ package blue.endless.jankson.api.io;
 
 import java.util.EnumSet;
 
-import blue.endless.jankson.api.Marshaller;
-import blue.endless.jankson.impl.MarshallerImpl;
-
-@SuppressWarnings("deprecation")
 public class JsonWriterOptions {
 	public static JsonWriterOptions DEFAULTS = new JsonWriterOptions(Hint.UNQUOTED_KEYS, Hint.WRITE_COMMENTS, Hint.WRITE_NEWLINES, Hint.WRITE_WHITESPACE);
 	public static JsonWriterOptions ONE_LINE = new JsonWriterOptions(Hint.UNQUOTED_KEYS, Hint.WRITE_COMMENTS, Hint.WRITE_WHITESPACE);
@@ -38,15 +34,13 @@ public class JsonWriterOptions {
 	
 	private final EnumSet<Hint> hints = EnumSet.noneOf(Hint.class);
 	private final String indentString;
-	private final Marshaller marshaller;
 	
 	public JsonWriterOptions(Hint... hints) {
-		this("\t", MarshallerImpl.getFallback(), hints);
+		this("\t", hints);
 	}
 	
-	public JsonWriterOptions(String indentString, Marshaller marshaller, Hint... hints) {
+	public JsonWriterOptions(String indentString, Hint... hints) {
 		for(Hint hint : hints) this.hints.add(hint);
-		this.marshaller = marshaller;
 		this.indentString = indentString;
 	}
 	

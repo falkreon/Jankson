@@ -26,10 +26,6 @@ package blue.endless.jankson.api.io;
 
 import java.util.EnumSet;
 
-import blue.endless.jankson.api.Marshaller;
-import blue.endless.jankson.impl.MarshallerImpl;
-
-@SuppressWarnings("deprecation")
 public class JsonReaderOptions {
 	/**
 	 * This is the set of options configured when there are no options specified. Effectively this is the "default
@@ -38,23 +34,13 @@ public class JsonReaderOptions {
 	public static final JsonReaderOptions UNSPECIFIED = new JsonReaderOptions(Hint.ALLOW_UNQUOTED_KEYS);
 	
 	private final EnumSet<Hint> hints = EnumSet.noneOf(Hint.class);
-	private final Marshaller marshaller;
 	
 	public JsonReaderOptions(Hint... hints) {
-		this.marshaller = MarshallerImpl.getFallback();
-	}
-	
-	public JsonReaderOptions(Marshaller marshaller, Hint... hints) {
 		for(Hint hint : hints) this.hints.add(hint);
-		this.marshaller = marshaller;
 	}
 	
 	public boolean hasHint(Hint hint) {
 		return hints.contains(hint);
-	}
-	
-	public Marshaller getMarshaller() {
-		return this.marshaller;
 	}
 	
 	public enum Hint {

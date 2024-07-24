@@ -40,19 +40,19 @@ public class MapStructuredDataReader extends DelegatingStructuredDataReader {
 		this.map = (Map<Object, Object>) map;
 		this.iterator = this.map.entrySet().iterator();
 		
-		this.prebuffer(StructuredData.OBJECT_START);
+		this.buffer(StructuredData.OBJECT_START);
 	}
 	
 	@Override
 	protected void onDelegateEmpty() throws IOException {
 		if (!iterator.hasNext()) {
-			prebuffer(StructuredData.OBJECT_END);
-			prebuffer(StructuredData.EOF);
+			buffer(StructuredData.OBJECT_END);
+			buffer(StructuredData.EOF);
 			return;
 		}
 		
 		Map.Entry<Object, Object> entry = iterator.next();
-		prebuffer(StructuredData.objectKey(
+		buffer(StructuredData.objectKey(
 				Objects.toString(entry.getKey())
 				));
 		setDelegate(ObjectStructuredDataReader.of(entry.getValue()));

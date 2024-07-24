@@ -35,7 +35,7 @@ import blue.endless.jankson.impl.io.context.ParserContext;
 
 public abstract class AbstractStructuredDataReader implements StructuredDataReader {
 	protected final LookaheadCodePointReader src;
-	protected final StructuredDataPipe readQueue = new StructuredDataPipe();
+	protected final StructuredDataBuffer readQueue = new StructuredDataBuffer();
 	private final Deque<ParserContext> contextStack = new ArrayDeque<>();
 	
 	public AbstractStructuredDataReader(Reader src) {

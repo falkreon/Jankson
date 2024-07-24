@@ -28,35 +28,35 @@ import java.io.IOException;
 
 import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.StructuredDataReader;
-import blue.endless.jankson.impl.io.StructuredDataPipe;
+import blue.endless.jankson.impl.io.StructuredDataBuffer;
 
 public abstract class DelegatingStructuredDataReader implements StructuredDataReader {
 	private StructuredDataReader delegate = null;
-	private final StructuredDataPipe pipe = new StructuredDataPipe();
+	private final StructuredDataBuffer buffer = new StructuredDataBuffer();
 	private StructuredData latestEntry = null;
 	
 	@Override
 	public boolean hasNext() {
 		
-		boolean emptyPipe = pipe.isEmpty();
+		boolean emptyBuffer = buffer.isEmpty();
 		boolean emptyDelegate = delegate == null || !delegate.hasNext();
 		
 		// Technically this is an illegal scenario, but we SHOULD have thrown by now.
-		if (emptyPipe && emptyDelegate) return false;
+		if (emptyBuffer && emptyDelegate) return false;
 		
 		// If the pipe is non-empty and the next entry is not EOF, we're ready for reading.
-		return !emptyPipe && pipe.peek().type() != StructuredData.Type.EOF;
+		return !emptyBuffer && buffer.peek().type() != StructuredData.Type.EOF;
 	}
 	
 	@Override
 	public StructuredData next() throws IOException {
-		if (pipe.isEmpty()) {
+		if (buffer.isEmpty()) {
 			//Usually this will happen on the first run. Prime our first element
 			loadNextElem();
 		}
-		boolean eof = pipe.isEof();
+		boolean eof = buffer.isEof();
 		// loadNextElem guarantees !pipe.isEmpty()
-		latestEntry = pipe.pop();
+		latestEntry = buffer.pop();
 		
 		// If we're not at EOF, load the next item so we always have an answer for hasNext
 		if (!eof) loadNextElem();
@@ -68,8 +68,8 @@ public abstract class DelegatingStructuredDataReader implements StructuredDataRe
 	 * Buffers an element so that it will be presented next, after any previously buffered data
 	 * @param value the value to buffer
 	 */
-	protected void prebuffer(StructuredData value) {
-		pipe.push(value);
+	protected void buffer(StructuredData value) {
+		buffer.push(value);
 	}
 	
 	protected void setDelegate(StructuredDataReader reader) {
@@ -86,7 +86,7 @@ public abstract class DelegatingStructuredDataReader implements StructuredDataRe
 	 */
 	private void loadNextElem() throws IOException {
 		// If we're already fulfilled, NOP out.
-		if (!pipe.isEmpty()) return;
+		if (!buffer.isEmpty()) return;
 		
 		if (delegate == null || !delegate.hasNext()) {
 			// We have absolutely no data available. Clear out the delegate if present and call onDelegateEmpty to prime some data
@@ -94,19 +94,19 @@ public abstract class DelegatingStructuredDataReader implements StructuredDataRe
 			delegate = null;
 			onDelegateEmpty();
 			
-			if (!pipe.isEmpty()) return; // Neat, data was primed directly!
+			if (!buffer.isEmpty()) return; // Neat, data was primed directly!
 			// No data was directly primed, so we NEED a delegate to continue operating properly.
 			if (delegate == null || !delegate.hasNext()) throw new IllegalStateException("No new data was made available from onDelegateEmpty()!");
 			
 			// We're all set to fill the pipe ourselves
-			pipe.push(delegate.next());
+			buffer.push(delegate.next());
 			//Not *needed* but helps things short circuit faster
 			if (!delegate.hasNext()) {
 				delegate = null;
 			}
 		} else {
 			// There's already a delegate, fill the pipe
-			pipe.push(delegate.next());
+			buffer.push(delegate.next());
 			//Not *needed* but helps things short circuit faster
 			if (!delegate.hasNext()) {
 				delegate = null;
