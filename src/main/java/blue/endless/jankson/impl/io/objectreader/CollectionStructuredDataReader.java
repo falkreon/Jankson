@@ -27,13 +27,16 @@ package blue.endless.jankson.impl.io.objectreader;
 import java.util.Collection;
 import java.util.Iterator;
 
+import blue.endless.jankson.api.io.ObjectReaderFactory;
 import blue.endless.jankson.api.io.StructuredData;
 
 public class CollectionStructuredDataReader extends DelegatingStructuredDataReader {
-	private Iterator<?> iter;
+	private final Iterator<?> iter;
+	private final ObjectReaderFactory factory;
 	
-	public CollectionStructuredDataReader(Collection<?> collection) {
+	public CollectionStructuredDataReader(Collection<?> collection, ObjectReaderFactory factory) {
 		iter = collection.iterator();
+		this.factory = factory;
 		buffer(StructuredData.ARRAY_START);
 	}
 
@@ -43,7 +46,7 @@ public class CollectionStructuredDataReader extends DelegatingStructuredDataRead
 			buffer(StructuredData.ARRAY_END);
 			buffer(StructuredData.EOF);
 		} else {
-			this.setDelegate(ObjectStructuredDataReader.of(iter.next()));
+			this.setDelegate(factory.getReader(iter.next()));
 		}
 	}
 }

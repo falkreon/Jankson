@@ -39,6 +39,7 @@ import blue.endless.jankson.api.Jankson;
 import blue.endless.jankson.api.annotation.SerializedName;
 import blue.endless.jankson.api.io.JsonReader;
 import blue.endless.jankson.api.io.JsonWriterOptions;
+import blue.endless.jankson.api.io.ObjectReaderFactory;
 import blue.endless.jankson.api.io.ObjectWriter;
 import blue.endless.jankson.impl.magic.ClassHierarchy;
 
@@ -339,7 +340,7 @@ public class TestObjectWriter {
 		PojoConfig config = new PojoConfig();
 		config.hostName = "localhost";
 		config.portNumber = 65535;
-		Jankson.writeJson(config, writer, JsonWriterOptions.DEFAULTS);
+		Jankson.writeJson(config, new ObjectReaderFactory(), writer, JsonWriterOptions.DEFAULTS);
 		String actual = writer.toString();
 		
 		Assertions.assertEquals(expected, actual);

@@ -40,10 +40,10 @@ import blue.endless.jankson.api.io.JsonReader;
 import blue.endless.jankson.api.io.JsonReaderOptions;
 import blue.endless.jankson.api.io.JsonWriter;
 import blue.endless.jankson.api.io.JsonWriterOptions;
+import blue.endless.jankson.api.io.ObjectReaderFactory;
 import blue.endless.jankson.api.io.ObjectWriter;
 import blue.endless.jankson.api.io.StructuredDataReader;
 import blue.endless.jankson.api.io.ValueElementWriter;
-import blue.endless.jankson.impl.io.objectreader.ObjectStructuredDataReader;
 
 
 public class Jankson {
@@ -229,7 +229,7 @@ public class Jankson {
 	 * @throws SyntaxError if there was a problem with the json data, or if there was a problem creating the object
 	 * 
 	 * @see #readJsonObject(Reader, JsonReaderOptions)
-	 * @see #writeJson(Object, Writer, JsonWriterOptions)
+	 * @see #writeJson(Object, Writer)
 	 */
 	public static <T> T readJson(Reader r, JsonReaderOptions opts, Class<T> clazz) throws IOException, SyntaxError {
 		JsonReader reader = new JsonReader(r);
@@ -238,9 +238,13 @@ public class Jankson {
 		return writer.toObject();
 	}
 	
-	public static void writeJson(Object obj, Writer writer, JsonWriterOptions options) throws IOException {
+	public static void writeJson(Object obj, Writer writer) throws IOException {
+		writeJson(obj, new ObjectReaderFactory(), writer, JsonWriterOptions.STRICT);
+	}
+	
+	public static void writeJson(Object obj, ObjectReaderFactory factory, Writer writer, JsonWriterOptions options) throws IOException {
 		try {
-			StructuredDataReader r = ObjectStructuredDataReader.of(obj);
+			StructuredDataReader r = factory.getReader(obj);
 			JsonWriter w = new JsonWriter(writer, options);
 			r.transferTo(w);
 			writer.flush();
@@ -250,9 +254,9 @@ public class Jankson {
 		}
 	}
 	
-	public static String writeJsonString(Object obj, JsonWriterOptions options) throws IOException {
+	public static String writeJsonString(Object obj, ObjectReaderFactory factory, JsonWriterOptions options) throws IOException {
 		try(StringWriter sw = new StringWriter()) {
-			StructuredDataReader r = ObjectStructuredDataReader.of(obj);
+			StructuredDataReader r = factory.getReader(obj);
 			JsonWriter w = new JsonWriter(sw, options);
 			r.transferTo(w);
 			sw.flush();

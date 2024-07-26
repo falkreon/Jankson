@@ -34,6 +34,7 @@ import java.util.Set;
 
 import blue.endless.jankson.api.annotation.SerializedName;
 import blue.endless.jankson.api.document.PrimitiveElement;
+import blue.endless.jankson.api.io.ObjectReaderFactory;
 import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.StructuredDataReader;
 import blue.endless.jankson.impl.TypeMagic;
@@ -41,16 +42,20 @@ import blue.endless.jankson.impl.TypeMagic;
 /**
  * StructuredDataReader which reads data directly from an arbitrary Java object.
  * 
+ * <p>Instances of this object can be created indirectly through ObjectReaderFactory.
+ * 
  * <p>This class is not threadsafe! No effort is made to detect mutations during
  * object access.
  */
 public class ObjectStructuredDataReader extends DelegatingStructuredDataReader {
 	private final Object obj;
+	private final ObjectReaderFactory factory;
 	private ArrayDeque<Field> pendingFields = new ArrayDeque<>();
 	
-	private ObjectStructuredDataReader(Object object) {
+	private ObjectStructuredDataReader(Object object, ObjectReaderFactory factory) {
 		this.obj = object;
 		this.buffer(StructuredData.OBJECT_START);
+		this.factory = (factory == null) ? new ObjectReaderFactory() : factory;
 		
 		Set<String> alreadyTaken = new HashSet<>();
 		for(Field f : obj.getClass().getDeclaredFields()) {
@@ -83,18 +88,31 @@ public class ObjectStructuredDataReader extends DelegatingStructuredDataReader {
 			if (value == null) {
 				buffer(StructuredData.NULL);
 			} else {
-				setDelegate(ObjectStructuredDataReader.of(value));
+				setDelegate(factory.getReader(value));
 			}
 		} catch (Throwable t) {
 			throw new IOException("Could not access field data for field \""+fieldName+"\" ("+cur.getName()+").", t);
 		}
 	}
 	
-	public static StructuredDataReader of(Object o) {
-		if (o.getClass().isArray()) return new ArrayStructuredDataReader(o);
-		if (o instanceof Collection val) return new CollectionStructuredDataReader(val);
-		if (o instanceof Map val) return new MapStructuredDataReader(val);
+	/*
+	 * Control flow note:
+	 * This method *is* the fallback behavior of ObjectReaderFactory.
+	 * 
+	 * The contents of this method MUST NOT delegate directly to the provided ORF, because ORF
+	 * delegates directly to this method to provide readers for non-overridden types.
+	 */
+	
+	/**
+	 * Do not use this method directly. Obtain an ObjectReaderFactory and ask it for an appropriate
+	 * StructuredDataReader for the object in question.
+	 * @see ObjectReaderFactory
+	 */
+	public static StructuredDataReader of(Object o, ObjectReaderFactory factory) {
+		if (o.getClass().isArray()) return new ArrayStructuredDataReader(o, factory);
+		if (o instanceof Collection val) return new CollectionStructuredDataReader(val, factory);
+		if (o instanceof Map val) return new MapStructuredDataReader(val, factory);
 		if (PrimitiveElement.canBox(o)) return new PrimitiveStructuredDataReader(o);
-		return new ObjectStructuredDataReader(o);
+		return new ObjectStructuredDataReader(o, factory);
 	}
 }

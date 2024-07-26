@@ -29,16 +29,19 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 
+import blue.endless.jankson.api.io.ObjectReaderFactory;
 import blue.endless.jankson.api.io.StructuredData;
 
 public class MapStructuredDataReader extends DelegatingStructuredDataReader {
 	private final Map<Object, Object> map;
 	private final Iterator<Map.Entry<Object, Object>> iterator;
+	private final ObjectReaderFactory factory;
 	
 	@SuppressWarnings("unchecked")
-	public MapStructuredDataReader(Map<?, ?> map) {
+	public MapStructuredDataReader(Map<?, ?> map, ObjectReaderFactory factory) {
 		this.map = (Map<Object, Object>) map;
 		this.iterator = this.map.entrySet().iterator();
+		this.factory = factory;
 		
 		this.buffer(StructuredData.OBJECT_START);
 	}
@@ -55,7 +58,7 @@ public class MapStructuredDataReader extends DelegatingStructuredDataReader {
 		buffer(StructuredData.objectKey(
 				Objects.toString(entry.getKey())
 				));
-		setDelegate(ObjectStructuredDataReader.of(entry.getValue()));
+		setDelegate(factory.getReader(entry.getValue()));
 	}
 
 }

@@ -25,7 +25,6 @@
 package blue.endless.jankson.impl.io.context;
 
 import java.io.IOException;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import blue.endless.jankson.api.SyntaxError;
@@ -46,7 +45,7 @@ public interface ParserContext {
 	
 	/**
 	 * Returns true if the parser has assembled a complete result. This method may trigger lookahead but MUST NOT read.
-	 * After this method returns true, the Reader state will change, and {@link #parse(LookaheadCodePointReader, BiConsumer, Consumer)} will
+	 * After this method returns true, the Reader state will change, and {@link #parse(LookaheadCodePointReader, Consumer, Consumer)} will
 	 * no longer be called.
 	 */
 	public boolean isComplete(LookaheadCodePointReader reader);
