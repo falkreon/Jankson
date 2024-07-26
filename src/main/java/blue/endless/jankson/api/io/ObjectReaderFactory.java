@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 import blue.endless.jankson.api.document.ValueElement;
+import blue.endless.jankson.impl.TypeMagic;
 import blue.endless.jankson.impl.io.objectreader.ObjectStructuredDataReader;
 
 /**
@@ -39,7 +40,23 @@ import blue.endless.jankson.impl.io.objectreader.ObjectStructuredDataReader;
  * readers externally.
  */
 public class ObjectReaderFactory {
-	private Map<Type, Function<Object, StructuredDataReader>> functionMap = new HashMap<>();
+	private final Map<Type, Function<Object, StructuredDataReader>> functionMap = new HashMap<>();
+	/** If true, only match exact types given **/
+	private boolean precise = false;
+	
+	/**
+	 * When precise is true, only exact matches will be used to generate readers. When precise is
+	 * false, exact matches are preferred, but if an exact match cannot be found, a serializer or
+	 * reader factory function for a superclass will be selected if available.
+	 * 
+	 * <p>Note that fuzzy matching of classes requires a full traversal of the registrations, so the
+	 * more registrations there are, the larger the speed gain precise mode will have.
+	 * 
+	 * @param value true to put this factory in precise mode, false to match loosely. Defaults to false.
+	 */
+	public void setPrecise(boolean value) {
+		this.precise = value;
+	}
 	
 	/**
 	 * Registers a "classic" serializer for the specified type.
@@ -110,9 +127,18 @@ public class ObjectReaderFactory {
 		}
 		
 		Function<Object, StructuredDataReader> function = functionMap.get(type);
-		return (function == null) ?
-				ObjectStructuredDataReader.of(objectOfType, this) :
-				function.apply(objectOfType);
+		if (function != null) return function.apply(objectOfType);
+		
+		if (!precise) {
+			Class<?> targetClass = TypeMagic.getErasedClass(type);
+			for(Map.Entry<Type, Function<Object, StructuredDataReader>> entry : functionMap.entrySet()) {
+				Class<?> curClass = TypeMagic.getErasedClass(entry.getKey());
+				if (curClass.isAssignableFrom(targetClass)) return entry.getValue().apply(objectOfType);
+				entry.getKey().getClass().isAssignableFrom(type.getClass());
+			}
+		}
+		
+		return ObjectStructuredDataReader.of(objectOfType, this);
 	}
 	
 	/**
@@ -123,5 +149,13 @@ public class ObjectReaderFactory {
 	 */
 	public StructuredDataReader getReader(Object object) {
 		return getReader(object.getClass(), object);
+	}
+	
+	public ObjectReaderFactory copy() {
+		ObjectReaderFactory result = new ObjectReaderFactory();
+		result.functionMap.putAll(this.functionMap);
+		result.precise = this.precise;
+		
+		return result;
 	}
 }
