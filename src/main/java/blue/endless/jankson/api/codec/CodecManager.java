@@ -24,6 +24,46 @@
 
 package blue.endless.jankson.api.codec;
 
+import java.lang.reflect.Type;
+
+import javax.annotation.Nullable;
+
+import blue.endless.jankson.api.io.StructuredDataReader;
+import blue.endless.jankson.impl.io.objectwriter.SingleValueFunction;
+
+/**
+ * Understands the structure of certain java object types, and can create streams to produce or
+ * consume StructuredData. You can think of this as a factory for serializers and deserializers.
+ */
 public interface CodecManager {
+	/**
+	 * Gets a StructuredDataReader which can produce a stream of data that represents the provided
+	 * object.
+	 * @param o The object to produce a data stream for
+	 * @return A stream of StructuredData which represents the provided object, or null if the object
+	 *         isn't understood by this manager or any of its delegates.
+	 */
+	public @Nullable StructuredDataReader getReader(Object o);
 	
+	/**
+	 * Gets a StructuredDataWriter that can consume a stream of data and produce an object of the
+	 * same type as the provided object.
+	 * @param <T> The type of the object that should be produced
+	 * @param existingValue The previous value of the field, which can be reused if the object is
+	 *                      mutable. The codec is not obligated to reuse the object, but it MAY
+	 *                      decide to.
+	 * @return A StructuredDataWriter that can consume a stream for this object's type, or null if
+	 *         the type isn't understood by this manager or any of its delegates.
+	 */
+	public @Nullable <T> SingleValueFunction<T> getWriter(T existingValue);
+	
+	/**
+	 * Gets a StructuredDataWriter that can consume a stream of data and produce an object of the
+	 * provided type.
+	 * @param <T> The type of object to produce
+	 * @param t The type of object to produce
+	 * @return A StructuredDataWriter that can consume data for this type and produce an instance of
+	 *         it.
+	 */
+	public @Nullable <T> SingleValueFunction<T> getWriter(Type t);
 }

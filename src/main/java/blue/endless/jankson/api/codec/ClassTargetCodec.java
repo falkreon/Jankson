@@ -25,43 +25,16 @@
 package blue.endless.jankson.api.codec;
 
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.List;
 
-import javax.annotation.Nullable;
+import blue.endless.jankson.impl.magic.ClassHierarchy;
 
-import blue.endless.jankson.api.io.StructuredDataReader;
-import blue.endless.jankson.impl.io.objectwriter.SingleValueFunction;
-
-public class CodecHolder implements CodecManager {
-	private List<StructuredDataCodec> codecs = new ArrayList<>();
-
-	@Override
-	public @Nullable StructuredDataReader getReader(Object o) {
-		for(StructuredDataCodec codec : codecs) {
-			if (codec.appliesTo(o)) return codec.getReader(o);
-		}
-		
-		return null;
-	}
-
-	@Override
-	public @Nullable <T> SingleValueFunction<T> getWriter(T existingValue) {
-		for(StructuredDataCodec codec : codecs) {
-			if (codec.appliesTo(existingValue.getClass())) return codec.getWriter(existingValue);
-		}
-		
-		return null;
-	}
-
-	@Override
-	public @Nullable <T> SingleValueFunction<T> getWriter(Type t) {
-		for(StructuredDataCodec codec : codecs) {
-			if (codec.appliesTo(t)) return codec.getWriter();
-		}
-		
-		return null;
-	}
+public abstract interface ClassTargetCodec extends StructuredDataCodec {
 	
+	public abstract Class<?> getTargetClass();
 	
+	@Override
+	public default boolean appliesTo(Type t) {
+		Class<?> clazz = ClassHierarchy.getErasedClass(t);
+		return getTargetClass().isAssignableFrom(clazz);
+	}
 }

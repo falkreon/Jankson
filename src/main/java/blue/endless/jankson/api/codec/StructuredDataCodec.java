@@ -29,6 +29,9 @@ import java.lang.reflect.Type;
 import blue.endless.jankson.api.io.StructuredDataReader;
 import blue.endless.jankson.impl.io.objectwriter.SingleValueFunction;
 
+/**
+ * Factory for StructuredDataReaders and StructuredDataWriters for a particular type.
+ */
 public interface StructuredDataCodec {
 	/**
 	 * Returns true if this codec can be used to create a StructuredData stream about the provided
@@ -55,6 +58,19 @@ public interface StructuredDataCodec {
 	 * @return A stream of StructuredData which represents the provided object
 	 */
 	public StructuredDataReader getReader(Object o);
+	
+	/**
+	 * Gets a StructuredDataWriter that can consume a stream of structured data and produce an
+	 * object of the kind that this codec manages.
+	 * @param <T> The type of the object this codec manages
+	 * @param existingValue The previous value of the field, which can be reused if the object is
+	 *                      mutable. The codec is not obligated to reuse the object, but it MAY
+	 *                      decide to.
+	 * @return A StructuredDataWriter that can consume a stream for this type.
+	 */
+	public default <T> SingleValueFunction<T> getWriter(T existingValue) {
+		return getWriter();
+	}
 	
 	/**
 	 * Gets a StructuredDataWriter that can consume a stream of structured data and produce an

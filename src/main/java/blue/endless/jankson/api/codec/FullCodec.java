@@ -24,44 +24,37 @@
 
 package blue.endless.jankson.api.codec;
 
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.annotation.Nullable;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import blue.endless.jankson.api.io.StructuredDataReader;
 import blue.endless.jankson.impl.io.objectwriter.SingleValueFunction;
 
-public class CodecHolder implements CodecManager {
-	private List<StructuredDataCodec> codecs = new ArrayList<>();
-
-	@Override
-	public @Nullable StructuredDataReader getReader(Object o) {
-		for(StructuredDataCodec codec : codecs) {
-			if (codec.appliesTo(o)) return codec.getReader(o);
-		}
-		
-		return null;
-	}
-
-	@Override
-	public @Nullable <T> SingleValueFunction<T> getWriter(T existingValue) {
-		for(StructuredDataCodec codec : codecs) {
-			if (codec.appliesTo(existingValue.getClass())) return codec.getWriter(existingValue);
-		}
-		
-		return null;
-	}
-
-	@Override
-	public @Nullable <T> SingleValueFunction<T> getWriter(Type t) {
-		for(StructuredDataCodec codec : codecs) {
-			if (codec.appliesTo(t)) return codec.getWriter();
-		}
-		
-		return null;
+public class FullCodec implements ClassTargetCodec {
+	private final Class<?> targetClass;
+	private final Function<Object, StructuredDataReader> serializer;
+	private final Supplier<SingleValueFunction<Object>> deserializer;
+	
+	@SuppressWarnings("unchecked")
+	public <T> FullCodec(Class<T> targetClass, Function<T, StructuredDataReader> serializer, Supplier<SingleValueFunction<T>> deserializer) {
+		this.targetClass = targetClass;
+		this.serializer = (Function<Object, StructuredDataReader>) serializer;
+		this.deserializer = () -> (SingleValueFunction<Object>) deserializer.get();
 	}
 	
-	
+	@Override
+	public StructuredDataReader getReader(Object o) {
+		return serializer.apply(o);
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T> SingleValueFunction<T> getWriter() {
+		return (SingleValueFunction<T>) deserializer.get();
+	}
+
+	@Override
+	public Class<?> getTargetClass() {
+		return targetClass;
+	}
 }

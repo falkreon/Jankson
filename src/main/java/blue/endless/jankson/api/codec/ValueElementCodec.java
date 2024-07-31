@@ -1,0 +1,111 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2018-2024 Falkreon (Isaac Ellingson)
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+package blue.endless.jankson.api.codec;
+
+import java.io.IOException;
+import java.util.function.Function;
+
+import blue.endless.jankson.api.document.ArrayElement;
+import blue.endless.jankson.api.document.ObjectElement;
+import blue.endless.jankson.api.document.PrimitiveElement;
+import blue.endless.jankson.api.document.ValueElement;
+import blue.endless.jankson.api.function.CheckedFunction;
+import blue.endless.jankson.api.io.StructuredDataReader;
+import blue.endless.jankson.api.io.ValueElementReader;
+import blue.endless.jankson.impl.io.objectwriter.SingleValueFunction;
+
+/**
+ * Simple codec that converts an object to and from at-rest json data. This is similar to Jankson
+ * 1.2-era serializers and deserializers.
+ */
+public class ValueElementCodec implements ClassTargetCodec {
+	private final Class<?> targetClass;
+	private final Function<Object, ValueElement> serializer;
+	private final CheckedFunction<ValueElement, Object, IOException> deserializer;
+	
+	@SuppressWarnings("unchecked")
+	public <T> ValueElementCodec(Class<T> targetClass, Function<T, ValueElement> serializer, CheckedFunction<ValueElement, T, IOException> deserializer) {
+		this.targetClass = targetClass;
+		this.serializer = (Function<Object, ValueElement>) serializer;
+		this.deserializer = (CheckedFunction<ValueElement, Object, IOException>) deserializer;
+	}
+	
+	@Override
+	public Class<?> getTargetClass() {
+		return targetClass;
+	}
+	
+	@Override
+	public StructuredDataReader getReader(Object o) {
+		return ValueElementReader.of(serializer.apply(o));
+	}
+
+	@Override
+	public <T> SingleValueFunction<T> getWriter() {
+		return null; //TODO: Implement
+	}
+	
+	public <T> ValueElementCodec requiringObjects(Class<T> targetClass, Function<T, ObjectElement> serializer, Function<ObjectElement, T> deserializer) {
+		Function<T, ValueElement> shimmedSerializer = serializer::apply;
+		
+		CheckedFunction<ValueElement, T, IOException> shimmedDeserializer = (elem) -> {
+			if (elem instanceof ObjectElement object) {
+				return deserializer.apply(object);
+			} else {
+				throw new IOException("Required ObjectElement but found "+elem.getClass().getSimpleName());
+			}
+		};
+		
+		return new ValueElementCodec(targetClass, shimmedSerializer, shimmedDeserializer);
+	}
+	
+	public <T> ValueElementCodec requiringArrays(Class<T> targetClass, Function<T, ArrayElement> serializer, Function<ArrayElement, T> deserializer) {
+		Function<T, ValueElement> shimmedSerializer = serializer::apply;
+		
+		CheckedFunction<ValueElement, T, IOException> shimmedDeserializer = (elem) -> {
+			if (elem instanceof ArrayElement array) {
+				return deserializer.apply(array);
+			} else {
+				throw new IOException("Required ArrayElement but found "+elem.getClass().getSimpleName());
+			}
+		};
+		
+		return new ValueElementCodec(targetClass, shimmedSerializer, shimmedDeserializer);
+	}
+	
+	public <T> ValueElementCodec requiringPrimitives(Class<T> targetClass, Function<T, PrimitiveElement> serializer, Function<PrimitiveElement, T> deserializer) {
+		Function<T, ValueElement> shimmedSerializer = serializer::apply;
+		
+		CheckedFunction<ValueElement, T, IOException> shimmedDeserializer = (elem) -> {
+			if (elem instanceof PrimitiveElement primitive) {
+				return deserializer.apply(primitive);
+			} else {
+				throw new IOException("Required PrimitiveElement but found "+elem.getClass().getSimpleName());
+			}
+		};
+		
+		return new ValueElementCodec(targetClass, shimmedSerializer, shimmedDeserializer);
+	}
+}
