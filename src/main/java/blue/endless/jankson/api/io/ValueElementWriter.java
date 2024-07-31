@@ -30,7 +30,6 @@ import java.util.ArrayList;
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.document.NonValueElement;
 import blue.endless.jankson.api.document.ValueElement;
-import blue.endless.jankson.impl.io.objectwriter.StructuredDataFunction;
 import blue.endless.jankson.impl.io.value.ArrayElementWriter;
 import blue.endless.jankson.impl.io.value.ObjectElementWriter;
 import blue.endless.jankson.impl.io.value.PrimitiveElementWriter;
@@ -39,7 +38,7 @@ import blue.endless.jankson.impl.io.value.PrimitiveElementWriter;
  * StructuredDataWriter that assembles a ValueElement. Much like StringWriter, this "captures" data
  * that would normally be serialized and assembles it into intermediate state.
  */
-public class ValueElementWriter implements StructuredDataWriter {
+public class ValueElementWriter implements StructuredDataFunction<ValueElement> {
 	
 	private StructuredDataFunction<ValueElement> delegate = null;
 	private ValueElement result = null;
@@ -94,7 +93,13 @@ public class ValueElementWriter implements StructuredDataWriter {
 		
 	}
 	
-	public ValueElement toValueElement() {
+	@Override
+	public boolean isComplete() {
+		return delegate == null && result != null;
+	}
+	
+	@Override
+	public ValueElement getResult() {
 		return result;
 	}
 }

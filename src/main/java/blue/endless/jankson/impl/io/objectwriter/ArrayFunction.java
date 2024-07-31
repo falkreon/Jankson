@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.ObjectWriter;
 import blue.endless.jankson.api.io.StructuredData;
+import blue.endless.jankson.api.io.StructuredDataFunction;
 import blue.endless.jankson.impl.magic.ClassHierarchy;
 
 public class ArrayFunction<V> extends SingleValueFunction<Object> {

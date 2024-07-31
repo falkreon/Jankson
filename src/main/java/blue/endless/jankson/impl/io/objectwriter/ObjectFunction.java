@@ -30,6 +30,7 @@ import java.lang.reflect.Type;
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.ObjectWriter;
 import blue.endless.jankson.api.io.StructuredData;
+import blue.endless.jankson.api.io.StructuredDataFunction;
 import blue.endless.jankson.impl.io.objectwriter.factory.ObjectWrapper;
 
 public class ObjectFunction<T> extends SingleValueFunction<T>{

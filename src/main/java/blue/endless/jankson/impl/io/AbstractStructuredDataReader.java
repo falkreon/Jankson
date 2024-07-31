@@ -31,6 +31,7 @@ import java.util.Deque;
 
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.StructuredData;
+import blue.endless.jankson.api.io.StructuredDataBuffer;
 import blue.endless.jankson.api.io.StructuredDataReader;
 import blue.endless.jankson.impl.io.context.ParserContext;
 

@@ -25,6 +25,8 @@
 package blue.endless.jankson.impl.io.objectwriter;
 
 import blue.endless.jankson.api.io.StructuredData;
+import blue.endless.jankson.api.io.StructuredDataFunction;
+
 import static blue.endless.jankson.api.io.StructuredData.Type.*;
 
 import java.io.IOException;

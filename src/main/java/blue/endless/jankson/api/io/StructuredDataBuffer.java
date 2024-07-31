@@ -22,15 +22,11 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.impl.io;
+package blue.endless.jankson.api.io;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Optional;
-
-import blue.endless.jankson.api.io.StructuredData;
-import blue.endless.jankson.api.io.StructuredDataReader;
-import blue.endless.jankson.api.io.StructuredDataWriter;
 
 /**
  * A FIFO queue / buffer that acts as both a reader and a writer, such that data written will be

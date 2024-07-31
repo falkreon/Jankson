@@ -53,7 +53,6 @@ import blue.endless.jankson.impl.io.objectwriter.CollectionFunction;
 import blue.endless.jankson.impl.io.objectwriter.MapFunction;
 import blue.endless.jankson.impl.io.objectwriter.ObjectFunction;
 import blue.endless.jankson.impl.io.objectwriter.RecordFunction;
-import blue.endless.jankson.impl.io.objectwriter.StructuredDataFunction;
 import blue.endless.jankson.impl.io.objectwriter.PrimitiveFunction;
 import blue.endless.jankson.impl.magic.ClassHierarchy;
 

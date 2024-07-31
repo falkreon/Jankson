@@ -30,6 +30,7 @@ import java.util.List;
 
 import javax.annotation.Nullable;
 
+import blue.endless.jankson.api.io.StructuredDataFunction;
 import blue.endless.jankson.api.io.StructuredDataReader;
 import blue.endless.jankson.impl.io.objectwriter.SingleValueFunction;
 
@@ -46,7 +47,7 @@ public class CodecHolder implements CodecManager {
 	}
 
 	@Override
-	public @Nullable <T> SingleValueFunction<T> getWriter(T existingValue) {
+	public @Nullable <T> StructuredDataFunction<T> getWriter(T existingValue) {
 		for(StructuredDataCodec codec : codecs) {
 			if (codec.appliesTo(existingValue.getClass())) return codec.getWriter(existingValue);
 		}
@@ -55,7 +56,7 @@ public class CodecHolder implements CodecManager {
 	}
 
 	@Override
-	public @Nullable <T> SingleValueFunction<T> getWriter(Type t) {
+	public @Nullable <T> StructuredDataFunction<T> getWriter(Type t) {
 		for(StructuredDataCodec codec : codecs) {
 			if (codec.appliesTo(t)) return codec.getWriter();
 		}

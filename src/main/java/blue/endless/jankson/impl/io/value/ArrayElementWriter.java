@@ -35,7 +35,7 @@ import blue.endless.jankson.api.document.FormattingElement;
 import blue.endless.jankson.api.document.NonValueElement;
 import blue.endless.jankson.api.document.ValueElement;
 import blue.endless.jankson.api.io.StructuredData;
-import blue.endless.jankson.impl.io.objectwriter.StructuredDataFunction;
+import blue.endless.jankson.api.io.StructuredDataFunction;
 
 public class ArrayElementWriter implements StructuredDataFunction<ValueElement> {
 	

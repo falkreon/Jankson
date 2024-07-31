@@ -65,7 +65,7 @@ public class ObjectWriterFactory {
 				} catch (SyntaxError e) {
 					throw new IOException(e);
 				}
-				return function.apply(writer.toValueElement());
+				return function.apply(writer.getResult());
 			};
 		}
 	}

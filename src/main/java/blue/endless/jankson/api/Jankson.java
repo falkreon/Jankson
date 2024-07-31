@@ -60,7 +60,7 @@ public class Jankson {
 		JsonReader reader = new JsonReader(new StringReader(s), opts);
 		ValueElementWriter writer = new ValueElementWriter();
 		reader.transferTo(writer);
-		return writer.toValueElement();
+		return writer.getResult();
 	}
 	
 	/**
@@ -76,7 +76,7 @@ public class Jankson {
 		JsonReader reader = new JsonReader(r, opts);
 		ValueElementWriter writer = new ValueElementWriter();
 		reader.transferTo(writer);
-		return writer.toValueElement();
+		return writer.getResult();
 	}
 	
 	/**
@@ -93,7 +93,7 @@ public class Jankson {
 		JsonReader reader = new JsonReader(new InputStreamReader(in, StandardCharsets.UTF_8), opts);
 		ValueElementWriter writer = new ValueElementWriter();
 		reader.transferTo(writer);
-		return writer.toValueElement();
+		return writer.getResult();
 	}
 	
 	/**

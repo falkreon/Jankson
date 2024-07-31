@@ -28,6 +28,7 @@ import java.lang.reflect.Type;
 
 import javax.annotation.Nullable;
 
+import blue.endless.jankson.api.io.StructuredDataFunction;
 import blue.endless.jankson.api.io.StructuredDataReader;
 import blue.endless.jankson.impl.io.objectwriter.SingleValueFunction;
 
@@ -55,7 +56,7 @@ public interface CodecManager {
 	 * @return A StructuredDataWriter that can consume a stream for this object's type, or null if
 	 *         the type isn't understood by this manager or any of its delegates.
 	 */
-	public @Nullable <T> SingleValueFunction<T> getWriter(T existingValue);
+	public @Nullable <T> StructuredDataFunction<T> getWriter(T existingValue);
 	
 	/**
 	 * Gets a StructuredDataWriter that can consume a stream of data and produce an object of the
@@ -65,5 +66,5 @@ public interface CodecManager {
 	 * @return A StructuredDataWriter that can consume data for this type and produce an instance of
 	 *         it.
 	 */
-	public @Nullable <T> SingleValueFunction<T> getWriter(Type t);
+	public @Nullable <T> StructuredDataFunction<T> getWriter(Type t);
 }

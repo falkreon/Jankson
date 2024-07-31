@@ -26,6 +26,7 @@ package blue.endless.jankson.api.codec;
 
 import java.lang.reflect.Type;
 
+import blue.endless.jankson.api.io.StructuredDataFunction;
 import blue.endless.jankson.api.io.StructuredDataReader;
 import blue.endless.jankson.impl.io.objectwriter.SingleValueFunction;
 
@@ -68,7 +69,7 @@ public interface StructuredDataCodec {
 	 *                      decide to.
 	 * @return A StructuredDataWriter that can consume a stream for this type.
 	 */
-	public default <T> SingleValueFunction<T> getWriter(T existingValue) {
+	public default <T> StructuredDataFunction<T> getWriter(T existingValue) {
 		return getWriter();
 	}
 	
@@ -78,5 +79,5 @@ public interface StructuredDataCodec {
 	 * @param <T> The type of the object this codec manages
 	 * @return A StructuredDataWriter that can consume a stream for this type.
 	 */
-	public <T> SingleValueFunction<T> getWriter();
+	public <T> StructuredDataFunction<T> getWriter();
 }

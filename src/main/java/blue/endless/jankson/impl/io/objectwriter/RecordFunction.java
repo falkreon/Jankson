@@ -38,6 +38,7 @@ import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.annotation.SerializedName;
 import blue.endless.jankson.api.io.ObjectWriter;
 import blue.endless.jankson.api.io.StructuredData;
+import blue.endless.jankson.api.io.StructuredDataFunction;
 
 public class RecordFunction<T> extends SingleValueFunction<T> {
 	private Class<T> clazz;

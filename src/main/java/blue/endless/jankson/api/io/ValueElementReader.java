@@ -32,7 +32,6 @@ import blue.endless.jankson.api.document.ArrayElement;
 import blue.endless.jankson.api.document.ObjectElement;
 import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.api.document.ValueElement;
-import blue.endless.jankson.impl.io.StructuredDataBuffer;
 import blue.endless.jankson.impl.io.objectreader.DelegatingStructuredDataReader;
 
 public class ValueElementReader {

@@ -28,8 +28,8 @@ import java.io.IOException;
 
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.StructuredData;
+import blue.endless.jankson.api.io.StructuredDataBuffer;
 import blue.endless.jankson.api.io.StructuredDataReader;
-import blue.endless.jankson.impl.io.StructuredDataBuffer;
 
 public abstract class DelegatingStructuredDataReader implements StructuredDataReader {
 	private StructuredDataReader delegate = null;

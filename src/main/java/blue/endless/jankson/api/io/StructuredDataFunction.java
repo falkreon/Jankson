@@ -22,15 +22,13 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.impl.io.objectwriter;
+package blue.endless.jankson.api.io;
 
 import java.io.IOException;
 import java.util.Optional;
 import java.util.function.Function;
 
 import blue.endless.jankson.api.SyntaxError;
-import blue.endless.jankson.api.io.StructuredData;
-import blue.endless.jankson.api.io.StructuredDataWriter;
 
 /**
  * A StructuredDataFunction is a job that consumes StructuredData over time, and produces a value

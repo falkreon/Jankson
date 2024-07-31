@@ -25,6 +25,7 @@
 package blue.endless.jankson.api.codec;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.function.Function;
 
 import blue.endless.jankson.api.document.ArrayElement;
@@ -32,9 +33,10 @@ import blue.endless.jankson.api.document.ObjectElement;
 import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.api.document.ValueElement;
 import blue.endless.jankson.api.function.CheckedFunction;
+import blue.endless.jankson.api.io.StructuredDataFunction;
 import blue.endless.jankson.api.io.StructuredDataReader;
 import blue.endless.jankson.api.io.ValueElementReader;
-import blue.endless.jankson.impl.io.objectwriter.SingleValueFunction;
+import blue.endless.jankson.api.io.ValueElementWriter;
 
 /**
  * Simple codec that converts an object to and from at-rest json data. This is similar to Jankson
@@ -63,8 +65,19 @@ public class ValueElementCodec implements ClassTargetCodec {
 	}
 
 	@Override
-	public <T> SingleValueFunction<T> getWriter() {
-		return null; //TODO: Implement
+	public <T> StructuredDataFunction<T> getWriter() {
+		StructuredDataFunction<ValueElement> function = new ValueElementWriter();
+		
+		@SuppressWarnings("unchecked")
+		Function<ValueElement, Optional<T>> mapper = (ValueElement val) -> {
+			try {
+				return Optional.ofNullable((T) deserializer.apply(val));
+			} catch (IOException e) {
+				return Optional.empty();
+			}
+		};
+		
+		return new StructuredDataFunction.Mapper<ValueElement, T>(function, mapper);
 	}
 	
 	public <T> ValueElementCodec requiringObjects(Class<T> targetClass, Function<T, ObjectElement> serializer, Function<ObjectElement, T> deserializer) {
