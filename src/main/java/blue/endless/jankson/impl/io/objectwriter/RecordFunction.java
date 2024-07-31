@@ -24,6 +24,7 @@
 
 package blue.endless.jankson.impl.io.objectwriter;
 
+import java.io.IOException;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.RecordComponent;
@@ -98,7 +99,6 @@ public class RecordFunction<T> extends SingleValueFunction<T> {
 	
 	private void checkDelegate() throws SyntaxError {
 		if (delegate != null && delegate.isComplete()) {
-			Object o = delegate.getResult();
 			String fieldName = serializedNameToFieldName.get(delegateKey);
 			if (fieldName != null) {
 				values.put(fieldName, delegate.getResult());
@@ -133,10 +133,10 @@ public class RecordFunction<T> extends SingleValueFunction<T> {
 	
 	@SuppressWarnings("unchecked")
 	@Override
-	protected void process(StructuredData data) throws SyntaxError {
+	protected void process(StructuredData data) throws SyntaxError, IOException {
 		checkDelegate();
 		if(delegate != null && !delegate.isComplete()) {
-			delegate.accept(data);
+			delegate.write(data);
 			checkDelegate();
 			return;
 		}
@@ -162,7 +162,7 @@ public class RecordFunction<T> extends SingleValueFunction<T> {
 				String fieldName = serializedNameToFieldName.get(delegateKey);
 				if (fieldName == null) {
 					delegate = SingleValueFunction.discard();
-					delegate.accept(data);
+					delegate.write(data);
 					checkDelegate();
 					return;
 				}
@@ -178,12 +178,12 @@ public class RecordFunction<T> extends SingleValueFunction<T> {
 					
 					delegate = (StructuredDataFunction<Object>) ObjectWriter.getObjectWriter(fieldType, data, null);
 					if (delegate != null) {
-						delegate.accept(data);
+						delegate.write(data);
 					}
 				} else {
 					// This key doesn't correspond to anything recognizeable in the record.
 					delegate = SingleValueFunction.discard();
-					delegate.accept(data);
+					delegate.write(data);
 				}
 			}
 		} else {

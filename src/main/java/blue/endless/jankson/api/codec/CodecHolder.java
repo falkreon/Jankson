@@ -22,16 +22,8 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.impl.io.value;
+package blue.endless.jankson.api.codec;
 
-import blue.endless.jankson.api.document.ValueElement;
-import blue.endless.jankson.api.io.StructuredDataWriter;
+public class CodecHolder implements CodecManager {
 
-/**
- * Represents a StructuredDataWriter specialized for creating a single kind of ValueElement.
- * May create and delegate to other StrictValueElementWriters to build a final object.
- */
-public interface StrictValueElementWriter extends StructuredDataWriter {
-	public abstract ValueElement getValue();
-	public boolean isComplete();
 }

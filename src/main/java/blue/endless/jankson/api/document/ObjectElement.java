@@ -37,6 +37,7 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
+import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.JsonWriter;
 import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.StructuredDataWriter;
@@ -139,7 +140,7 @@ public class ObjectElement implements ValueElement, Map<String, ValueElement> {
 		this.isDefault = isDefault;
 	}
 	
-	public void write(StructuredDataWriter writer) throws IOException {
+	public void write(StructuredDataWriter writer) throws SyntaxError, IOException {
 		for(NonValueElement elem : prologue) elem.write(writer);
 		
 		writer.write(StructuredData.OBJECT_START);
@@ -159,7 +160,7 @@ public class ObjectElement implements ValueElement, Map<String, ValueElement> {
 		
 		try {
 			this.write(v);
-		} catch (IOException e) {
+		} catch (SyntaxError | IOException e) {
 			throw new RuntimeException(e);
 		}
 		

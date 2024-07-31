@@ -22,29 +22,8 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.api.io;
+package blue.endless.jankson.api.codec;
 
-import java.io.IOException;
-
-import blue.endless.jankson.api.SyntaxError;
-
-public interface StructuredDataReader {
+public interface CodecManager {
 	
-	/**
-	 * Continues reading data until ready to report the next value or structural element. This represents a pre-order
-	 * traversal of the object tree (starting at the root, descend to leaves in order) just like if you read the json
-	 * document from start to finish.
-	 * @return An ElementType corresponding to where we are in the object tree.
-	 * @throws SyntaxError 
-	 */
-	public StructuredData next() throws SyntaxError, IOException;
-	
-	public boolean hasNext();
-	
-	public default void transferTo(StructuredDataWriter writer) throws SyntaxError, IOException {
-		while(hasNext()) {
-			var d = next();
-			writer.write(d);
-		}
-	}
 }

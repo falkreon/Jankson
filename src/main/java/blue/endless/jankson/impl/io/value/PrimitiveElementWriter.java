@@ -28,9 +28,11 @@ import java.io.IOException;
 import java.util.Objects;
 
 import blue.endless.jankson.api.document.PrimitiveElement;
+import blue.endless.jankson.api.document.ValueElement;
 import blue.endless.jankson.api.io.StructuredData;
+import blue.endless.jankson.impl.io.objectwriter.StructuredDataFunction;
 
-public class PrimitiveElementWriter implements StrictValueElementWriter {
+public class PrimitiveElementWriter implements StructuredDataFunction<ValueElement> {
 	
 	private boolean complete = false;
 	private PrimitiveElement value = null;
@@ -44,7 +46,7 @@ public class PrimitiveElementWriter implements StrictValueElementWriter {
 	}
 
 	@Override
-	public PrimitiveElement getValue() {
+	public PrimitiveElement getResult() {
 		return value;
 	}
 

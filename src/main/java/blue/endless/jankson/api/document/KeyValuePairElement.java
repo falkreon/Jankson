@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.StructuredDataWriter;
 
@@ -116,7 +117,7 @@ public class KeyValuePairElement implements DocumentElement, Map.Entry<String, V
 	}
 	
 	@Override
-	public void write(StructuredDataWriter writer) throws IOException {
+	public void write(StructuredDataWriter writer) throws SyntaxError, IOException {
 		for(NonValueElement elem : prologue) elem.write(writer);
 		
 		writer.write(StructuredData.objectKey(key));

@@ -33,6 +33,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.IniReader;
 import blue.endless.jankson.api.io.JsonWriter;
 import blue.endless.jankson.api.io.JsonWriterOptions;
@@ -70,7 +71,7 @@ public class IniReaderTests {
 	}
 	
 	@Test
-	public void testFileParse() throws IOException {
+	public void testFileParse() throws SyntaxError, IOException {
 		String iniData = """
 		[foo]
 		this format = a bunch of key-value pairs

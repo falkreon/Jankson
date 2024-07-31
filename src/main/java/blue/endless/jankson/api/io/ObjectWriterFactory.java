@@ -29,6 +29,7 @@ import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 
+import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.document.ValueElement;
 import blue.endless.jankson.api.function.CheckedFunction;
 
@@ -59,7 +60,11 @@ public class ObjectWriterFactory {
 		public static <T> ReaderDeserializer<T> of(ValueDeserializer<T> function) {
 			return (reader) -> {
 				ValueElementWriter writer = new ValueElementWriter();
-				reader.transferTo(writer);
+				try {
+					reader.transferTo(writer);
+				} catch (SyntaxError e) {
+					throw new IOException(e);
+				}
 				return function.apply(writer.toValueElement());
 			};
 		}

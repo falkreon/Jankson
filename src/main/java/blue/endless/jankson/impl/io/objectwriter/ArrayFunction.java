@@ -24,6 +24,7 @@
 
 package blue.endless.jankson.impl.io.objectwriter;
 
+import java.io.IOException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -68,9 +69,9 @@ public class ArrayFunction<V> extends SingleValueFunction<Object> {
 	
 	@SuppressWarnings("unchecked")
 	@Override
-	protected void process(StructuredData data) throws SyntaxError {
+	protected void process(StructuredData data) throws SyntaxError, IOException {
 		if (delegate != null) {
-			delegate.accept(data);
+			delegate.write(data);
 			checkDelegate();
 			return;
 		}
@@ -95,7 +96,7 @@ public class ArrayFunction<V> extends SingleValueFunction<Object> {
 				default -> {
 					if (!data.type().isSemantic()) return;
 					delegate = (StructuredDataFunction<V>) ObjectWriter.getObjectWriter(elementType, data, null);
-					delegate.accept(data);
+					delegate.write(data);
 					checkDelegate();
 				}
 			}

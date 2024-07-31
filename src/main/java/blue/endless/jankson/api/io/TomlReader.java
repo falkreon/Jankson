@@ -145,7 +145,7 @@ public class TomlReader extends AbstractStructuredDataReader {
 	}
 
 	@Override
-	protected void readNext() throws IOException {
+	protected void readNext() throws SyntaxError, IOException {
 		if (hasReadInData) {
 			readQueue.push(StructuredData.EOF);
 			return;

@@ -35,6 +35,7 @@ import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.LongFunction;
 
+import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.document.NonValueElement;
 import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.api.document.ValueElement;
@@ -112,7 +113,7 @@ public class NullElementImpl extends PrimitiveElement {
 	}
 
 	@Override
-	public void write(StructuredDataWriter writer) throws IOException {
+	public void write(StructuredDataWriter writer) throws SyntaxError, IOException {
 		for(NonValueElement elem : prologue) elem.write(writer);
 		writer.write(StructuredData.NULL);
 		for(NonValueElement elem : epilogue) elem.write(writer);

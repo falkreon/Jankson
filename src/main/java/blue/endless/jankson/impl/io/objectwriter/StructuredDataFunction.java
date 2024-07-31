@@ -24,20 +24,22 @@
 
 package blue.endless.jankson.impl.io.objectwriter;
 
+import java.io.IOException;
 import java.util.Optional;
 import java.util.function.Function;
 
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.StructuredData;
+import blue.endless.jankson.api.io.StructuredDataWriter;
 
 /**
  * A StructuredDataFunction is a job that consumes StructuredData over time, and produces a value
  * when complete.
  * @param <T> The return type of the function.
  */
-public interface StructuredDataFunction<T> {
+public interface StructuredDataFunction<T> extends StructuredDataWriter {
 	boolean isComplete();
-	void accept(StructuredData data) throws SyntaxError;
+	void write(StructuredData data) throws SyntaxError, IOException;
 	T getResult();
 	
 	public class Mapper<S, T> implements StructuredDataFunction<T> {
@@ -55,8 +57,8 @@ public interface StructuredDataFunction<T> {
 		}
 
 		@Override
-		public void accept(StructuredData data) throws SyntaxError {
-			function.accept(data);
+		public void write(StructuredData data) throws SyntaxError, IOException {
+			function.write(data);
 		}
 
 		@Override

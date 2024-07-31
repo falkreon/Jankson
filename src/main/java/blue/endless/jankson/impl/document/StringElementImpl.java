@@ -33,6 +33,7 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.function.Function;
 
+import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.document.NonValueElement;
 import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.api.io.StructuredData;
@@ -54,7 +55,7 @@ public class StringElementImpl extends PrimitiveElement {
 	}
 
 	@Override
-	public void write(StructuredDataWriter writer) throws IOException {
+	public void write(StructuredDataWriter writer) throws SyntaxError, IOException {
 		for(NonValueElement elem : prologue) elem.write(writer);
 		writer.write(StructuredData.primitive(this));
 		for(NonValueElement elem : epilogue) elem.write(writer);

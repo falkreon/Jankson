@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.document.CommentElement;
 import blue.endless.jankson.api.document.CommentType;
 import blue.endless.jankson.api.document.FormattingElement;
@@ -36,20 +37,21 @@ import blue.endless.jankson.api.document.NonValueElement;
 import blue.endless.jankson.api.document.ObjectElement;
 import blue.endless.jankson.api.document.ValueElement;
 import blue.endless.jankson.api.io.StructuredData;
+import blue.endless.jankson.impl.io.objectwriter.StructuredDataFunction;
 
-public class ObjectElementWriter implements StrictValueElementWriter {
+public class ObjectElementWriter implements StructuredDataFunction<ValueElement> {
 	
 	private boolean initialBraceFound = false;
 	private boolean finalBraceFound = false;
 	private ObjectElement value = new ObjectElement();
-	private StrictValueElementWriter subordinate;
+	private StructuredDataFunction<ValueElement> subordinate;
 	
 	private List<NonValueElement> bufferedKeyPreamble = new ArrayList<>();
 	private List<NonValueElement> bufferedValuePreamble = new ArrayList<>();
 	private String bufferedKey;
 	
 	@Override
-	public void write(StructuredData data) throws IOException {
+	public void write(StructuredData data) throws SyntaxError, IOException {
 		
 		if (subordinate != null) {
 			subordinate.write(data);
@@ -61,7 +63,7 @@ public class ObjectElementWriter implements StrictValueElementWriter {
 					System.out.println("Dealing with comment");
 					value.getPrologue().add(data.asComment());
 				} else {
-					if (data.type() != StructuredData.Type.OBJECT_START) throw new IOException("Required to start an object: OBJECT_START. Found: "+data.type().name());
+					if (data.type() != StructuredData.Type.OBJECT_START) throw new SyntaxError("Required to start an object: OBJECT_START. Found: "+data.type().name());
 					initialBraceFound = true;
 				}
 			} else if (!finalBraceFound) {
@@ -87,7 +89,7 @@ public class ObjectElementWriter implements StrictValueElementWriter {
 						
 						default -> {
 							if (data.type().isSemantic()) {
-								throw new IOException("Expected object key but found "+data.type().name());
+								throw new SyntaxError("Expected object key but found "+data.type().name());
 							}
 						}
 					}
@@ -123,16 +125,16 @@ public class ObjectElementWriter implements StrictValueElementWriter {
 							// bufferedValuePreamble.add(new FormattingElement(data.value().toString()));
 						}
 						
-						case OBJECT_KEY -> throw new IOException("Found two object keys in a row!");
-						case OBJECT_END -> throw new IOException("Found anomalous object end");
-						case ARRAY_END -> throw new IOException("Found anomalous array end");
-						case EOF -> throw new IOException("Stream ended before object was closed!");
+						case OBJECT_KEY -> throw new SyntaxError("Found two object keys in a row!");
+						case OBJECT_END -> throw new SyntaxError("Found anomalous object end");
+						case ARRAY_END -> throw new SyntaxError("Found anomalous array end");
+						case EOF -> throw new SyntaxError("Stream ended before object was closed!");
 					}
 				}
 			} else {
 				// No semantic data is allowed after the ending brace
 				if (data.type().isSemantic()) {
-					throw new IOException("Illegal "+data.type().name()+" found after end of object body");
+					throw new SyntaxError("Illegal "+data.type().name()+" found after end of object body");
 				} else {
 					if (data.isComment()) {
 						value.getEpilogue().add(data.asComment());
@@ -147,10 +149,10 @@ public class ObjectElementWriter implements StrictValueElementWriter {
 		
 	}
 	
-	private void checkSubordinate() throws IOException {
+	private void checkSubordinate() throws SyntaxError, IOException {
 		if (subordinate != null && subordinate.isComplete()) {
-			if (bufferedKey == null) throw new IOException("Invalid writer state: we don't have a key for an object value");
-			ValueElement result = subordinate.getValue();
+			if (bufferedKey == null) throw new SyntaxError("Invalid writer state: we don't have a key for an object value");
+			ValueElement result = subordinate.getResult();
 			result.getPrologue().addAll(bufferedValuePreamble);
 			bufferedValuePreamble.clear();
 			KeyValuePairElement kvPair = new KeyValuePairElement(bufferedKey, result);
@@ -165,7 +167,7 @@ public class ObjectElementWriter implements StrictValueElementWriter {
 	}
 
 	@Override
-	public ObjectElement getValue() {
+	public ObjectElement getResult() {
 		return value;
 	}
 

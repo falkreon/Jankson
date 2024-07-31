@@ -255,7 +255,7 @@ public class ObjectWriter<T> implements StructuredDataWriter {
 		
 		try {
 			if(delegate != null) {
-				delegate.accept(data);
+				delegate.write(data);
 				if (delegate.isComplete()) {
 					commitResult();
 				}
@@ -269,7 +269,7 @@ public class ObjectWriter<T> implements StructuredDataWriter {
 					StructuredDataFunction<?> function = getObjectWriter(type, data, subject);
 					if (function != null) {
 						delegate = (StructuredDataFunction<Object>) function;
-						delegate.accept(data);
+						delegate.write(data);
 					}
 				}
 			}

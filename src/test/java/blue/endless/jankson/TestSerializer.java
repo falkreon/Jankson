@@ -50,19 +50,19 @@ import blue.endless.jankson.api.SyntaxError;
 public class TestSerializer {
 	
 	@Test
-	public void testPrimitiveSerialization() throws IOException {
+	public void testPrimitiveSerialization() throws SyntaxError, IOException {
 		String actual = Jankson.writeJsonString(2, new ObjectReaderFactory(), JsonWriterOptions.ONE_LINE);
 		Assertions.assertEquals("2", actual);
 	}
 	
 	@Test
-	public void testArraySerialization() throws IOException {
+	public void testArraySerialization() throws SyntaxError, IOException {
 		String actual = Jankson.writeJsonString(new String[] { "foo", "bar" }, new ObjectReaderFactory(), JsonWriterOptions.ONE_LINE);
 		Assertions.assertEquals("[ \"foo\", \"bar\" ]", actual);
 	}
 	
 	@Test
-	public void testCollectionSerialization() throws IOException {
+	public void testCollectionSerialization() throws SyntaxError, IOException {
 		String listActual = Jankson.writeJsonString(List.of(1, 2, 3), new ObjectReaderFactory(), JsonWriterOptions.ONE_LINE);
 		Assertions.assertEquals("[ 1, 2, 3 ]", listActual);
 		

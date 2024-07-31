@@ -36,6 +36,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import blue.endless.jankson.api.Jankson;
+import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.annotation.SerializedName;
 import blue.endless.jankson.api.io.JsonReader;
 import blue.endless.jankson.api.io.JsonWriterOptions;
@@ -58,7 +59,7 @@ public class TestObjectWriter {
 	 */
 	
 	@Test
-	public void testBareInt() throws IOException {
+	public void testBareInt() throws SyntaxError, IOException {
 		String subject = "731";
 		JsonReader reader = new JsonReader(new StringReader(subject));
 		var writer = new ObjectWriter<>(Integer.class);
@@ -68,7 +69,7 @@ public class TestObjectWriter {
 	}
 	
 	@Test
-	public void testBareString() throws IOException {
+	public void testBareString() throws SyntaxError, IOException {
 		String subject = "\"This is a bare string.\"";
 		JsonReader reader = new JsonReader(new StringReader(subject));
 		var writer = new ObjectWriter<>(String.class);
@@ -78,7 +79,7 @@ public class TestObjectWriter {
 	}
 	
 	@Test
-	public void testBareDouble() throws IOException {
+	public void testBareDouble() throws SyntaxError, IOException {
 		String subject = "12.0";
 		JsonReader reader = new JsonReader(new StringReader(subject));
 		var writer = new ObjectWriter<>(Double.class);
@@ -88,7 +89,7 @@ public class TestObjectWriter {
 	}
 	
 	@Test
-	public void testBareFloat() throws IOException {
+	public void testBareFloat() throws SyntaxError, IOException {
 		String subject = "13.0";
 		JsonReader reader = new JsonReader(new StringReader(subject));
 		var writer = new ObjectWriter<>(Float.class);
@@ -98,7 +99,7 @@ public class TestObjectWriter {
 	}
 	
 	@Test
-	public void testBareLong() throws IOException {
+	public void testBareLong() throws SyntaxError, IOException {
 		String subject = "9223372036854775807"; // This happens to be Long.MAX_VALUE, but the important part is that it's big.
 		JsonReader reader = new JsonReader(new StringReader(subject));
 		var writer = new ObjectWriter<>(Long.class);
@@ -108,7 +109,7 @@ public class TestObjectWriter {
 	}
 	
 	@Test
-	public void testBareBoolean() throws IOException {
+	public void testBareBoolean() throws SyntaxError, IOException {
 		String subject = "true"; // We don't use "false" here because that's the default value for boolean
 		JsonReader reader = new JsonReader(new StringReader(subject));
 		var writer = new ObjectWriter<>(Boolean.class);
@@ -123,7 +124,7 @@ public class TestObjectWriter {
 	 */
 	
 	@Test
-	public void testSimpleRecord() throws IOException {
+	public void testSimpleRecord() throws SyntaxError, IOException {
 		record Point(double x, double y, double z) {};
 		
 		String subject =
@@ -188,7 +189,7 @@ public class TestObjectWriter {
 	
 	
 	@Test
-	public void testCollection() throws IOException {
+	public void testCollection() throws SyntaxError, IOException {
 		
 		String subject =
 				"""
@@ -208,7 +209,7 @@ public class TestObjectWriter {
 	}
 	
 	@Test
-	public void testNestedCollection() throws IOException {
+	public void testNestedCollection() throws SyntaxError, IOException {
 		String subject =
 				"""
 				{
@@ -228,7 +229,7 @@ public class TestObjectWriter {
 	}
 	
 	@Test
-	public void testMap() throws IOException {
+	public void testMap() throws SyntaxError, IOException {
 		
 		String subject =
 				"""
@@ -263,7 +264,7 @@ public class TestObjectWriter {
 	}
 	
 	@Test
-	public void testConfigPojo() throws IOException {
+	public void testConfigPojo() throws SyntaxError, IOException {
 		String subject =
 				"""
 				{
@@ -287,7 +288,7 @@ public class TestObjectWriter {
 	}
 	
 	@Test
-	public void testConfigWithEmbeddedListMap() throws IOException {
+	public void testConfigWithEmbeddedListMap() throws SyntaxError, IOException {
 		String subject =
 				"""
 				{
@@ -307,7 +308,7 @@ public class TestObjectWriter {
 	}
 	
 	@Test
-	public void testArrays() throws IOException {
+	public void testArrays() throws SyntaxError, IOException {
 		String subject =
 				"""
 				[ 96, 112, 24]
@@ -327,7 +328,7 @@ public class TestObjectWriter {
 	 */
 	
 	@Test
-	public void testFull() throws IOException {
+	public void testFull() throws SyntaxError, IOException {
 		String expected =
 			"""
 			{

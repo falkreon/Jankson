@@ -24,6 +24,7 @@
 
 package blue.endless.jankson.impl.io.objectwriter;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Type;
 import java.util.HashMap;
@@ -114,9 +115,9 @@ public class MapFunction<K, V> extends SingleValueFunction<Map<K, V>> {
 	
 	@SuppressWarnings("unchecked")
 	@Override
-	protected void process(StructuredData data) throws SyntaxError {
+	protected void process(StructuredData data) throws SyntaxError, IOException {
 		if (delegate != null) {
-			delegate.accept(data);
+			delegate.write(data);
 			checkDelegate();
 			return;
 		}
@@ -152,7 +153,7 @@ public class MapFunction<K, V> extends SingleValueFunction<Map<K, V>> {
 					
 					default -> {
 						delegate = (StructuredDataFunction<V>) ObjectWriter.getObjectWriter(valueType, data, null);
-						delegate.accept(data);
+						delegate.write(data);
 						checkDelegate();
 					}
 				}

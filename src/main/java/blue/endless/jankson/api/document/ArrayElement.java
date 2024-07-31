@@ -33,6 +33,7 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 
+import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.StructuredDataWriter;
 
@@ -304,7 +305,7 @@ public class ArrayElement extends AbstractList<ValueElement> implements ValueEle
 	}
 	
 	@Override
-	public void write(StructuredDataWriter writer) throws IOException {
+	public void write(StructuredDataWriter writer) throws SyntaxError, IOException {
 		for (NonValueElement elem : prologue) {
 			elem.write(writer);
 		}

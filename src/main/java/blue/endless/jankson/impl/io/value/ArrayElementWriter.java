@@ -27,6 +27,7 @@ package blue.endless.jankson.impl.io.value;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.document.ArrayElement;
 import blue.endless.jankson.api.document.CommentElement;
 import blue.endless.jankson.api.document.CommentType;
@@ -34,17 +35,18 @@ import blue.endless.jankson.api.document.FormattingElement;
 import blue.endless.jankson.api.document.NonValueElement;
 import blue.endless.jankson.api.document.ValueElement;
 import blue.endless.jankson.api.io.StructuredData;
+import blue.endless.jankson.impl.io.objectwriter.StructuredDataFunction;
 
-public class ArrayElementWriter implements StrictValueElementWriter {
+public class ArrayElementWriter implements StructuredDataFunction<ValueElement> {
 	
 	private boolean initialBracketFound = false;
 	private boolean finalBracketFound =  false;
 	private ArrayElement value = new ArrayElement();
-	private StrictValueElementWriter delegate;
+	private StructuredDataFunction<ValueElement> delegate;
 	private ArrayList<NonValueElement> bufferedValuePrologue = new ArrayList<>();
 	
 	@Override
-	public void write(StructuredData data) throws IOException {
+	public void write(StructuredData data) throws SyntaxError, IOException {
 		if (!initialBracketFound) {
 			// There is only one valid type, ARRAY_START
 			if (data.type() == StructuredData.Type.ARRAY_START) {
@@ -52,10 +54,10 @@ public class ArrayElementWriter implements StrictValueElementWriter {
 			} else if (data.isComment()) {
 				value.getPrologue().add(data.asComment());
 			} else {
-				throw new IOException("Expected array start, found "+data.type().name());
+				throw new SyntaxError("Expected array start, found "+data.type().name());
 			}
 		} else if (finalBracketFound) {
-			if (data.type().isSemantic()) throw new IOException("Anomalous "+data.type().name()+" found after closing bracket of array");
+			if (data.type().isSemantic()) throw new SyntaxError("Anomalous "+data.type().name()+" found after closing bracket of array");
 		} else {
 			// Anything we receive here is an array element
 			
@@ -102,15 +104,15 @@ public class ArrayElementWriter implements StrictValueElementWriter {
 						bufferedValuePrologue.add(comment);
 					}
 				}
-				case OBJECT_KEY -> throw new IOException("Expected array element, but found an object key");
-				case OBJECT_END -> throw new IOException("Found an object ending brace, but we're inside an array!");
+				case OBJECT_KEY -> throw new SyntaxError("Expected array element, but found an object key");
+				case OBJECT_END -> throw new SyntaxError("Found an object ending brace, but we're inside an array!");
 			}
 		}
 	}
 
 	private void checkSubordinate() throws IOException {
 		if (delegate != null && delegate.isComplete()) {
-			ValueElement result = delegate.getValue();
+			ValueElement result = delegate.getResult();
 			result.getPrologue().addAll(bufferedValuePrologue);
 			bufferedValuePrologue.clear();
 			value.add(result);
@@ -120,7 +122,7 @@ public class ArrayElementWriter implements StrictValueElementWriter {
 	}
 	
 	@Override
-	public ArrayElement getValue() {
+	public ArrayElement getResult() {
 		return value;
 	}
 

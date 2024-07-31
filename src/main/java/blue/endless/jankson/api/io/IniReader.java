@@ -33,13 +33,10 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.naming.spi.DirStateFactory.Result;
 
 import blue.endless.jankson.api.SyntaxError;
-import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.impl.io.AbstractStructuredDataReader;
 import blue.endless.jankson.impl.io.LookaheadCodePointReader;
 import blue.endless.jankson.impl.io.context.StringValueParser;
@@ -79,7 +76,7 @@ public class IniReader extends AbstractStructuredDataReader {
 	}
 
 	@Override
-	protected void readNext() throws IOException {
+	protected void readNext() throws SyntaxError, IOException {
 		while(Character.isWhitespace(src.peek())) src.read(); // Skip line breaks, etc.
 		
 		if (src.peek() == -1) {

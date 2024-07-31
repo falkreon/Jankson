@@ -27,6 +27,8 @@ package blue.endless.jankson.impl.io.objectwriter;
 import blue.endless.jankson.api.io.StructuredData;
 import static blue.endless.jankson.api.io.StructuredData.Type.*;
 
+import java.io.IOException;
+
 import blue.endless.jankson.api.SyntaxError;
 
 public abstract class SingleValueFunction<T> implements StructuredDataFunction<T> {
@@ -39,7 +41,7 @@ public abstract class SingleValueFunction<T> implements StructuredDataFunction<T
 	}
 
 	@Override
-	public void accept(StructuredData data) throws SyntaxError {
+	public void write(StructuredData data) throws SyntaxError, IOException {
 		if (complete) return;
 		
 		process(data);
@@ -66,7 +68,7 @@ public abstract class SingleValueFunction<T> implements StructuredDataFunction<T
 		}
 	}
 	
-	protected abstract void process(StructuredData data) throws SyntaxError;
+	protected abstract void process(StructuredData data) throws SyntaxError, IOException;
 	
 	public static <T> SingleValueFunction<T> discard() {
 		return new Discard<T>();

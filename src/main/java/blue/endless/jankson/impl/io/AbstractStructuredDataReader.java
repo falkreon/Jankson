@@ -29,6 +29,7 @@ import java.io.Reader;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
+import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.StructuredDataReader;
 import blue.endless.jankson.impl.io.context.ParserContext;
@@ -62,7 +63,7 @@ public abstract class AbstractStructuredDataReader implements StructuredDataRead
 		readQueue.push(value);
 	}
 	
-	protected void skipNonBreakingWhitespace() throws IOException {
+	protected void skipNonBreakingWhitespace() throws SyntaxError, IOException {
 		while(true) {
 			int ch = src.peek();
 			if (ch==-1) return;
@@ -72,7 +73,7 @@ public abstract class AbstractStructuredDataReader implements StructuredDataRead
 		}
 	}
 	
-	protected abstract void readNext() throws IOException;
+	protected abstract void readNext() throws SyntaxError, IOException;
 	
 	@Override
 	public boolean hasNext() {
@@ -82,7 +83,7 @@ public abstract class AbstractStructuredDataReader implements StructuredDataRead
 	}
 	
 	@Override
-	public StructuredData next() throws IOException {
+	public StructuredData next() throws SyntaxError, IOException {
 		while(readQueue.isEmpty()) {
 			readNext();
 		}

@@ -33,7 +33,6 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
-import java.util.function.Consumer;
 
 import blue.endless.jankson.api.document.ObjectElement;
 import blue.endless.jankson.api.document.ValueElement;
@@ -43,7 +42,6 @@ import blue.endless.jankson.api.io.JsonWriter;
 import blue.endless.jankson.api.io.JsonWriterOptions;
 import blue.endless.jankson.api.io.ObjectReaderFactory;
 import blue.endless.jankson.api.io.ObjectWriter;
-import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.StructuredDataReader;
 import blue.endless.jankson.api.io.ValueElementWriter;
 
@@ -240,23 +238,18 @@ public class Jankson {
 		return writer.toObject();
 	}
 	
-	public static void writeJson(Object obj, Writer writer) throws IOException {
+	public static void writeJson(Object obj, Writer writer) throws SyntaxError, IOException {
 		writeJson(obj, new ObjectReaderFactory(), writer, JsonWriterOptions.STRICT);
 	}
 	
-	public static void writeJson(Object obj, ObjectReaderFactory factory, Writer writer, JsonWriterOptions options) throws IOException {
-		try {
-			StructuredDataReader r = factory.getReader(obj);
-			JsonWriter w = new JsonWriter(writer, options);
-			r.transferTo(w);
-			writer.flush();
-		} catch (Throwable t) {
-			// IOException, MarshallerException, SyntaxError -> just IOException
-			throw new IOException(t);
-		}
+	public static void writeJson(Object obj, ObjectReaderFactory factory, Writer writer, JsonWriterOptions options) throws SyntaxError, IOException {
+		StructuredDataReader r = factory.getReader(obj);
+		JsonWriter w = new JsonWriter(writer, options);
+		r.transferTo(w);
+		writer.flush();
 	}
 	
-	public static String writeJsonString(Object obj, ObjectReaderFactory factory, JsonWriterOptions options) throws IOException {
+	public static String writeJsonString(Object obj, ObjectReaderFactory factory, JsonWriterOptions options) throws SyntaxError, IOException {
 		try(StringWriter sw = new StringWriter()) {
 			StructuredDataReader r = factory.getReader(obj);
 			JsonWriter w = new JsonWriter(sw, options);
@@ -266,12 +259,12 @@ public class Jankson {
 		}
 	}
 	
-	public static void writeJson(ValueElement elem, Writer writer) throws IOException {
+	public static void writeJson(ValueElement elem, Writer writer) throws SyntaxError, IOException {
 		JsonWriter out = new JsonWriter(writer);
 		elem.write(out);
 	}
 	
-	public static String toJsonString(ValueElement elem, JsonWriterOptions options) throws IOException {
+	public static String toJsonString(ValueElement elem, JsonWriterOptions options) throws SyntaxError, IOException {
 		try(StringWriter sw = new StringWriter()) {
 			JsonWriter out = new JsonWriter(sw, options);
 			elem.write(out);

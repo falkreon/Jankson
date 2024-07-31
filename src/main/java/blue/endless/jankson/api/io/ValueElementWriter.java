@@ -27,12 +27,13 @@ package blue.endless.jankson.api.io;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.document.NonValueElement;
 import blue.endless.jankson.api.document.ValueElement;
+import blue.endless.jankson.impl.io.objectwriter.StructuredDataFunction;
 import blue.endless.jankson.impl.io.value.ArrayElementWriter;
 import blue.endless.jankson.impl.io.value.ObjectElementWriter;
 import blue.endless.jankson.impl.io.value.PrimitiveElementWriter;
-import blue.endless.jankson.impl.io.value.StrictValueElementWriter;
 
 /**
  * StructuredDataWriter that assembles a ValueElement. Much like StringWriter, this "captures" data
@@ -40,24 +41,24 @@ import blue.endless.jankson.impl.io.value.StrictValueElementWriter;
  */
 public class ValueElementWriter implements StructuredDataWriter {
 	
-	private StrictValueElementWriter delegate = null;
+	private StructuredDataFunction<ValueElement> delegate = null;
 	private ValueElement result = null;
 	private ArrayList<NonValueElement> bufferedComments = new ArrayList<>();
 	
 	@Override
-	public void write(StructuredData data) throws IOException {
+	public void write(StructuredData data) throws SyntaxError, IOException {
 		if (delegate != null && !delegate.isComplete()) {
 			// After we've completed our data, we could potentially consume a trailer
 			delegate.write(data);
 			if (delegate.isComplete()) {
-				result = delegate.getValue();
+				result = delegate.getResult();
 				result.getPrologue().addAll(bufferedComments);
 				bufferedComments.clear();
 				delegate = null;
 			}
 		} else {
 			if (delegate != null && delegate.isComplete()) {
-				result = delegate.getValue();
+				result = delegate.getResult();
 				delegate = null;
 				
 				if (data.type() == StructuredData.Type.EOF) return;

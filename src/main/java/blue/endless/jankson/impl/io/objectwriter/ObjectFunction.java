@@ -24,14 +24,8 @@
 
 package blue.endless.jankson.impl.io.objectwriter;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.RecordComponent;
+import java.io.IOException;
 import java.lang.reflect.Type;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.ObjectWriter;
@@ -88,9 +82,9 @@ public class ObjectFunction<T> extends SingleValueFunction<T>{
 
 	@SuppressWarnings("unchecked")
 	@Override
-	protected void process(StructuredData data) throws SyntaxError {
+	protected void process(StructuredData data) throws SyntaxError, IOException {
 		if (delegate != null) {
-			delegate.accept(data);
+			delegate.write(data);
 			checkDelegate();
 			return;
 		}
@@ -131,7 +125,7 @@ public class ObjectFunction<T> extends SingleValueFunction<T>{
 					Type fieldType = wrapper.getType(delegateKey);
 					if (fieldType == null) {
 						delegate = SingleValueFunction.discard();
-						delegate.accept(data);
+						delegate.write(data);
 						checkDelegate();
 						return;
 					}
@@ -139,7 +133,7 @@ public class ObjectFunction<T> extends SingleValueFunction<T>{
 					// TODO: Hand over the instance to start with
 					delegate = (StructuredDataFunction<Object>) ObjectWriter.getObjectWriter(fieldType, data, null);
 					if (delegate != null) {
-						delegate.accept(data);
+						delegate.write(data);
 					} else {
 						throw new IllegalStateException("Oops");
 					}

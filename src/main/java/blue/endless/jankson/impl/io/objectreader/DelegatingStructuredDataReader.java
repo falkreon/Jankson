@@ -26,6 +26,7 @@ package blue.endless.jankson.impl.io.objectreader;
 
 import java.io.IOException;
 
+import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.StructuredDataReader;
 import blue.endless.jankson.impl.io.StructuredDataBuffer;
@@ -49,7 +50,7 @@ public abstract class DelegatingStructuredDataReader implements StructuredDataRe
 	}
 	
 	@Override
-	public StructuredData next() throws IOException {
+	public StructuredData next() throws SyntaxError, IOException {
 		if (buffer.isEmpty()) {
 			//Usually this will happen on the first run. Prime our first element
 			loadNextElem();
@@ -84,7 +85,7 @@ public abstract class DelegatingStructuredDataReader implements StructuredDataRe
 	 * <p>One way or another, guarantees !pipe.isEmpty() at return
 	 * @throws IOException if a delegate encountered a problem reading data.
 	 */
-	private void loadNextElem() throws IOException {
+	private void loadNextElem() throws SyntaxError, IOException {
 		// If we're already fulfilled, NOP out.
 		if (!buffer.isEmpty()) return;
 		

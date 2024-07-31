@@ -31,6 +31,7 @@ import java.io.StringWriter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.JsonWriter;
 import blue.endless.jankson.api.io.JsonWriterOptions;
 import blue.endless.jankson.api.io.TomlReader;
@@ -41,7 +42,7 @@ public class TestTomlReader {
 	private static final JsonWriterOptions STRICT_ONE_LINE = new JsonWriterOptions(Hint.WRITE_WHITESPACE);
 	
 	@Test
-	public void testKeys() throws IOException {
+	public void testKeys() throws SyntaxError, IOException {
 		String tomlExample = """
 		name = "Orange"
 		physical.color = "orange"
@@ -72,7 +73,7 @@ public class TestTomlReader {
 	}
 	
 	@Test
-	public void testBadlyConceivedKeys() throws IOException {
+	public void testBadlyConceivedKeys() throws SyntaxError, IOException {
 		String tomlExample = """
 		3.14159 = "pi"
 		""";
@@ -91,7 +92,7 @@ public class TestTomlReader {
 	}
 	
 	@Test
-	public void testTable() throws IOException {
+	public void testTable() throws SyntaxError, IOException {
 		String tomlExample = """
 		[dog."tater.man"]
 		type.name = "pug"
@@ -114,7 +115,7 @@ public class TestTomlReader {
 	 * Jankson explicitly allows this, in deviation of the spec.
 	 */
 	@Test
-	public void testAllowDuplicateTables() throws IOException {
+	public void testAllowDuplicateTables() throws SyntaxError, IOException {
 		String tomlExample = """
 		# DO NOT DO THIS (unless you're using jankson)
 		
@@ -158,7 +159,7 @@ public class TestTomlReader {
 	}
 	
 	@Test
-	public void testTableArrays() throws IOException {
+	public void testTableArrays() throws SyntaxError, IOException {
 		String tomlExample = """
 		[[products]]
 		name = "Hammer"
@@ -201,7 +202,7 @@ public class TestTomlReader {
 	}
 	
 	@Test
-	public void testNestedTableArrays() throws IOException {
+	public void testNestedTableArrays() throws SyntaxError, IOException {
 		String tomlExample = """
 		[[fruits]]
 		name = "apple"
@@ -264,7 +265,7 @@ public class TestTomlReader {
 	}
 	
 	@Test
-	public void testInlineArrays() throws IOException {
+	public void testInlineArrays() throws SyntaxError, IOException {
 		String tomlExample = """
 		foo = [ 1, 2, 3, true, "foo" ]
 		""";
@@ -283,7 +284,7 @@ public class TestTomlReader {
 	}
 	
 	@Test
-	public void testArrayOfInlineTables() throws IOException {
+	public void testArrayOfInlineTables() throws SyntaxError, IOException {
 		String tomlExample = """
 		points = [ { x = 1, y = 2, z = 3 },
 		           { x = 7, y = 8, z = 9 },
@@ -322,7 +323,7 @@ public class TestTomlReader {
 	}
 	
 	@Test
-	public void testDateValues() throws IOException {
+	public void testDateValues() throws SyntaxError, IOException {
 		String tomlExample = """
 		odt1 = 1979-05-27T07:32:00Z
 		odt2 = 1979-05-27T00:32:00-07:00

@@ -26,6 +26,7 @@ package blue.endless.jankson.api.document;
 
 import java.io.IOException;
 
+import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.StructuredDataWriter;
 
 /**
@@ -64,5 +65,5 @@ public interface DocumentElement extends Cloneable {
 	 */
 	public void setDefault(boolean isDefault);
 	
-	public void write(StructuredDataWriter writer) throws IOException;
+	public void write(StructuredDataWriter writer) throws SyntaxError, IOException;
 }

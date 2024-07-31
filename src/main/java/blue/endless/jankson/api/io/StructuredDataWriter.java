@@ -26,7 +26,9 @@ package blue.endless.jankson.api.io;
 
 import java.io.IOException;
 
+import blue.endless.jankson.api.SyntaxError;
+
 public interface StructuredDataWriter {
 	
-	public void write(StructuredData data) throws IOException;
+	public void write(StructuredData data) throws SyntaxError, IOException;
 }
