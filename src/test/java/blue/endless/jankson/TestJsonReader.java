@@ -24,7 +24,15 @@
 
 package blue.endless.jankson;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -33,6 +41,7 @@ import blue.endless.jankson.api.Jankson;
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.api.document.ValueElement;
+import blue.endless.jankson.api.io.JsonReaderOptions;
 
 public class TestJsonReader {
 	
@@ -79,5 +88,64 @@ public class TestJsonReader {
 		} else {
 			Assertions.fail("Should parse to a PrimitiveElement");
 		}
+	}
+	
+	@Test
+	public void testReadArray() throws IOException, SyntaxError {
+		// Real-world data; excerpt from https://mcphackers.org/versionsV2/versions.json
+		String subject =
+				"""
+				[
+					{
+						"id": "1.5.2",
+						"releaseTime": "2013-04-25T15:45:00+00:00",
+						"resources": "https://mcphackers.github.io/versionsV2/1.5.2.zip",
+						"time": "2022-03-10T09:51:38+00:00",
+						"type": "release",
+						"url": "https://mcphackers.github.io/BetterJSONs/jsons/1.5.2.json"
+					},
+					{
+						"id": "1.2.5",
+						"releaseTime": "2012-03-29T22:00:00+00:00",
+						"resources": "https://mcphackers.github.io/versionsV2/1.2.5.zip",
+						"time": "2022-03-10T09:51:38+00:00",
+						"type": "release",
+						"url": "https://mcphackers.github.io/BetterJSONs/jsons/1.2.5.json"
+					}
+				]
+				""";
+		byte[] subjectBytes = subject.getBytes(StandardCharsets.UTF_8);
+		InputStream in = new ByteArrayInputStream(subjectBytes);
+		Jankson.readJson(in);
+	}
+	
+	@Test
+	public void testBetterRead() throws IOException, SyntaxError {
+		// Real-world data; excerpt from https://mcphackers.org/versionsV2/versions.json
+		String subject =
+				"""
+				[
+					{
+						"id": "1.5.2",
+						"releaseTime": "2013-04-25T15:45:00+00:00",
+						"resources": "https://mcphackers.github.io/versionsV2/1.5.2.zip",
+						"time": "2022-03-10T09:51:38+00:00",
+						"type": "release",
+						"url": "https://mcphackers.github.io/BetterJSONs/jsons/1.5.2.json"
+					},
+					{
+						"id": "1.2.5",
+						"releaseTime": "2012-03-29T22:00:00+00:00",
+						"resources": "https://mcphackers.github.io/versionsV2/1.2.5.zip",
+						"time": "2022-03-10T09:51:38+00:00",
+						"type": "release",
+						"url": "https://mcphackers.github.io/BetterJSONs/jsons/1.2.5.json"
+					}
+				]
+				""";
+		
+		record Release(String id, String releaseTime, String resources, String time, String type, String url) {}
+		Release[] releases = Jankson.readJson(new StringReader(subject), JsonReaderOptions.UNSPECIFIED, Release[].class);
+		System.out.println(Arrays.toString(releases));
 	}
 }

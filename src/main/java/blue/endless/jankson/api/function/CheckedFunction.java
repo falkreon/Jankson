@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.impl;
+package blue.endless.jankson.api.function;
 
 @FunctionalInterface
 public interface CheckedFunction<A, R, T extends Throwable> {

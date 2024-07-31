@@ -86,7 +86,9 @@ public class ObjectElementWriter implements StrictValueElementWriter {
 						}
 						
 						default -> {
-							throw new IOException("Expected object key but found "+data.type().name());
+							if (data.type().isSemantic()) {
+								throw new IOException("Expected object key but found "+data.type().name());
+							}
 						}
 					}
 					

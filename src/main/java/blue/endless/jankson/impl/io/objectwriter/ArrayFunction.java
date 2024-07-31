@@ -93,6 +93,7 @@ public class ArrayFunction<V> extends SingleValueFunction<Object> {
 				}
 				
 				default -> {
+					if (!data.type().isSemantic()) return;
 					delegate = (StructuredDataFunction<V>) ObjectWriter.getObjectWriter(elementType, data, null);
 					delegate.accept(data);
 					checkDelegate();
