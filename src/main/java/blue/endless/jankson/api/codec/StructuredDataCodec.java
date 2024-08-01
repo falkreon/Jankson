@@ -28,7 +28,6 @@ import java.lang.reflect.Type;
 
 import blue.endless.jankson.api.io.StructuredDataFunction;
 import blue.endless.jankson.api.io.StructuredDataReader;
-import blue.endless.jankson.impl.io.objectwriter.SingleValueFunction;
 
 /**
  * Factory for StructuredDataReaders and StructuredDataWriters for a particular type.

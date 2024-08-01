@@ -29,6 +29,7 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import blue.endless.jankson.api.SyntaxError;
+import blue.endless.jankson.api.function.CheckedFunction;
 
 /**
  * A StructuredDataFunction is a job that consumes StructuredData over time, and produces a value
@@ -42,9 +43,10 @@ public interface StructuredDataFunction<T> extends StructuredDataWriter {
 	
 	public class Mapper<S, T> implements StructuredDataFunction<T> {
 		private final StructuredDataFunction<S> function;
-		private final Function<S, Optional<T>> mapper;
+		private final CheckedFunction<S, T, SyntaxError> mapper;
+		private T result = null;
 		
-		public Mapper(StructuredDataFunction<S> function, Function<S, Optional<T>> mapper) {
+		public Mapper(StructuredDataFunction<S> function, CheckedFunction<S, T, SyntaxError> mapper) {
 			this.function = function;
 			this.mapper = mapper;
 		}
@@ -57,12 +59,12 @@ public interface StructuredDataFunction<T> extends StructuredDataWriter {
 		@Override
 		public void write(StructuredData data) throws SyntaxError, IOException {
 			function.write(data);
+			if (function.isComplete()) result = mapper.apply(function.getResult());
 		}
 
 		@Override
 		public T getResult() {
-			Optional<T> result = mapper.apply(function.getResult());
-			return result.orElse(null);
+			return result;
 		}
 		
 	}

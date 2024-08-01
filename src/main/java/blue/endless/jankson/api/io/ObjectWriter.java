@@ -42,12 +42,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
-import java.util.function.Function;
 
 import javax.annotation.Nullable;
 
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.document.PrimitiveElement;
+import blue.endless.jankson.api.function.CheckedFunction;
 import blue.endless.jankson.impl.io.objectwriter.ArrayFunction;
 import blue.endless.jankson.impl.io.objectwriter.CollectionFunction;
 import blue.endless.jankson.impl.io.objectwriter.MapFunction;
@@ -177,7 +177,7 @@ public class ObjectWriter<T> implements StructuredDataWriter {
 			return new ArrayFunction<>(targetClass);
 		}
 		
-		Function<PrimitiveElement, Optional<Object>> selectedMapper = primitiveMappers.get(targetClass);
+		CheckedFunction<PrimitiveElement, Object, SyntaxError> selectedMapper = primitiveMappers.get(targetClass);
 		if (selectedMapper != null) {
 			return new StructuredDataFunction.Mapper<>(new PrimitiveFunction(), selectedMapper);
 		}
@@ -296,44 +296,44 @@ public class ObjectWriter<T> implements StructuredDataWriter {
 	}
 	
 	//private static Map<Class<?>, Supplier<SingleValueFunction<?>>> classConfigs = new HashMap<>();
-	private static Map<Class<?>, Function<PrimitiveElement, Optional<Object>>> primitiveMappers = new HashMap<>();
+	private static Map<Class<?>, CheckedFunction<PrimitiveElement, Object, SyntaxError>> primitiveMappers = new HashMap<>();
 	
 	static {
-		primitiveMappers.put(String.class, (prim) -> (Optional<Object>) (Object) prim.asString());
+		primitiveMappers.put(String.class, (prim) -> prim.asString().orElseThrow());
 		
-		primitiveMappers.put(Integer.class, (prim) -> prim.mapAsInt((it)-> it));
-		primitiveMappers.put(Long.class,    (prim) -> prim.mapAsLong((it)-> it));
-		primitiveMappers.put(Short.class,   (prim) -> prim.mapAsInt((it) -> (short) it));
-		primitiveMappers.put(Byte.class,    (prim) -> prim.mapAsInt((it) -> (byte) it));
-		primitiveMappers.put(Double.class,  (prim) -> prim.mapAsDouble((it)-> it));
-		primitiveMappers.put(Float.class,   (prim) -> prim.mapAsDouble((it) -> (float) it));
-		primitiveMappers.put(Boolean.class, (prim) -> prim.mapAsBoolean((it) -> it));
-		primitiveMappers.put(Integer.TYPE,  (prim) -> prim.mapAsInt((it)-> it));
-		primitiveMappers.put(Long.TYPE,     (prim) -> prim.mapAsLong((it)-> it));
-		primitiveMappers.put(Double.TYPE,   (prim) -> prim.mapAsDouble((it) -> it));
-		primitiveMappers.put(Short.TYPE,    (prim) -> prim.mapAsInt((it) -> (short) it));
-		primitiveMappers.put(Float.TYPE,    (prim) -> prim.mapAsDouble((it) -> (float) it));
-		primitiveMappers.put(Boolean.TYPE,  (prim) -> prim.mapAsBoolean((it) -> it));
+		primitiveMappers.put(Integer.class, (prim) -> prim.mapAsInt((it)-> it).orElseThrow(()->new SyntaxError("Required: Int")));
+		primitiveMappers.put(Long.class,    (prim) -> prim.mapAsLong((it)-> it).orElseThrow(()->new SyntaxError("Required: Long")));
+		primitiveMappers.put(Short.class,   (prim) -> prim.mapAsInt((it) -> (short) it).orElseThrow(()->new SyntaxError("Required: Short")));
+		primitiveMappers.put(Byte.class,    (prim) -> prim.mapAsInt((it) -> (byte) it).orElseThrow(()->new SyntaxError("Required: Byte")));
+		primitiveMappers.put(Double.class,  (prim) -> prim.mapAsDouble((it)-> it).orElseThrow(()->new SyntaxError("Required: Double")));
+		primitiveMappers.put(Float.class,   (prim) -> prim.mapAsDouble((it) -> (float) it).orElseThrow(()->new SyntaxError("Required: Float")));
+		primitiveMappers.put(Boolean.class, (prim) -> prim.mapAsBoolean((it) -> it).orElseThrow(()->new SyntaxError("Required: Boolean")));
+		primitiveMappers.put(Integer.TYPE,  (prim) -> prim.mapAsInt((it)-> it).orElseThrow(()->new SyntaxError("Required: Int")));
+		primitiveMappers.put(Long.TYPE,     (prim) -> prim.mapAsLong((it)-> it).orElseThrow(()->new SyntaxError("Required: Long")));
+		primitiveMappers.put(Double.TYPE,   (prim) -> prim.mapAsDouble((it) -> it).orElseThrow(()->new SyntaxError("Required: Double")));
+		primitiveMappers.put(Short.TYPE,    (prim) -> prim.mapAsInt((it) -> (short) it).orElseThrow(()->new SyntaxError("Required: Short")));
+		primitiveMappers.put(Float.TYPE,    (prim) -> prim.mapAsDouble((it) -> (float) it).orElseThrow(()->new SyntaxError("Required: Float")));
+		primitiveMappers.put(Boolean.TYPE,  (prim) -> prim.mapAsBoolean((it) -> it).orElseThrow(()->new SyntaxError("Required: Boolean")));
 		
 		// This one's complex because no good canonical serialization makes sense
 		primitiveMappers.put(Character.class, (prim) -> {
 			Optional<Object> value = prim.getValue();
-			if (value.isEmpty()) return Optional.empty();
+			if (value.isEmpty()) return null;
 			if (value.get() instanceof String s) {
-				if (s.length() != 1) return Optional.empty();
-				return Optional.of(Character.valueOf(s.charAt(0)));
+				if (s.length() != 1) return null;
+				return Character.valueOf(s.charAt(0));
 			} else {
-				return prim.mapAsInt((it) -> (char) it);
+				return prim.mapAsInt((it) -> (char) it).orElseThrow(()->new SyntaxError("Required: Character"));
 			}
 		});
 		
 		// PrimitiveElement has convenience methods for these two, so let's set consistent expectations
 		// It's truly unfortunate that Java can't tell that e.g. Optional<BigInteger> is castable to Optional<Object>
-		primitiveMappers.put(BigInteger.class, (prim) -> (Optional<Object>) (Object) prim.asBigInteger());
-		primitiveMappers.put(BigDecimal.class, (prim) -> (Optional<Object>) (Object) prim.asBigDecimal());
+		primitiveMappers.put(BigInteger.class, (prim) -> (Optional<Object>) (Object) prim.asBigInteger().orElseThrow(()->new SyntaxError("Required: BigInteger")));
+		primitiveMappers.put(BigDecimal.class, (prim) -> (Optional<Object>) (Object) prim.asBigDecimal().orElseThrow(()->new SyntaxError("Required: BigDecimal")));
 		
-		primitiveMappers.put(LocalDate.class, (prim) -> prim.mapAsString(LocalDate::parse));
-		primitiveMappers.put(LocalTime.class, (prim) -> prim.mapAsString(LocalTime::parse));
-		primitiveMappers.put(LocalDateTime.class, (prim) -> prim.mapAsString(LocalDateTime::parse));
+		primitiveMappers.put(LocalDate.class, (prim) -> prim.mapAsString(LocalDate::parse).orElseThrow(() -> new SyntaxError("Required: LocalDate")));
+		primitiveMappers.put(LocalTime.class, (prim) -> prim.mapAsString(LocalTime::parse).orElseThrow(() -> new SyntaxError("Required: LocalTime")));
+		primitiveMappers.put(LocalDateTime.class, (prim) -> prim.mapAsString(LocalDateTime::parse).orElseThrow(() -> new SyntaxError("Required: LocalDateTime")));
 	}
 }

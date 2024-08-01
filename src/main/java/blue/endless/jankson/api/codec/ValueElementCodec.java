@@ -25,9 +25,9 @@
 package blue.endless.jankson.api.codec;
 
 import java.io.IOException;
-import java.util.Optional;
 import java.util.function.Function;
 
+import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.document.ArrayElement;
 import blue.endless.jankson.api.document.ObjectElement;
 import blue.endless.jankson.api.document.PrimitiveElement;
@@ -69,11 +69,11 @@ public class ValueElementCodec implements ClassTargetCodec {
 		StructuredDataFunction<ValueElement> function = new ValueElementWriter();
 		
 		@SuppressWarnings("unchecked")
-		Function<ValueElement, Optional<T>> mapper = (ValueElement val) -> {
+		CheckedFunction<ValueElement, T, SyntaxError> mapper = (ValueElement val) -> {
 			try {
-				return Optional.ofNullable((T) deserializer.apply(val));
+				return (T) deserializer.apply(val);
 			} catch (IOException e) {
-				return Optional.empty();
+				throw new SyntaxError("Error applying deserializer function.", e);
 			}
 		};
 		
