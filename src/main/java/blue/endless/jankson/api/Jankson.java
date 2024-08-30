@@ -239,7 +239,7 @@ public class Jankson {
 	}
 	
 	public static void writeJson(Object obj, Writer writer) throws SyntaxError, IOException {
-		writeJson(obj, new ObjectReaderFactory(), writer, JsonWriterOptions.STRICT);
+		writeJson(obj, new ObjectReaderFactory(), writer, JsonWriterOptions.DEFAULTS);
 	}
 	
 	public static void writeJson(Object obj, ObjectReaderFactory factory, Writer writer, JsonWriterOptions options) throws SyntaxError, IOException {

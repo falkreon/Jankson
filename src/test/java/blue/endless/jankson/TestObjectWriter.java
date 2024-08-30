@@ -346,4 +346,36 @@ public class TestObjectWriter {
 		
 		Assertions.assertEquals(expected, actual);
 	}
+	
+	public static class ImmutableConfig {
+		
+		final int x;
+		final int y;
+		
+		public ImmutableConfig(@SerializedName("x") int x, @SerializedName("y") int y) {
+			this.x = x;
+			this.y = y;
+		}
+		
+		public int getX() { return x; }
+		public int getY() { return y; }
+		
+	}
+	
+	@Test
+	public void testImmutable() throws SyntaxError, IOException {
+		String subject = """
+			{ "x": 12, "y": 24 }
+			""";
+		
+		StringReader stringReader = new StringReader(subject);
+		JsonReader reader = new JsonReader(stringReader);
+		ObjectWriter<ImmutableConfig> writer = new ObjectWriter<>(ImmutableConfig.class);
+		reader.transferTo(writer);
+		
+		ImmutableConfig config = writer.toObject();
+		
+		Assertions.assertEquals(12, config.x);
+		Assertions.assertEquals(24, config.y);
+	}
 }

@@ -142,7 +142,7 @@ public class ObjectWriter<T> implements StructuredDataWriter {
 		}
 		
 		if (Map.class.isAssignableFrom(targetClass)) {
-			if (subject instanceof Map map) {
+			if (subject instanceof Map) {
 				// Map<Object, Object> is incorrect, but we cannot construct MapFunction<?, ?>
 				return new MapFunction<Object, Object>(type, (Map<Object, Object>) subject);
 			}

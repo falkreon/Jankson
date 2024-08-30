@@ -46,7 +46,6 @@ import blue.endless.jankson.impl.io.context.toml.TomlTripleQuotedStringValuePars
 
 public class TomlReader extends AbstractStructuredDataReader {
 	
-	
 	/**
 	 * Unfortunately, because of the unpredictable order here, we need to crystallize the config down into an object before we can emit anything.
 	 */

@@ -22,38 +22,33 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.api.io;
+package blue.endless.jankson.impl.io;
 
 import java.io.IOException;
 
 import blue.endless.jankson.api.SyntaxError;
-import blue.endless.jankson.impl.io.SingleStructuredDataReader;
+import blue.endless.jankson.api.io.StructuredData;
+import blue.endless.jankson.api.io.StructuredDataReader;
 
-public interface StructuredDataReader {
+/**
+ * StructuredDataReader that will provide a single data record and then complete.
+ */
+public class SingleStructuredDataReader implements StructuredDataReader {
+	private boolean hasNext = true;
+	private final StructuredData value;
 	
-	/**
-	 * Continues reading data until ready to report the next value or structural element. This represents a pre-order
-	 * traversal of the object tree (starting at the root, descend to leaves in order) just like if you read the json
-	 * document from start to finish.
-	 * @return An ElementType corresponding to where we are in the object tree.
-	 * @throws SyntaxError 
-	 */
-	public StructuredData next() throws SyntaxError, IOException;
-	
-	public boolean hasNext();
-	
-	public default void transferTo(StructuredDataWriter writer) throws SyntaxError, IOException {
-		while(hasNext()) {
-			var d = next();
-			writer.write(d);
-		}
+	public SingleStructuredDataReader(StructuredData value) {
+		this.value = value;
 	}
-	
-	public static StructuredDataReader of(StructuredData data) {
-		return new SingleStructuredDataReader(data);
+
+	@Override
+	public StructuredData next() throws SyntaxError, IOException {
+		hasNext = false;
+		return value;
 	}
-	
-	public static StructuredDataReader of(String value) {
-		return new SingleStructuredDataReader(new StructuredData(StructuredData.Type.PRIMITIVE, value));
+
+	@Override
+	public boolean hasNext() {
+		return hasNext;
 	}
 }

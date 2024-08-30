@@ -42,7 +42,7 @@ public interface InstanceFactory<T> {
 			String serializedName = parameters[i].getName();
 			SerializedName annotation = parameters[i].getAnnotation(SerializedName.class);
 			if (annotation != null) serializedName = annotation.value();
-			if (!arguments.containsKey(serializedName)) throw new InstantiationException("No value supplied for required field \""+serializedName+"\".");
+			if (!arguments.containsKey(serializedName)) throw new InstantiationException("No value supplied for required field \""+serializedName+"\". ("+arguments+")");
 			arrangedArguments[i] = arguments.get(serializedName);
 		}
 		return arrangedArguments;

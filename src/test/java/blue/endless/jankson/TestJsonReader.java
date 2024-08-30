@@ -146,6 +146,6 @@ public class TestJsonReader {
 		
 		record Release(String id, String releaseTime, String resources, String time, String type, String url) {}
 		Release[] releases = Jankson.readJson(new StringReader(subject), JsonReaderOptions.UNSPECIFIED, Release[].class);
-		System.out.println(Arrays.toString(releases));
+		//System.out.println(Arrays.toString(releases));
 	}
 }

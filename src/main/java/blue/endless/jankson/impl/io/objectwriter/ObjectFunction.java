@@ -84,6 +84,7 @@ public class ObjectFunction<T> extends SingleValueFunction<T>{
 	@SuppressWarnings("unchecked")
 	@Override
 	protected void process(StructuredData data) throws SyntaxError, IOException {
+		
 		if (delegate != null) {
 			delegate.write(data);
 			checkDelegate();
@@ -135,6 +136,7 @@ public class ObjectFunction<T> extends SingleValueFunction<T>{
 					delegate = (StructuredDataFunction<Object>) ObjectWriter.getObjectWriter(fieldType, data, null);
 					if (delegate != null) {
 						delegate.write(data);
+						checkDelegate();
 					} else {
 						throw new IllegalStateException("Oops");
 					}
