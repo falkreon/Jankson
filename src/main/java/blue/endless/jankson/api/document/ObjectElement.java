@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +43,7 @@ import blue.endless.jankson.api.io.JsonWriter;
 import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.StructuredDataWriter;
 
-public class ObjectElement implements ValueElement, Map<String, ValueElement> {
+public class ObjectElement implements ValueElement, Map<String, ValueElement>, Iterable<KeyValuePairElement> {
 	protected boolean isDefault = false;
 	protected List<NonValueElement> prologue = new ArrayList<>();
 	protected List<KeyValuePairElement> entries = new ArrayList<>();
@@ -263,6 +264,11 @@ public class ObjectElement implements ValueElement, Map<String, ValueElement> {
 		}
 		
 		return Optional.empty();
+	}
+
+	@Override
+	public Iterator<KeyValuePairElement> iterator() {
+		return this.entries.iterator();
 	}
 	
 	//implements Map {
