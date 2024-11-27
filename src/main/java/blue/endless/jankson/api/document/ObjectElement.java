@@ -167,7 +167,22 @@ public class ObjectElement implements ValueElement, Map<String, ValueElement> {
 		w.flush();
 		return w.toString();
 	}
-	
+
+	/**
+	 * Gets an Optional KeyValuePairElement matching the provided key.
+	 * If no such element exist an empty Optional is returned.
+	 * @param key the key whose corresponding entry should be returned
+	 * @return Optional with the entry if it is present.
+	 */
+	public Optional<KeyValuePairElement> getKeyValuePair(String key) {
+		for (KeyValuePairElement element : entries) {
+			if (Objects.equals(element.key, key)) {
+				return Optional.of(element);
+			}
+		}
+		return Optional.empty();
+	}
+
 	/**
 	 * Gets a primtive element if it exists in this object. This method cannot return null values, only
 	 * PrimitiveElements representing the null value. If no element exists with the specified key, or the element
