@@ -263,6 +263,11 @@ public class Jankson {
 		JsonWriter out = new JsonWriter(writer);
 		elem.write(out);
 	}
+
+	public static void writeJson(ValueElement elem, Writer writer, JsonWriterOptions options) throws SyntaxError, IOException {
+		JsonWriter out = new JsonWriter(writer, options);
+		elem.write(out);
+	}
 	
 	public static String toJsonString(ValueElement elem, JsonWriterOptions options) throws SyntaxError, IOException {
 		try(StringWriter sw = new StringWriter()) {
