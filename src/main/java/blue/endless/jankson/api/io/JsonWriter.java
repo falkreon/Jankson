@@ -125,6 +125,7 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 			addCommas();
 			write("//");
 			write(value);
+			skipNewline = false;
 			writeNewline();
 			break;
 		
