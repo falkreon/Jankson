@@ -136,6 +136,10 @@ dependencies {
 	testImplementation group: "com.google.code.findbugs", name: "jsr305", version: "3.0.2";
 }
 
+test {
+	useJUnitPlatform()
+}
+
 signing {
 	if (project.hasProperty("signing.keyId")) {
 		println("Key credentials found. Enabling jar signing.");
