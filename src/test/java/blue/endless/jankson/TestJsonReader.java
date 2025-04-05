@@ -39,6 +39,7 @@ import org.junit.jupiter.api.Test;
 
 import blue.endless.jankson.api.Jankson;
 import blue.endless.jankson.api.SyntaxError;
+import blue.endless.jankson.api.document.ArrayElement;
 import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.api.document.ValueElement;
 import blue.endless.jankson.api.io.JsonReaderOptions;
@@ -87,6 +88,13 @@ public class TestJsonReader {
 			Assertions.assertTrue(p.isNull());
 		} else {
 			Assertions.fail("Should parse to a PrimitiveElement");
+		}
+
+		ValueElement emptyArray = Jankson.readJson("[]");
+		if (emptyArray instanceof ArrayElement p) {
+			Assertions.assertTrue(p.isEmpty());
+		} else {
+			Assertions.fail("Should parse to an ArrayElement");
 		}
 	}
 	
