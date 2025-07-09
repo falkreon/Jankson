@@ -25,6 +25,9 @@
 package blue.endless.jankson.api.codec;
 
 import java.lang.reflect.Type;
+import java.util.function.Predicate;
+
+import javax.annotation.Nonnull;
 
 import blue.endless.jankson.api.io.StructuredDataFunction;
 import blue.endless.jankson.api.io.StructuredDataReader;
@@ -45,11 +48,11 @@ public interface StructuredDataCodec {
 	}
 	
 	/**
-	 * Returns true if this codec can be used to create and/or process objects of the given type.
+	 * Returns a function that tests whether this codec can be used to create and/or process objects of the given type.
 	 * @param t The type that needs a codec
-	 * @return true if this codec applies to objects of the provided type, otherwise false.
+	 * @return a Predicate that will return true if this codec applies to objects of the provided type, otherwise false.
 	 */
-	public boolean appliesTo(Type t);
+	public Predicate<Type> getPredicate();
 	
 	/**
 	 * Gets a StructuredDataReader which can produce a stream of data that represents the provided
@@ -68,7 +71,7 @@ public interface StructuredDataCodec {
 	 *                      decide to.
 	 * @return A StructuredDataWriter that can consume a stream for this type.
 	 */
-	public default <T> StructuredDataFunction<T> getWriter(T existingValue) {
+	public default <T> StructuredDataFunction<T> getWriter(@Nonnull T existingValue) {
 		return getWriter();
 	}
 	

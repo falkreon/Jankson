@@ -25,8 +25,9 @@
 package blue.endless.jankson.api.codec;
 
 import java.io.IOException;
-import java.util.Optional;
+import java.lang.reflect.Type;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.function.CheckedFunction;
@@ -35,14 +36,21 @@ import blue.endless.jankson.api.io.StructuredDataBuffer;
 import blue.endless.jankson.api.io.StructuredDataFunction;
 import blue.endless.jankson.api.io.StructuredDataReader;
 
-public class StringCodec implements ClassTargetCodec {
-	private final Class<?> targetClass;
+/**
+ * Convenience codec that translates between json strings and some target class. For example, turning
+ * <pre><code>
+ * "color": "#FFEEAA"
+ * </code></pre>
+ * into an awt Color object, and the Color object back into the String.
+ */
+public class JsonStringCodec implements StructuredDataCodec {
+	private final Predicate<Type> predicate;
 	private final Function<Object, String> encoder;
 	private final Function<String, Object> decoder;
 	
 	@SuppressWarnings("unchecked")
-	public <T> StringCodec(Class<T> clazz, Function<T, String> encoder, Function<String, T> decoder) {
-		this.targetClass = clazz;
+	public <T> JsonStringCodec(Class<T> clazz, Function<T, String> encoder, Function<String, T> decoder) {
+		this.predicate = TypePredicate.ofClass(clazz);
 		this.encoder = (Function<Object, String>) encoder;
 		this.decoder = (Function<String, Object>) decoder;
 	}
@@ -61,10 +69,10 @@ public class StringCodec implements ClassTargetCodec {
 		
 		return new StructuredDataFunction.Mapper<String, T>(new StringElementWriter(), shimmedDecoder);
 	}
-
+	
 	@Override
-	public Class<?> getTargetClass() {
-		return targetClass;
+	public Predicate<Type> getPredicate() {
+		return predicate;
 	}
 	
 	private class StringElementWriter implements StructuredDataFunction<String> {
@@ -89,4 +97,5 @@ public class StringCodec implements ClassTargetCodec {
 		}
 		
 	}
+	
 }

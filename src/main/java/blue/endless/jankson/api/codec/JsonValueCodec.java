@@ -25,7 +25,9 @@
 package blue.endless.jankson.api.codec;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.document.ArrayElement;
@@ -39,24 +41,31 @@ import blue.endless.jankson.api.io.ValueElementReader;
 import blue.endless.jankson.api.io.ValueElementWriter;
 
 /**
- * Simple codec that converts an object to and from at-rest json data. This is similar to Jankson
- * 1.2-era serializers and deserializers.
+ * Simple codec that converts an object to and from "at-rest" json data in non-streaming mode. This is similar to
+ * Jankson 1.2-era serializers and deserializers.
  */
-public class ValueElementCodec implements ClassTargetCodec {
-	private final Class<?> targetClass;
+public class JsonValueCodec implements StructuredDataCodec {
+	private final Predicate<Type> predicate;
 	private final Function<Object, ValueElement> serializer;
 	private final CheckedFunction<ValueElement, Object, IOException> deserializer;
 	
 	@SuppressWarnings("unchecked")
-	public <T> ValueElementCodec(Class<T> targetClass, Function<T, ValueElement> serializer, CheckedFunction<ValueElement, T, IOException> deserializer) {
-		this.targetClass = targetClass;
+	public <T> JsonValueCodec(Predicate<Type> predicate, Function<T, ValueElement> serializer, CheckedFunction<ValueElement, T, IOException> deserializer) {
+		this.predicate = predicate;
+		this.serializer = (Function<Object, ValueElement>) serializer;
+		this.deserializer = (CheckedFunction<ValueElement, Object, IOException>) deserializer;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public <T> JsonValueCodec(Class<T> targetClass, Function<T, ValueElement> serializer, CheckedFunction<ValueElement, T, IOException> deserializer) {
+		this.predicate = TypePredicate.ofClass(targetClass);
 		this.serializer = (Function<Object, ValueElement>) serializer;
 		this.deserializer = (CheckedFunction<ValueElement, Object, IOException>) deserializer;
 	}
 	
 	@Override
-	public Class<?> getTargetClass() {
-		return targetClass;
+	public Predicate<Type> getPredicate() {
+		return predicate;
 	}
 	
 	@Override
@@ -80,7 +89,7 @@ public class ValueElementCodec implements ClassTargetCodec {
 		return new StructuredDataFunction.Mapper<ValueElement, T>(function, mapper);
 	}
 	
-	public <T> ValueElementCodec requiringObjects(Class<T> targetClass, Function<T, ObjectElement> serializer, Function<ObjectElement, T> deserializer) {
+	public static <T> JsonValueCodec requiringObjects(Class<T> targetClass, Function<T, ObjectElement> serializer, Function<ObjectElement, T> deserializer) {
 		Function<T, ValueElement> shimmedSerializer = serializer::apply;
 		
 		CheckedFunction<ValueElement, T, IOException> shimmedDeserializer = (elem) -> {
@@ -91,10 +100,10 @@ public class ValueElementCodec implements ClassTargetCodec {
 			}
 		};
 		
-		return new ValueElementCodec(targetClass, shimmedSerializer, shimmedDeserializer);
+		return new JsonValueCodec(targetClass, shimmedSerializer, shimmedDeserializer);
 	}
 	
-	public <T> ValueElementCodec requiringArrays(Class<T> targetClass, Function<T, ArrayElement> serializer, Function<ArrayElement, T> deserializer) {
+	public static <T> JsonValueCodec requiringArrays(Class<T> targetClass, Function<T, ArrayElement> serializer, Function<ArrayElement, T> deserializer) {
 		Function<T, ValueElement> shimmedSerializer = serializer::apply;
 		
 		CheckedFunction<ValueElement, T, IOException> shimmedDeserializer = (elem) -> {
@@ -105,10 +114,10 @@ public class ValueElementCodec implements ClassTargetCodec {
 			}
 		};
 		
-		return new ValueElementCodec(targetClass, shimmedSerializer, shimmedDeserializer);
+		return new JsonValueCodec(targetClass, shimmedSerializer, shimmedDeserializer);
 	}
 	
-	public <T> ValueElementCodec requiringPrimitives(Class<T> targetClass, Function<T, PrimitiveElement> serializer, Function<PrimitiveElement, T> deserializer) {
+	public static <T> JsonValueCodec requiringPrimitives(Class<T> targetClass, Function<T, PrimitiveElement> serializer, Function<PrimitiveElement, T> deserializer) {
 		Function<T, ValueElement> shimmedSerializer = serializer::apply;
 		
 		CheckedFunction<ValueElement, T, IOException> shimmedDeserializer = (elem) -> {
@@ -119,6 +128,6 @@ public class ValueElementCodec implements ClassTargetCodec {
 			}
 		};
 		
-		return new ValueElementCodec(targetClass, shimmedSerializer, shimmedDeserializer);
+		return new JsonValueCodec(targetClass, shimmedSerializer, shimmedDeserializer);
 	}
 }

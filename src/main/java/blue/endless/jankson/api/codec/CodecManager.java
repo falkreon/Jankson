@@ -26,11 +26,11 @@ package blue.endless.jankson.api.codec;
 
 import java.lang.reflect.Type;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import blue.endless.jankson.api.io.StructuredDataFunction;
 import blue.endless.jankson.api.io.StructuredDataReader;
-import blue.endless.jankson.impl.io.objectwriter.SingleValueFunction;
 
 /**
  * Understands the structure of certain java object types, and can create streams to produce or
@@ -56,7 +56,7 @@ public interface CodecManager {
 	 * @return A StructuredDataWriter that can consume a stream for this object's type, or null if
 	 *         the type isn't understood by this manager or any of its delegates.
 	 */
-	public @Nullable <T> StructuredDataFunction<T> getWriter(T existingValue);
+	public @Nullable <T> StructuredDataFunction<T> getWriter(@Nonnull T existingValue);
 	
 	/**
 	 * Gets a StructuredDataWriter that can consume a stream of data and produce an object of the

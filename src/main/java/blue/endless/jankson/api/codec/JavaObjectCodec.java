@@ -24,20 +24,26 @@
 
 package blue.endless.jankson.api.codec;
 
+import java.lang.reflect.Type;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import blue.endless.jankson.api.io.StructuredDataReader;
 import blue.endless.jankson.impl.io.objectwriter.SingleValueFunction;
 
-public class FullCodec implements ClassTargetCodec {
-	private final Class<?> targetClass;
+/**
+ * Concrete implementation of StructuredDataCodec. Fuses a serializer and deserializer together into a custom codec for
+ * a target class.
+ */
+public class JavaObjectCodec implements StructuredDataCodec {
+	private final TypePredicate predicate;
 	private final Function<Object, StructuredDataReader> serializer;
 	private final Supplier<SingleValueFunction<Object>> deserializer;
 	
 	@SuppressWarnings("unchecked")
-	public <T> FullCodec(Class<T> targetClass, Function<T, StructuredDataReader> serializer, Supplier<SingleValueFunction<T>> deserializer) {
-		this.targetClass = targetClass;
+	public <T> JavaObjectCodec(Class<T> targetClass, Function<T, StructuredDataReader> serializer, Supplier<SingleValueFunction<T>> deserializer) {
+		this.predicate = TypePredicate.ofClass(targetClass);
 		this.serializer = (Function<Object, StructuredDataReader>) serializer;
 		this.deserializer = () -> (SingleValueFunction<Object>) deserializer.get();
 	}
@@ -54,7 +60,7 @@ public class FullCodec implements ClassTargetCodec {
 	}
 
 	@Override
-	public Class<?> getTargetClass() {
-		return targetClass;
+	public Predicate<Type> getPredicate() {
+		return predicate;
 	}
 }

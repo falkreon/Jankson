@@ -28,11 +28,11 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import blue.endless.jankson.api.io.StructuredDataFunction;
 import blue.endless.jankson.api.io.StructuredDataReader;
-import blue.endless.jankson.impl.io.objectwriter.SingleValueFunction;
 
 public class CodecHolder implements CodecManager {
 	private List<StructuredDataCodec> codecs = new ArrayList<>();
@@ -47,7 +47,7 @@ public class CodecHolder implements CodecManager {
 	}
 
 	@Override
-	public @Nullable <T> StructuredDataFunction<T> getWriter(T existingValue) {
+	public @Nullable <T> StructuredDataFunction<T> getWriter(@Nonnull T existingValue) {
 		for(StructuredDataCodec codec : codecs) {
 			if (codec.appliesTo(existingValue.getClass())) return codec.getWriter(existingValue);
 		}
