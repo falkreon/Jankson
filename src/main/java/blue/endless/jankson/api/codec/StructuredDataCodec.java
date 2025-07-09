@@ -49,7 +49,6 @@ public interface StructuredDataCodec {
 	
 	/**
 	 * Returns a function that tests whether this codec can be used to create and/or process objects of the given type.
-	 * @param t The type that needs a codec
 	 * @return a Predicate that will return true if this codec applies to objects of the provided type, otherwise false.
 	 */
 	public Predicate<Type> getPredicate();
