@@ -39,8 +39,8 @@ public interface Deserializer<T> extends StructuredDataWriter {
 	void write(StructuredData data) throws SyntaxError, IOException;
 	T getResult();
 	
-	public static <S, T> Deserializer<T> map(Deserializer<S> deserializer, CheckedFunction<S, T, SyntaxError> mapper) {
-		return new Mapper<S, T>(deserializer, mapper);
+	public default <U> Deserializer<U> map(CheckedFunction<T, U, SyntaxError> mapper) {
+		return new Mapper<T, U>(this, mapper);
 	}
 	
 	public class Mapper<S, T> implements Deserializer<T> {

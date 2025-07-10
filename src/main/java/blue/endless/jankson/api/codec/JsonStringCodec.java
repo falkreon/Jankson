@@ -67,7 +67,7 @@ public class JsonStringCodec implements StructuredDataCodec {
 		@SuppressWarnings("unchecked")
 		CheckedFunction<String, T, SyntaxError> shimmedDecoder = (String encoded) -> (T) decoder.apply(encoded);
 		
-		return Deserializer.map(new StringElementWriter(), shimmedDecoder);
+		return new StringDeserializer().map(shimmedDecoder);
 	}
 	
 	@Override
@@ -75,7 +75,7 @@ public class JsonStringCodec implements StructuredDataCodec {
 		return predicate;
 	}
 	
-	private class StringElementWriter implements Deserializer<String> {
+	private class StringDeserializer implements Deserializer<String> {
 		private String result;
 		
 		@Override
