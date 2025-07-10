@@ -22,10 +22,7 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.impl.io.objectwriter;
-
-import blue.endless.jankson.api.io.StructuredData;
-import blue.endless.jankson.api.io.StructuredDataFunction;
+package blue.endless.jankson.api.io;
 
 import static blue.endless.jankson.api.io.StructuredData.Type.*;
 
@@ -33,7 +30,12 @@ import java.io.IOException;
 
 import blue.endless.jankson.api.SyntaxError;
 
-public abstract class SingleValueFunction<T> implements StructuredDataFunction<T> {
+/**
+ * A helper class which keeps track of when we've consumed a single ValueElement in order to automatically report
+ * completion.
+ * @param <T> The type of object this Deserializer produces.
+ */
+public abstract class AbstractDeserializer<T> implements Deserializer<T> {
 	private int nestingLevel = 0;
 	private boolean complete = false;
 	
@@ -72,11 +74,11 @@ public abstract class SingleValueFunction<T> implements StructuredDataFunction<T
 	
 	protected abstract void process(StructuredData data) throws SyntaxError, IOException;
 	
-	public static <T> SingleValueFunction<T> discard() {
+	public static <T> AbstractDeserializer<T> discard() {
 		return new Discard<T>();
 	}
 	
-	private static class Discard<T> extends SingleValueFunction<T> {
+	private static class Discard<T> extends AbstractDeserializer<T> {
 		@Override
 		public T getResult() { return null; }
 		

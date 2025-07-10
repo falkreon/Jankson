@@ -48,12 +48,12 @@ import javax.annotation.Nullable;
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.api.function.CheckedFunction;
-import blue.endless.jankson.impl.io.objectwriter.ArrayFunction;
-import blue.endless.jankson.impl.io.objectwriter.CollectionFunction;
-import blue.endless.jankson.impl.io.objectwriter.MapFunction;
-import blue.endless.jankson.impl.io.objectwriter.ObjectFunction;
-import blue.endless.jankson.impl.io.objectwriter.RecordFunction;
-import blue.endless.jankson.impl.io.objectwriter.PrimitiveFunction;
+import blue.endless.jankson.impl.io.objectwriter.ArrayDeserializer;
+import blue.endless.jankson.impl.io.objectwriter.CollectionDeserializer;
+import blue.endless.jankson.impl.io.objectwriter.MapDeserializer;
+import blue.endless.jankson.impl.io.objectwriter.ObjectDeserializer;
+import blue.endless.jankson.impl.io.objectwriter.RecordDeserializer;
+import blue.endless.jankson.impl.io.objectwriter.PrimitiveDeserializer;
 import blue.endless.jankson.impl.magic.ClassHierarchy;
 
 @SuppressWarnings("unchecked")
@@ -62,7 +62,7 @@ public class ObjectWriter<T> implements StructuredDataWriter {
 	private T subject;
 	private boolean complete = false;
 	
-	private StructuredDataFunction<Object> delegate = null;
+	private Deserializer<Object> delegate = null;
 	
 	//private Function<Object, Optional<T>> mapper = it -> (Optional<T>) Optional.of(it);
 	
@@ -93,15 +93,16 @@ public class ObjectWriter<T> implements StructuredDataWriter {
 	 * @param data
 	 * @return
 	 */
-	public static StructuredDataFunction<?> getObjectWriter(Type type, StructuredData data, @Nullable Object subject) {
-		if (!data.type().isSemantic()) throw new IllegalArgumentException("Can't get objectWriter for "+data);
+	public static Deserializer<?> getObjectWriter(Type type, StructuredData data, @Nullable Object subject) {
+		// TODO: See if the destination is nullable instead?
+		if (!data.type().isSemantic()) throw new IllegalArgumentException("Can't get objectWriter for non-semantic data: "+data);
 		
 		Class<?> targetClass = ClassHierarchy.getErasedClass(type);
 		if (Collection.class.isAssignableFrom(targetClass)) {
 			Type elementType = ClassHierarchy.getCollectionTypeArgument(type);
 			
 			if (subject instanceof Collection coll) {
-				return new CollectionFunction<>(coll, elementType);
+				return new CollectionDeserializer<>(coll, elementType);
 			}
 			
 			if (targetClass.isInterface()) {
@@ -121,7 +122,7 @@ public class ObjectWriter<T> implements StructuredDataWriter {
 					throw new IllegalArgumentException("Can't get an implementation for unknown collection interface \""+targetClass.getCanonicalName()+"\"");
 				}
 				
-				return new CollectionFunction<>(coll, elementType);
+				return new CollectionDeserializer<>(coll, elementType);
 			} else {
 				// Attempt to create an instance using the target type's no-arg constructor - just
 				// about every Collection type has one. If not, give a clear indication of the problem
@@ -134,7 +135,7 @@ public class ObjectWriter<T> implements StructuredDataWriter {
 					Collection<?> coll = (Collection<?>) cons.newInstance();
 					if (!access) cons.setAccessible(false);
 					
-					return new CollectionFunction<>(coll, elementType);
+					return new CollectionDeserializer<>(coll, elementType);
 				} catch (Throwable t) {
 					throw new IllegalArgumentException("Could not create an instance of collection type, \""+type.getTypeName()+"\". Is there a zero-argument constructor?", t);
 				}
@@ -144,11 +145,11 @@ public class ObjectWriter<T> implements StructuredDataWriter {
 		if (Map.class.isAssignableFrom(targetClass)) {
 			if (subject instanceof Map) {
 				// Map<Object, Object> is incorrect, but we cannot construct MapFunction<?, ?>
-				return new MapFunction<Object, Object>(type, (Map<Object, Object>) subject);
+				return new MapDeserializer<Object, Object>(type, (Map<Object, Object>) subject);
 			}
 			
 			if (targetClass.isInterface()) {
-				return new MapFunction<Object, Object>(type);
+				return new MapDeserializer<Object, Object>(type);
 			} else {
 				// Attempt to create an instance using the target type's no-arg constructor - as
 				// with Collection, just about every Map type has one. If not, give a clear
@@ -161,7 +162,7 @@ public class ObjectWriter<T> implements StructuredDataWriter {
 					Map<Object, Object> coll = (Map<Object, Object>) cons.newInstance();
 					if (!access) cons.setAccessible(false);
 					
-					return new MapFunction<Object, Object>(type, coll);
+					return new MapDeserializer<Object, Object>(type, coll);
 				} catch (Throwable t) {
 					throw new IllegalArgumentException("Could not create an instance of collection type, \""+type.getTypeName()+"\". Is there a zero-argument constructor?", t);
 				}
@@ -170,19 +171,19 @@ public class ObjectWriter<T> implements StructuredDataWriter {
 		}
 		
 		if (targetClass.isRecord()) {
-			return new RecordFunction<>(targetClass);
+			return new RecordDeserializer<>(targetClass);
 		}
 		
 		if (targetClass.isArray()) {
-			return new ArrayFunction<>(targetClass);
+			return new ArrayDeserializer<>(targetClass);
 		}
 		
 		CheckedFunction<PrimitiveElement, Object, SyntaxError> selectedMapper = primitiveMappers.get(targetClass);
 		if (selectedMapper != null) {
-			return new StructuredDataFunction.Mapper<>(new PrimitiveFunction(), selectedMapper);
+			return new Deserializer.Mapper<>(new PrimitiveDeserializer(), selectedMapper);
 		}
 		
-		return new ObjectFunction<Object>(type);
+		return new ObjectDeserializer<Object>(type);
 	}
 	
 	/*
@@ -265,9 +266,9 @@ public class ObjectWriter<T> implements StructuredDataWriter {
 				
 				//analyzeTypeAndData(data);
 				if (data.type().isSemantic()) {
-					StructuredDataFunction<?> function = getObjectWriter(type, data, subject);
+					Deserializer<?> function = getObjectWriter(type, data, subject);
 					if (function != null) {
-						delegate = (StructuredDataFunction<Object>) function;
+						delegate = (Deserializer<Object>) function;
 						delegate.write(data);
 					}
 				}

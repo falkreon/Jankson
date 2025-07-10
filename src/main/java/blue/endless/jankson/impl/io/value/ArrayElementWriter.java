@@ -35,14 +35,14 @@ import blue.endless.jankson.api.document.FormattingElement;
 import blue.endless.jankson.api.document.NonValueElement;
 import blue.endless.jankson.api.document.ValueElement;
 import blue.endless.jankson.api.io.StructuredData;
-import blue.endless.jankson.api.io.StructuredDataFunction;
+import blue.endless.jankson.api.io.Deserializer;
 
-public class ArrayElementWriter implements StructuredDataFunction<ValueElement> {
+public class ArrayElementWriter implements Deserializer<ValueElement> {
 	
 	private boolean initialBracketFound = false;
 	private boolean finalBracketFound =  false;
 	private ArrayElement value = new ArrayElement();
-	private StructuredDataFunction<ValueElement> delegate;
+	private Deserializer<ValueElement> delegate;
 	private ArrayList<NonValueElement> bufferedValuePrologue = new ArrayList<>();
 	
 	@Override

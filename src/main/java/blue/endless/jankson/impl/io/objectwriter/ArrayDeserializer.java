@@ -31,20 +31,21 @@ import java.util.ArrayList;
 
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.ObjectWriter;
+import blue.endless.jankson.api.io.AbstractDeserializer;
 import blue.endless.jankson.api.io.StructuredData;
-import blue.endless.jankson.api.io.StructuredDataFunction;
+import blue.endless.jankson.api.io.Deserializer;
 import blue.endless.jankson.impl.magic.ClassHierarchy;
 
-public class ArrayFunction<V> extends SingleValueFunction<Object> {
+public class ArrayDeserializer<V> extends AbstractDeserializer<Object> {
 	
 	private ArrayList<V> result = new ArrayList<>();
 	//private final Class<?> arrayType;
 	private final Type elementType;
 	private boolean foundStart = false;
 	private boolean foundEnd = false;
-	private StructuredDataFunction<V> delegate;
+	private Deserializer<V> delegate;
 	
-	public ArrayFunction(Class<?> arrayType) {
+	public ArrayDeserializer(Class<?> arrayType) {
 		//this.arrayType = arrayType;
 		if (!arrayType.isArray()) throw new IllegalArgumentException("Expected: Array type, got "+arrayType.getCanonicalName()+" instead.");
 		this.elementType = arrayType.getComponentType();
@@ -96,7 +97,7 @@ public class ArrayFunction<V> extends SingleValueFunction<Object> {
 				
 				default -> {
 					if (!data.type().isSemantic()) return;
-					delegate = (StructuredDataFunction<V>) ObjectWriter.getObjectWriter(elementType, data, null);
+					delegate = (Deserializer<V>) ObjectWriter.getObjectWriter(elementType, data, null);
 					delegate.write(data);
 					checkDelegate();
 				}

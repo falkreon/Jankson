@@ -38,9 +38,9 @@ import blue.endless.jankson.impl.io.value.PrimitiveElementWriter;
  * StructuredDataWriter that assembles a ValueElement. Much like StringWriter, this "captures" data
  * that would normally be serialized and assembles it into intermediate state.
  */
-public class ValueElementWriter implements StructuredDataFunction<ValueElement> {
+public class ValueElementWriter implements Deserializer<ValueElement> {
 	
-	private StructuredDataFunction<ValueElement> delegate = null;
+	private Deserializer<ValueElement> delegate = null;
 	private ValueElement result = null;
 	private ArrayList<NonValueElement> bufferedComments = new ArrayList<>();
 	

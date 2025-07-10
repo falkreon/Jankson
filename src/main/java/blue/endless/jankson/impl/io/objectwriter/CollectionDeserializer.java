@@ -31,11 +31,12 @@ import java.util.Collection;
 
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.ObjectWriter;
+import blue.endless.jankson.api.io.AbstractDeserializer;
 import blue.endless.jankson.api.io.StructuredData;
-import blue.endless.jankson.api.io.StructuredDataFunction;
+import blue.endless.jankson.api.io.Deserializer;
 import blue.endless.jankson.impl.magic.ClassHierarchy;
 
-public class CollectionFunction<V, T extends Collection<V>> extends SingleValueFunction<Collection<V>>{
+public class CollectionDeserializer<V, T extends Collection<V>> extends AbstractDeserializer<Collection<V>>{
 	
 	private final Type memberType;
 	private final T result;
@@ -43,14 +44,14 @@ public class CollectionFunction<V, T extends Collection<V>> extends SingleValueF
 	private boolean startFound = false;
 	private boolean endFound = false;
 	
-	private StructuredDataFunction<V> delegate = null;
+	private Deserializer<V> delegate = null;
 	
-	public CollectionFunction(T result, Type memberType) {
+	public CollectionDeserializer(T result, Type memberType) {
 		this.result = result;
 		this.memberType = memberType;
 	}
 	
-	public CollectionFunction(Type resultType) throws IllegalArgumentException {
+	public CollectionDeserializer(Type resultType) throws IllegalArgumentException {
 		this(createObject(resultType), ClassHierarchy.getCollectionTypeArgument(resultType));
 	}
 	
@@ -94,7 +95,7 @@ public class CollectionFunction<V, T extends Collection<V>> extends SingleValueF
 				}
 				
 				default -> {
-					delegate = (StructuredDataFunction<V>) ObjectWriter.getObjectWriter(memberType, data, null);
+					delegate = (Deserializer<V>) ObjectWriter.getObjectWriter(memberType, data, null);
 					delegate.write(data);
 					checkDelegate();
 				}

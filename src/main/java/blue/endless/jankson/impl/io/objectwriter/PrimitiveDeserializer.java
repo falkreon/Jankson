@@ -26,6 +26,7 @@ package blue.endless.jankson.impl.io.objectwriter;
 
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.document.PrimitiveElement;
+import blue.endless.jankson.api.io.AbstractDeserializer;
 import blue.endless.jankson.api.io.StructuredData;
 
 /**
@@ -33,7 +34,7 @@ import blue.endless.jankson.api.io.StructuredData;
  * SyntaxError. PrimitiveElement supports a number of different flexible marshalling tasks, so there's
  * no need for individual long/String/double/boolean functions.
  */
-public class PrimitiveFunction extends SingleValueFunction<PrimitiveElement> {
+public class PrimitiveDeserializer extends AbstractDeserializer<PrimitiveElement> {
 	PrimitiveElement value = null;
 	
 	@Override

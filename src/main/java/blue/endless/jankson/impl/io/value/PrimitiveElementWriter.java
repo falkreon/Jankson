@@ -30,9 +30,9 @@ import java.util.Objects;
 import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.api.document.ValueElement;
 import blue.endless.jankson.api.io.StructuredData;
-import blue.endless.jankson.api.io.StructuredDataFunction;
+import blue.endless.jankson.api.io.Deserializer;
 
-public class PrimitiveElementWriter implements StructuredDataFunction<ValueElement> {
+public class PrimitiveElementWriter implements Deserializer<ValueElement> {
 	
 	private boolean complete = false;
 	private PrimitiveElement value = null;

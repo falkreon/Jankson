@@ -37,14 +37,14 @@ import blue.endless.jankson.api.document.NonValueElement;
 import blue.endless.jankson.api.document.ObjectElement;
 import blue.endless.jankson.api.document.ValueElement;
 import blue.endless.jankson.api.io.StructuredData;
-import blue.endless.jankson.api.io.StructuredDataFunction;
+import blue.endless.jankson.api.io.Deserializer;
 
-public class ObjectElementWriter implements StructuredDataFunction<ValueElement> {
+public class ObjectElementWriter implements Deserializer<ValueElement> {
 	
 	private boolean initialBraceFound = false;
 	private boolean finalBraceFound = false;
 	private ObjectElement value = new ObjectElement();
-	private StructuredDataFunction<ValueElement> subordinate;
+	private Deserializer<ValueElement> subordinate;
 	
 	private List<NonValueElement> bufferedKeyPreamble = new ArrayList<>();
 	private List<NonValueElement> bufferedValuePreamble = new ArrayList<>();

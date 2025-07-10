@@ -29,7 +29,7 @@ import java.util.function.Predicate;
 
 import javax.annotation.Nonnull;
 
-import blue.endless.jankson.api.io.StructuredDataFunction;
+import blue.endless.jankson.api.io.Deserializer;
 import blue.endless.jankson.api.io.StructuredDataReader;
 
 /**
@@ -70,7 +70,7 @@ public interface StructuredDataCodec {
 	 *                      decide to.
 	 * @return A StructuredDataWriter that can consume a stream for this type.
 	 */
-	public default <T> StructuredDataFunction<T> getWriter(@Nonnull T existingValue) {
+	public default <T> Deserializer<T> getWriter(@Nonnull T existingValue) {
 		return getWriter();
 	}
 	
@@ -80,5 +80,5 @@ public interface StructuredDataCodec {
 	 * @param <T> The type of the object this codec manages
 	 * @return A StructuredDataWriter that can consume a stream for this type.
 	 */
-	public <T> StructuredDataFunction<T> getWriter();
+	public <T> Deserializer<T> getWriter();
 }

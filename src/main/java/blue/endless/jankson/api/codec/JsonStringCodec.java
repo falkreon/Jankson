@@ -33,7 +33,7 @@ import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.function.CheckedFunction;
 import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.StructuredDataBuffer;
-import blue.endless.jankson.api.io.StructuredDataFunction;
+import blue.endless.jankson.api.io.Deserializer;
 import blue.endless.jankson.api.io.StructuredDataReader;
 
 /**
@@ -63,11 +63,11 @@ public class JsonStringCodec implements StructuredDataCodec {
 	}
 
 	@Override
-	public <T> StructuredDataFunction<T> getWriter() {
+	public <T> Deserializer<T> getWriter() {
 		@SuppressWarnings("unchecked")
 		CheckedFunction<String, T, SyntaxError> shimmedDecoder = (String encoded) -> (T) decoder.apply(encoded);
 		
-		return new StructuredDataFunction.Mapper<String, T>(new StringElementWriter(), shimmedDecoder);
+		return Deserializer.map(new StringElementWriter(), shimmedDecoder);
 	}
 	
 	@Override
@@ -75,7 +75,7 @@ public class JsonStringCodec implements StructuredDataCodec {
 		return predicate;
 	}
 	
-	private class StringElementWriter implements StructuredDataFunction<String> {
+	private class StringElementWriter implements Deserializer<String> {
 		private String result;
 		
 		@Override

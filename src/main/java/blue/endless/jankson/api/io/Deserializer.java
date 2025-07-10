@@ -25,28 +25,30 @@
 package blue.endless.jankson.api.io;
 
 import java.io.IOException;
-import java.util.Optional;
-import java.util.function.Function;
 
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.function.CheckedFunction;
 
 /**
- * A StructuredDataFunction is a job that consumes StructuredData over time, and produces a value
- * when complete.
- * @param <T> The return type of the function.
+ * A Deserializer is a kind of StructuredDataWriter. It's like a job that consumes StructuredData over time (as
+ * it is written to this object), and produces a value when writing is complete.
+ * @param <T> The kind of object this Deserializer produces
  */
-public interface StructuredDataFunction<T> extends StructuredDataWriter {
+public interface Deserializer<T> extends StructuredDataWriter {
 	boolean isComplete();
 	void write(StructuredData data) throws SyntaxError, IOException;
 	T getResult();
 	
-	public class Mapper<S, T> implements StructuredDataFunction<T> {
-		private final StructuredDataFunction<S> function;
+	public static <S, T> Deserializer<T> map(Deserializer<S> deserializer, CheckedFunction<S, T, SyntaxError> mapper) {
+		return new Mapper<S, T>(deserializer, mapper);
+	}
+	
+	public class Mapper<S, T> implements Deserializer<T> {
+		private final Deserializer<S> function;
 		private final CheckedFunction<S, T, SyntaxError> mapper;
 		private T result = null;
 		
-		public Mapper(StructuredDataFunction<S> function, CheckedFunction<S, T, SyntaxError> mapper) {
+		public Mapper(Deserializer<S> function, CheckedFunction<S, T, SyntaxError> mapper) {
 			this.function = function;
 			this.mapper = mapper;
 		}

@@ -37,10 +37,11 @@ import java.util.Set;
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.annotation.SerializedName;
 import blue.endless.jankson.api.io.ObjectWriter;
+import blue.endless.jankson.api.io.AbstractDeserializer;
 import blue.endless.jankson.api.io.StructuredData;
-import blue.endless.jankson.api.io.StructuredDataFunction;
+import blue.endless.jankson.api.io.Deserializer;
 
-public class RecordFunction<T> extends SingleValueFunction<T> {
+public class RecordDeserializer<T> extends AbstractDeserializer<T> {
 	private Class<T> clazz;
 	private boolean foundStart = false;
 	private boolean foundEnd = false;
@@ -49,9 +50,9 @@ public class RecordFunction<T> extends SingleValueFunction<T> {
 	private Map<String, String> serializedNameToFieldName = new HashMap<>();
 	private Set<String> requiredValues = new HashSet<>();
 	private String delegateKey = null;
-	private StructuredDataFunction<Object> delegate = null;
+	private Deserializer<Object> delegate = null;
 	
-	public RecordFunction(Class<T> clazz) {
+	public RecordDeserializer(Class<T> clazz) {
 		this.clazz = clazz;
 		for (RecordComponent c : clazz.getRecordComponents()) {
 			requiredValues.add(c.getName());
@@ -162,7 +163,7 @@ public class RecordFunction<T> extends SingleValueFunction<T> {
 			} else {
 				String fieldName = serializedNameToFieldName.get(delegateKey);
 				if (fieldName == null) {
-					delegate = SingleValueFunction.discard();
+					delegate = AbstractDeserializer.discard();
 					delegate.write(data);
 					checkDelegate();
 					return;
@@ -177,13 +178,13 @@ public class RecordFunction<T> extends SingleValueFunction<T> {
 
 				if (fieldType != null) {
 					
-					delegate = (StructuredDataFunction<Object>) ObjectWriter.getObjectWriter(fieldType, data, null);
+					delegate = (Deserializer<Object>) ObjectWriter.getObjectWriter(fieldType, data, null);
 					if (delegate != null) {
 						delegate.write(data);
 					}
 				} else {
 					// This key doesn't correspond to anything recognizeable in the record.
-					delegate = SingleValueFunction.discard();
+					delegate = AbstractDeserializer.discard();
 					delegate.write(data);
 				}
 			}

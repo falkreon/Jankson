@@ -29,31 +29,32 @@ import java.lang.reflect.Type;
 
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.ObjectWriter;
+import blue.endless.jankson.api.io.AbstractDeserializer;
 import blue.endless.jankson.api.io.StructuredData;
-import blue.endless.jankson.api.io.StructuredDataFunction;
+import blue.endless.jankson.api.io.Deserializer;
 import blue.endless.jankson.impl.io.objectwriter.factory.ObjectWrapper;
 
-public class ObjectFunction<T> extends SingleValueFunction<T>{
+public class ObjectDeserializer<T> extends AbstractDeserializer<T>{
 	
 	private final Type tType;
 	private boolean foundStart = false;
 	private boolean foundEnd = false;
 	private String delegateKey = null;
-	private StructuredDataFunction<Object> delegate = null;
+	private Deserializer<Object> delegate = null;
 	
 	private ObjectWrapper<T> wrapper;
 	
-	public ObjectFunction(Type t) {
+	public ObjectDeserializer(Type t) {
 		tType = t;
 		wrapper = ObjectWrapper.of(t, null);
 	}
 	
-	public ObjectFunction(Class<T> clazz) {
+	public ObjectDeserializer(Class<T> clazz) {
 		tType = clazz;
 		wrapper = ObjectWrapper.of(clazz, null);
 	}
 	
-	public ObjectFunction(Type t, T result) {
+	public ObjectDeserializer(Type t, T result) {
 		tType = t;
 		wrapper = ObjectWrapper.of(t, result);
 	}
@@ -126,14 +127,14 @@ public class ObjectFunction<T> extends SingleValueFunction<T>{
 					
 					Type fieldType = wrapper.getType(delegateKey);
 					if (fieldType == null) {
-						delegate = SingleValueFunction.discard();
+						delegate = AbstractDeserializer.discard();
 						delegate.write(data);
 						checkDelegate();
 						return;
 					}
 					
 					// TODO: Hand over the instance to start with
-					delegate = (StructuredDataFunction<Object>) ObjectWriter.getObjectWriter(fieldType, data, null);
+					delegate = (Deserializer<Object>) ObjectWriter.getObjectWriter(fieldType, data, null);
 					if (delegate != null) {
 						delegate.write(data);
 						checkDelegate();

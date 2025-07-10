@@ -29,8 +29,8 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+import blue.endless.jankson.api.io.Deserializer;
 import blue.endless.jankson.api.io.StructuredDataReader;
-import blue.endless.jankson.impl.io.objectwriter.SingleValueFunction;
 
 /**
  * Concrete implementation of StructuredDataCodec. Fuses a serializer and deserializer together into a custom codec for
@@ -39,13 +39,13 @@ import blue.endless.jankson.impl.io.objectwriter.SingleValueFunction;
 public class JavaObjectCodec implements StructuredDataCodec {
 	private final TypePredicate predicate;
 	private final Function<Object, StructuredDataReader> serializer;
-	private final Supplier<SingleValueFunction<Object>> deserializer;
+	private final Supplier<Deserializer<Object>> deserializer;
 	
 	@SuppressWarnings("unchecked")
-	public <T> JavaObjectCodec(Class<T> targetClass, Function<T, StructuredDataReader> serializer, Supplier<SingleValueFunction<T>> deserializer) {
+	public <T> JavaObjectCodec(Class<T> targetClass, Function<T, StructuredDataReader> serializer, Supplier<Deserializer<T>> deserializer) {
 		this.predicate = TypePredicate.ofClass(targetClass);
 		this.serializer = (Function<Object, StructuredDataReader>) serializer;
-		this.deserializer = () -> (SingleValueFunction<Object>) deserializer.get();
+		this.deserializer = () -> (Deserializer<Object>) deserializer.get();
 	}
 	
 	@Override
@@ -55,8 +55,8 @@ public class JavaObjectCodec implements StructuredDataCodec {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T> SingleValueFunction<T> getWriter() {
-		return (SingleValueFunction<T>) deserializer.get();
+	public <T> Deserializer<T> getWriter() {
+		return (Deserializer<T>) deserializer.get();
 	}
 
 	@Override

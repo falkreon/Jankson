@@ -35,7 +35,7 @@ import blue.endless.jankson.api.document.ObjectElement;
 import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.api.document.ValueElement;
 import blue.endless.jankson.api.function.CheckedFunction;
-import blue.endless.jankson.api.io.StructuredDataFunction;
+import blue.endless.jankson.api.io.Deserializer;
 import blue.endless.jankson.api.io.StructuredDataReader;
 import blue.endless.jankson.api.io.ValueElementReader;
 import blue.endless.jankson.api.io.ValueElementWriter;
@@ -74,8 +74,8 @@ public class JsonValueCodec implements StructuredDataCodec {
 	}
 
 	@Override
-	public <T> StructuredDataFunction<T> getWriter() {
-		StructuredDataFunction<ValueElement> function = new ValueElementWriter();
+	public <T> Deserializer<T> getWriter() {
+		Deserializer<ValueElement> function = new ValueElementWriter();
 		
 		@SuppressWarnings("unchecked")
 		CheckedFunction<ValueElement, T, SyntaxError> mapper = (ValueElement val) -> {
@@ -86,7 +86,7 @@ public class JsonValueCodec implements StructuredDataCodec {
 			}
 		};
 		
-		return new StructuredDataFunction.Mapper<ValueElement, T>(function, mapper);
+		return new Deserializer.Mapper<ValueElement, T>(function, mapper);
 	}
 	
 	public static <T> JsonValueCodec requiringObjects(Class<T> targetClass, Function<T, ObjectElement> serializer, Function<ObjectElement, T> deserializer) {

@@ -33,11 +33,12 @@ import java.util.function.Function;
 
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.ObjectWriter;
+import blue.endless.jankson.api.io.AbstractDeserializer;
 import blue.endless.jankson.api.io.StructuredData;
-import blue.endless.jankson.api.io.StructuredDataFunction;
+import blue.endless.jankson.api.io.Deserializer;
 import blue.endless.jankson.impl.magic.ClassHierarchy;
 
-public class MapFunction<K, V> extends SingleValueFunction<Map<K, V>> {
+public class MapDeserializer<K, V> extends AbstractDeserializer<Map<K, V>> {
 	
 	private final Type keyType;
 	private final Type valueType;
@@ -48,9 +49,9 @@ public class MapFunction<K, V> extends SingleValueFunction<Map<K, V>> {
 	private boolean startFound = false;
 	private boolean endFound = false;
 	
-	private StructuredDataFunction<V> delegate = null;
+	private Deserializer<V> delegate = null;
 	
-	public MapFunction(Type keyType, Type valueType) {
+	public MapDeserializer(Type keyType, Type valueType) {
 		this.keyType = keyType;
 		this.valueType = valueType;
 		this.result = new HashMap<K, V>();
@@ -58,14 +59,14 @@ public class MapFunction<K, V> extends SingleValueFunction<Map<K, V>> {
 		
 	}
 	
-	public MapFunction(Type keyType, Type valueType, Map<K, V> map) {
+	public MapDeserializer(Type keyType, Type valueType, Map<K, V> map) {
 		this.keyType = keyType;
 		this.valueType = valueType;
 		this.result = map;
 		this.toKFunction = getKeyFunction(keyType);
 	}
 	
-	public MapFunction(Type mapType) {
+	public MapDeserializer(Type mapType) {
 		this.result = new HashMap<>();
 		var mapTypes = ClassHierarchy.getMapTypeArguments(mapType);
 		this.keyType = mapTypes.keyType();
@@ -73,7 +74,7 @@ public class MapFunction<K, V> extends SingleValueFunction<Map<K, V>> {
 		this.toKFunction = getKeyFunction(keyType);
 	}
 	
-	public MapFunction(Type mapType, Map<K, V> map) {
+	public MapDeserializer(Type mapType, Map<K, V> map) {
 		this.result = map;
 		var mapTypes = ClassHierarchy.getMapTypeArguments(mapType);
 		this.keyType = mapTypes.keyType();
@@ -153,7 +154,7 @@ public class MapFunction<K, V> extends SingleValueFunction<Map<K, V>> {
 					}
 					
 					default -> {
-						delegate = (StructuredDataFunction<V>) ObjectWriter.getObjectWriter(valueType, data, null);
+						delegate = (Deserializer<V>) ObjectWriter.getObjectWriter(valueType, data, null);
 						delegate.write(data);
 						checkDelegate();
 					}
