@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 
+import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.document.ArrayElement;
 import blue.endless.jankson.api.document.ObjectElement;
 import blue.endless.jankson.api.document.PrimitiveElement;
@@ -53,9 +54,11 @@ public class ValueElementReader {
 	}
 	
 	private static class ArrayValueReader extends DelegatingStructuredDataReader {
+		private final ArrayElement value;
 		private final Iterator<ValueElement> iterator;
 		
 		public ArrayValueReader(ArrayElement value) {
+			this.value = value;
 			this.iterator = value.iterator();
 		}
 		
@@ -68,13 +71,24 @@ public class ValueElementReader {
 				buffer(StructuredData.EOF);
 			}
 		}
+		
+		@Override
+		public void transferTo(StructuredDataWriter writer) throws SyntaxError, IOException {
+			if (writer instanceof BufferedStructuredDataWriter buffered) {
+				buffered.write(value);
+			} else {
+				super.transferTo(writer);
+			}
+		}
 	}
 	
 	private static class ObjectValueReader extends DelegatingStructuredDataReader {
+		private final ObjectElement value;
 		private final Iterator<Map.Entry<String, ValueElement>> iterator;
 		
 		public ObjectValueReader(ObjectElement value) {
-			iterator = value.entrySet().iterator();
+			this.value = value;
+			this.iterator = value.entrySet().iterator();
 		}
 		
 		@Override
@@ -85,6 +99,15 @@ public class ValueElementReader {
 				setDelegate(ValueElementReader.of(entry.getValue()));
 			} else {
 				buffer(StructuredData.EOF);
+			}
+		}
+		
+		@Override
+		public void transferTo(StructuredDataWriter writer) throws SyntaxError, IOException {
+			if (writer instanceof BufferedStructuredDataWriter buffered) {
+				buffered.write(value);
+			} else {
+				super.transferTo(writer);
 			}
 		}
 		

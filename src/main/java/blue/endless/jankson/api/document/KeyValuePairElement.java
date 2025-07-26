@@ -37,7 +37,6 @@ public class KeyValuePairElement implements DocumentElement, Map.Entry<String, V
 	protected boolean isDefault = false;
 	protected List<NonValueElement> prologue = new ArrayList<>();
 	protected String key;
-	//protected List<NonValueElement> intermission = new ArrayList<>();
 	protected ValueElement value;
 	
 	public KeyValuePairElement(String key, ValueElement value) {
@@ -54,14 +53,6 @@ public class KeyValuePairElement implements DocumentElement, Map.Entry<String, V
 	public String getKey() {
 		return key;
 	}
-	
-	/**
-	 * Gets NonValueElements after the key, but before the colon that separates the key and value. Should be left empty
-	 * if possible.
-	 */
-	//public List<NonValueElement> getIntermission() {
-	//	return intermission;
-	//}
 	
 	@Override
 	public ValueElement getValue() {
