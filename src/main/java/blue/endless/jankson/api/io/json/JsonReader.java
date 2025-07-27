@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.api.io;
+package blue.endless.jankson.api.io.json;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,6 +30,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 
 import blue.endless.jankson.api.SyntaxError;
+import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.impl.io.AbstractStructuredDataReader;
 import blue.endless.jankson.impl.io.context.ParserContext;
 import blue.endless.jankson.impl.io.context.RootParserContext;

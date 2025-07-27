@@ -39,9 +39,9 @@ import java.util.Set;
 import javax.annotation.Nullable;
 
 import blue.endless.jankson.api.SyntaxError;
-import blue.endless.jankson.api.io.JsonWriter;
 import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.StructuredDataWriter;
+import blue.endless.jankson.api.io.json.JsonWriter;
 
 public class ObjectElement implements ValueElement, Map<String, ValueElement>, Iterable<KeyValuePairElement> {
 	protected boolean isDefault = false;

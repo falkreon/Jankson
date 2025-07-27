@@ -27,7 +27,8 @@ package blue.endless.jankson;
 import blue.endless.jankson.api.Jankson;
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.document.*;
-import blue.endless.jankson.api.io.JsonWriterOptions;
+import blue.endless.jankson.api.io.json.JsonWriterOptions;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

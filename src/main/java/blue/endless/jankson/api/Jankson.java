@@ -36,14 +36,14 @@ import java.nio.charset.StandardCharsets;
 
 import blue.endless.jankson.api.document.ObjectElement;
 import blue.endless.jankson.api.document.ValueElement;
-import blue.endless.jankson.api.io.JsonReader;
-import blue.endless.jankson.api.io.JsonReaderOptions;
-import blue.endless.jankson.api.io.JsonWriter;
-import blue.endless.jankson.api.io.JsonWriterOptions;
 import blue.endless.jankson.api.io.ObjectReaderFactory;
 import blue.endless.jankson.api.io.ObjectWriter;
 import blue.endless.jankson.api.io.StructuredDataReader;
 import blue.endless.jankson.api.io.ValueElementWriter;
+import blue.endless.jankson.api.io.json.JsonReader;
+import blue.endless.jankson.api.io.json.JsonReaderOptions;
+import blue.endless.jankson.api.io.json.JsonWriter;
+import blue.endless.jankson.api.io.json.JsonWriterOptions;
 
 
 public class Jankson {

@@ -22,16 +22,17 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.api.io;
+package blue.endless.jankson.api.io.json;
+
+import static blue.endless.jankson.api.io.json.JsonWriterOptions.Hint.*;
 
 import java.io.IOException;
 import java.io.Writer;
 
 import blue.endless.jankson.api.document.CommentElement;
 import blue.endless.jankson.api.document.CommentType;
+import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.impl.io.AbstractStructuredDataWriter;
-
-import static blue.endless.jankson.api.io.JsonWriterOptions.Hint.*;
 
 public class JsonWriter extends AbstractStructuredDataWriter {
 	private final JsonWriterOptions options;

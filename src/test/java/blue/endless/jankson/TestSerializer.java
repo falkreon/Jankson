@@ -26,11 +26,11 @@ package blue.endless.jankson;
 
 import blue.endless.jankson.api.document.ObjectElement;
 import blue.endless.jankson.api.document.ValueElement;
-import blue.endless.jankson.api.io.JsonWriter;
-import blue.endless.jankson.api.io.JsonWriterOptions;
 import blue.endless.jankson.api.io.ObjectReaderFactory;
 import blue.endless.jankson.api.io.StructuredDataReader;
 import blue.endless.jankson.api.io.ValueElementWriter;
+import blue.endless.jankson.api.io.json.JsonWriter;
+import blue.endless.jankson.api.io.json.JsonWriterOptions;
 import blue.endless.jankson.impl.io.objectreader.ObjectStructuredDataReader;
 
 import java.io.IOException;

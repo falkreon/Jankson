@@ -38,10 +38,10 @@ import org.junit.jupiter.api.Test;
 import blue.endless.jankson.api.Jankson;
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.annotation.SerializedName;
-import blue.endless.jankson.api.io.JsonReader;
-import blue.endless.jankson.api.io.JsonWriterOptions;
 import blue.endless.jankson.api.io.ObjectReaderFactory;
 import blue.endless.jankson.api.io.ObjectWriter;
+import blue.endless.jankson.api.io.json.JsonReader;
+import blue.endless.jankson.api.io.json.JsonWriterOptions;
 import blue.endless.jankson.impl.magic.ClassHierarchy;
 
 public class TestObjectWriter {

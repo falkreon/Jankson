@@ -28,8 +28,8 @@ import java.io.IOException;
 import java.util.function.Consumer;
 
 import blue.endless.jankson.api.SyntaxError;
-import blue.endless.jankson.api.io.JsonReaderOptions;
 import blue.endless.jankson.api.io.StructuredData;
+import blue.endless.jankson.api.io.json.JsonReaderOptions;
 import blue.endless.jankson.impl.io.LookaheadCodePointReader;
 
 public class RootParserContext implements ParserContext {
@@ -58,16 +58,18 @@ public class RootParserContext implements ParserContext {
 				}
 				elementConsumer.accept(StructuredData.EOF);
 			}
-			case ':' -> {
-				if (bufferedKey != null && options.hasHint(JsonReaderOptions.Hint.ALLOW_BARE_ROOT_OBJECT)) {
-					elementConsumer.accept(StructuredData.objectKey(bufferedKey));
-					bufferedKey = null;
-					// Next thing will be a Value, but it'll be caught by the next parse call.
-				}
-			}
 			case '{' -> pusher.accept(new ObjectParserContext(options));
 			case '[' -> pusher.accept(new ArrayParserContext(options));
 			default -> {
+				if (ch == options.getKeyValueSeparator()) {
+					if (bufferedKey != null && options.isBareRootObject()) {
+						elementConsumer.accept(StructuredData.objectKey(bufferedKey));
+						bufferedKey = null;
+						// Next thing will be a Value, but it'll be caught by the next parse call.
+					}
+					break;
+				}
+				
 				if (NumberValueParser.canReadStatic(reader)) {
 					Number value = NumberValueParser.readStatic(reader);
 					elementConsumer.accept(StructuredData.primitive(value));
@@ -79,7 +81,7 @@ public class RootParserContext implements ParserContext {
 					elementConsumer.accept(StructuredData.NULL);
 				} else if (StringValueParser.canReadStatic(reader)) {
 					String s = StringValueParser.readStatic(reader);
-					if (options.hasHint(JsonReaderOptions.Hint.ALLOW_BARE_ROOT_OBJECT)) {
+					if (options.isBareRootObject()) {
 						// This could be either a key of a bare root object, or it could be a primitive String root object.
 						// Buffer it for now - if we find a colon later, it's a key.
 						bufferedKey = s;

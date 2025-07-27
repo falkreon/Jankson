@@ -42,7 +42,7 @@ import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.document.ArrayElement;
 import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.api.document.ValueElement;
-import blue.endless.jankson.api.io.JsonReaderOptions;
+import blue.endless.jankson.api.io.json.JsonReaderOptions;
 
 public class TestJsonReader {
 	

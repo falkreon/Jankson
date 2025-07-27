@@ -22,36 +22,33 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.api.io;
+package blue.endless.jankson.api.io.json;
 
-import java.util.EnumSet;
-
-public class JsonReaderOptions {
+public final class JsonReaderOptions extends JsonReaderOptionsBuilder {
 	/**
 	 * This is the set of options configured when there are no options specified. Effectively this is the "default
 	 * Jankson behavior". Bare root objects are not allowed, unquoted keys are allowed, and commas are ignored.
 	 */
-	public static final JsonReaderOptions UNSPECIFIED = new JsonReaderOptions(Hint.ALLOW_UNQUOTED_KEYS);
+	public static final JsonReaderOptions UNSPECIFIED = new JsonReaderOptionsBuilder().build();
 	
-	private final EnumSet<Hint> hints = EnumSet.noneOf(Hint.class);
-	
-	public JsonReaderOptions(Hint... hints) {
-		for(Hint hint : hints) this.hints.add(hint);
+	public JsonReaderOptions(JsonReaderOptionsBuilder b) {
+		this.bareRootObject = b.bareRootObject;
+		this.unquotedKeys = b.unquotedKeys;
+		this.keyValueSeparator = b.keyValueSeparator;
 	}
 	
-	public boolean hasHint(Hint hint) {
-		return hints.contains(hint);
+	@Override
+	public void setBareRootObject(boolean value) {
+		throw new UnsupportedOperationException();
 	}
 	
-	public enum Hint {
-		/** Allow the root object of a document to omit its delimiters / braces */
-		ALLOW_BARE_ROOT_OBJECT,
-		/** Allow keys in key value pairs to occur without quotes */
-		ALLOW_UNQUOTED_KEYS,
-		/** This is the HOCON behavior of combining objects declared on the same key. Will have no effect during granular
-		 * JsonReader access. */
-		MERGE_DUPLICATE_OBJECTS,
-		/** This is the HOCON behavior of allowing equals ('=') to replace colons between keys and values */
-		ALLOW_KEY_EQUALS_VALUE;
+	@Override
+	public void setKeyValueSeparator(char ch) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public void setUnquotedKeys(boolean value) {
+		throw new UnsupportedOperationException();
 	}
 }

@@ -35,8 +35,8 @@ import org.junit.jupiter.api.Test;
 
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.IniReader;
-import blue.endless.jankson.api.io.JsonWriter;
-import blue.endless.jankson.api.io.JsonWriterOptions;
+import blue.endless.jankson.api.io.json.JsonWriter;
+import blue.endless.jankson.api.io.json.JsonWriterOptions;
 
 public class IniReaderTests {
 	@Test

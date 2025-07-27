@@ -28,8 +28,8 @@ import java.io.IOException;
 import java.util.function.Consumer;
 
 import blue.endless.jankson.api.SyntaxError;
-import blue.endless.jankson.api.io.JsonReaderOptions;
 import blue.endless.jankson.api.io.StructuredData;
+import blue.endless.jankson.api.io.json.JsonReaderOptions;
 import blue.endless.jankson.impl.io.LookaheadCodePointReader;
 
 public class ObjectParserContext implements ParserContext {
