@@ -22,7 +22,6 @@
  * SOFTWARE.
  */
 
-
 package blue.endless.jankson.api.function;
 
 @FunctionalInterface
