@@ -24,8 +24,6 @@
 
 package blue.endless.jankson.api.io.json;
 
-import static blue.endless.jankson.api.io.json.JsonWriterOptions.Hint.*;
-
 import java.io.IOException;
 import java.io.Writer;
 
@@ -35,7 +33,7 @@ import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.impl.io.AbstractStructuredDataWriter;
 
 public class JsonWriter extends AbstractStructuredDataWriter {
-	private final JsonWriterOptions options;
+	private final JsonWriterOptions.Access options;
 	private int indentLevel = 0;
 	
 	private String resource = "";
@@ -47,7 +45,7 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 		this(destination, JsonWriterOptions.DEFAULTS);
 	}
 	
-	public JsonWriter(Writer destination, JsonWriterOptions options) {
+	public JsonWriter(Writer destination, JsonWriterOptions.Access options) {
 		super(destination);
 		this.options = options;
 	}
@@ -64,10 +62,6 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 		for(int i=0; i<s.length(); i++) {
 			dest.write(s.charAt(i));
 		}
-	}
-	
-	private boolean hint(JsonWriterOptions.Hint hint) {
-		return options.get(hint);
 	}
 	
 	public int getLine() {
@@ -111,9 +105,11 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 				}
 			}
 			case WHITESPACE -> {
+				// TODO: Policy for additional whitespace
+				/*
 				writeWhitespace(
 						(data.value() == null) ? " " : data.value().toString()
-						);
+						);*/
 			}
 			case NEWLINE -> writeNewline();
 			case EOF -> { return; }
@@ -132,7 +128,7 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 		
 		case OCTOTHORPE:
 			addCommas();
-			if (hint(WRITE_NEWLINES)) writeNewline();
+			if (options.whitespace().newlines()) writeNewline();
 			write("#");
 			write(value);
 			skipNewline = false;
@@ -141,7 +137,7 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 		
 		case MULTILINE:
 			addCommas();
-			if (hint(WRITE_NEWLINES)) writeNewline();
+			if (options.whitespace().newlines()) writeNewline();
 			write("/*");
 			write(value);
 			write("*/ "); //TODO: Figure out if we should write this extra space here
@@ -149,7 +145,7 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 		
 		case DOC:
 			addCommas();
-			if (hint(WRITE_NEWLINES)) writeNewline();
+			if (options.whitespace().newlines()) writeNewline();
 			write("/**");
 			write(value);
 			write("*/ "); //TODO: Figure out if we should write this extra space here
@@ -162,9 +158,9 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 		}
 	}
 	
-	private void writeWhitespace(String value) throws IOException {
-		if (hint(WRITE_WHITESPACE)) write(value);
-	}
+	//private void writeWhitespace(String value) throws IOException {
+	//	if (hint(WRITE_WHITESPACE)) write(value);
+	//}
 	
 	private void writeKey(String key) throws IOException {
 		addCommas();
@@ -172,7 +168,7 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 		assertKey();
 		
 		//TODO: escape parts of the key if needed, omit quotes if possible + configured
-		boolean quoted = !hint(UNQUOTED_KEYS); //TODO: Check to make sure it CAN be unquoted
+		boolean quoted = !options.isUnquotedKeys(); //TODO: Check to make sure it CAN be unquoted
 		if (quoted) {
 			write('"');
 		}
@@ -181,11 +177,8 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 			write('"');
 		}
 		
-		if (hint(KEY_EQUALS_VALUE)) {
-			write(" = ");
-		} else {
-			write(": ");
-		}
+		write(options.getKeyValueSeparator());
+		if (options.whitespace().spaces()) write(' ');
 		
 		keyWritten();
 	}
@@ -194,20 +187,20 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 		State peek = context.peek();
 		
 		if (peek == State.DICTIONARY || peek == State.ARRAY) {
-			if (hint(WRITE_NEWLINES)) {
+			if (options.whitespace().newlines()) {
 				writeNewline();
 			} else {
-				if (hint(WRITE_WHITESPACE)) write(' ');
+				if (options.whitespace().spaces()) write(' ');
 			}
 		} else if (peek == State.ARRAY_BEFORE_COMMA || peek == State.DICTIONARY_BEFORE_COMMA) {
-			// fixCommas is called before a value is written; a comma is needed here
-			if (!hint(OMIT_COMMAS)) {
-				write(',');
-			} else {
+			// addCommas is called before a value is written; a comma is needed here
+			if (options.shouldOmmitCommas()) {
 				write(' ');
+			} else {
+				write(',');
 			}
 			
-			if (hint(WRITE_NEWLINES)) {
+			if (options.whitespace().newlines()) {
 				skipNewline = false;
 				writeNewline();
 			} else {
@@ -222,7 +215,7 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 		addCommas();
 		
 		assertValue();
-		if (!isWritingRoot() || !hint(BARE_ROOT_OBJECT)) {
+		if (!isWritingRoot() || !options.isBareRootObject()) {
 			write('{');
 			indentLevel++;
 		}
@@ -235,20 +228,20 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 		assertObjectEnd();
 		
 		skipNewline = false;
-		if (!isWritingRoot() || !hint(BARE_ROOT_OBJECT)) {
+		if (!isWritingRoot() || !options.isBareRootObject()) {
 			indentLevel--;
 		}
 		if (peek() == State.DICTIONARY) { // No values yet
-			if (hint(WRITE_WHITESPACE)) write(' ');
+			if (options.whitespace().spaces()) write(' ');
 		} else {
-			if (hint(WRITE_NEWLINES)) {
+			if (options.whitespace().newlines()) {
 				writeNewline();
 			} else {
-				if (hint(WRITE_WHITESPACE)) write(' ');
+				if (options.whitespace().spaces()) write(' ');
 			}
 		}
 		
-		if (!isWritingRoot() || !hint(BARE_ROOT_OBJECT)) {
+		if (!isWritingRoot() || !options.isBareRootObject()) {
 			write('}');
 		}
 		
@@ -272,10 +265,10 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 		
 		skipNewline = false;
 		indentLevel--;
-		if (hint(WRITE_NEWLINES)) {
+		if (options.whitespace().newlines()) {
 			writeNewline();
 		} else {
-			if (hint(WRITE_WHITESPACE)) write(' ');
+			if (options.whitespace().spaces()) write(' ');
 		}
 		
 		write(']');

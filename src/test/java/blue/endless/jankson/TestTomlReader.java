@@ -35,11 +35,8 @@ import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.TomlReader;
 import blue.endless.jankson.api.io.json.JsonWriter;
 import blue.endless.jankson.api.io.json.JsonWriterOptions;
-import blue.endless.jankson.api.io.json.JsonWriterOptions.Hint;
 
 public class TestTomlReader {
-	
-	private static final JsonWriterOptions STRICT_ONE_LINE = new JsonWriterOptions(Hint.WRITE_WHITESPACE);
 	
 	@Test
 	public void testKeys() throws SyntaxError, IOException {
@@ -84,7 +81,7 @@ public class TestTomlReader {
 		
 		TomlReader reader = new TomlReader(new StringReader(tomlExample));
 		StringWriter out = new StringWriter();
-		JsonWriter writer = new JsonWriter(out, STRICT_ONE_LINE);
+		JsonWriter writer = new JsonWriter(out, JsonWriterOptions.ONE_LINE);
 		reader.transferTo(writer);
 		String actual = out.toString();
 		
@@ -104,7 +101,7 @@ public class TestTomlReader {
 		
 		TomlReader reader = new TomlReader(new StringReader(tomlExample));
 		StringWriter out = new StringWriter();
-		JsonWriter writer = new JsonWriter(out, STRICT_ONE_LINE);
+		JsonWriter writer = new JsonWriter(out, JsonWriterOptions.ONE_LINE);
 		reader.transferTo(writer);
 		String actual = out.toString();
 		
@@ -127,7 +124,7 @@ public class TestTomlReader {
 		""";
 		
 		TomlReader reader = new TomlReader(new StringReader(tomlExample));
-		JsonWriter writer = new JsonWriter(new StringWriter(), STRICT_ONE_LINE);
+		JsonWriter writer = new JsonWriter(new StringWriter(), JsonWriterOptions.ONE_LINE);
 		
 		reader.transferTo(writer);
 	}
@@ -153,7 +150,7 @@ public class TestTomlReader {
 		""";
 		
 		TomlReader reader = new TomlReader(new StringReader(tomlExample));
-		JsonWriter writer = new JsonWriter(new StringWriter(), STRICT_ONE_LINE);
+		JsonWriter writer = new JsonWriter(new StringWriter(), JsonWriterOptions.ONE_LINE);
 		
 		Assertions.assertThrows(IOException.class, ()->reader.transferTo(writer));
 	}
@@ -276,7 +273,7 @@ public class TestTomlReader {
 		
 		TomlReader reader = new TomlReader(new StringReader(tomlExample));
 		StringWriter out = new StringWriter();
-		JsonWriter writer = new JsonWriter(out, STRICT_ONE_LINE);
+		JsonWriter writer = new JsonWriter(out, JsonWriterOptions.ONE_LINE);
 		reader.transferTo(writer);
 		String actual = out.toString();
 		

@@ -47,4 +47,12 @@ public enum WhitespaceStyle {
 	 * Spaces, newlines, and indents will be used to make the output as readable as possible.
 	 */
 	PRETTY;
+	
+	public boolean spaces() {
+		return this == PRETTY || this == SPACES_ONLY;
+	}
+	
+	public boolean newlines() {
+		return this == PRETTY;
+	}
 }

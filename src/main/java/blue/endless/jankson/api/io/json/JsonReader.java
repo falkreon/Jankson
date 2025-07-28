@@ -36,19 +36,19 @@ import blue.endless.jankson.impl.io.context.ParserContext;
 import blue.endless.jankson.impl.io.context.RootParserContext;
 
 public class JsonReader extends AbstractStructuredDataReader {
-	private final JsonReaderOptions options;
+	private final JsonReaderOptions.Access options;
 	
 	public JsonReader(Reader source) {
 		this(source, JsonReaderOptions.UNSPECIFIED);
 	}
 	
-	public JsonReader(Reader source, JsonReaderOptions options) {
+	public JsonReader(Reader source, JsonReaderOptions.Access options) {
 		super(source);
 		this.options = options;
 		pushContext(new RootParserContext(options));
 	}
 	
-	public JsonReader(InputStream source, JsonReaderOptions options) {
+	public JsonReader(InputStream source, JsonReaderOptions.Access options) {
 		this(new InputStreamReader(source), options);
 	}
 	

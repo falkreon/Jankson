@@ -56,7 +56,7 @@ public class Jankson {
 	 * @throws IOException if there was a problem reading the String. This should almost never happen
 	 * @throws SyntaxError if there was a problem with the syntax or structure of the json document
 	 */
-	public static ValueElement readJson(String s, JsonReaderOptions opts) throws IOException, SyntaxError {
+	public static ValueElement readJson(String s, JsonReaderOptions.Access opts) throws IOException, SyntaxError {
 		JsonReader reader = new JsonReader(new StringReader(s), opts);
 		ValueElementWriter writer = new ValueElementWriter();
 		reader.transferTo(writer);
@@ -72,7 +72,7 @@ public class Jankson {
 	 * @throws IOException if there was a problem reading the String. This should almost never happen
 	 * @throws SyntaxError if there was a problem with the syntax or structure of the json document
 	 */
-	public static ValueElement readJson(Reader r, JsonReaderOptions opts) throws IOException, SyntaxError {
+	public static ValueElement readJson(Reader r, JsonReaderOptions.Access opts) throws IOException, SyntaxError {
 		JsonReader reader = new JsonReader(r, opts);
 		ValueElementWriter writer = new ValueElementWriter();
 		reader.transferTo(writer);
@@ -89,7 +89,7 @@ public class Jankson {
 	 * @throws IOException if there was a problem reading the String. This should almost never happen
 	 * @throws SyntaxError if there was a problem with the syntax or structure of the json document
 	 */
-	public static ValueElement readJson(InputStream in, JsonReaderOptions opts) throws IOException, SyntaxError {
+	public static ValueElement readJson(InputStream in, JsonReaderOptions.Access opts) throws IOException, SyntaxError {
 		JsonReader reader = new JsonReader(new InputStreamReader(in, StandardCharsets.UTF_8), opts);
 		ValueElementWriter writer = new ValueElementWriter();
 		reader.transferTo(writer);
@@ -98,7 +98,7 @@ public class Jankson {
 	
 	/**
 	 * Reads in json data from a String using the default settings.
-	 * @see #readJson(String, JsonReaderOptions)
+	 * @see #readJson(String, JsonReaderOptions.Access)
 	 */
 	public static ValueElement readJson(String s) throws IOException, SyntaxError {
 		return readJson(s, JsonReaderOptions.UNSPECIFIED);
@@ -128,7 +128,7 @@ public class Jankson {
 	 * @throws IOException if there was a problem reading the String. This should almost never happen
 	 * @throws SyntaxError if there was a problem with the syntax or structure of the json document, or if the value is not a json Object element.
 	 */
-	public static ObjectElement readJsonObject(String s, JsonReaderOptions opts) throws IOException, SyntaxError {
+	public static ObjectElement readJsonObject(String s, JsonReaderOptions.Access opts) throws IOException, SyntaxError {
 		ValueElement elem = readJson(s, opts);
 		if (elem instanceof ObjectElement obj) {
 			return obj;
@@ -146,7 +146,7 @@ public class Jankson {
 	 * @throws IOException if there was a problem reading the String. This should almost never happen
 	 * @throws SyntaxError if there was a problem with the syntax or structure of the json document, or if the value is not a json Object element.
 	 */
-	public static ObjectElement readJsonObject (Reader r, JsonReaderOptions opts) throws IOException, SyntaxError {
+	public static ObjectElement readJsonObject (Reader r, JsonReaderOptions.Access opts) throws IOException, SyntaxError {
 		ValueElement elem = readJson(r, opts);
 		if (elem instanceof ObjectElement obj) {
 			return obj;
@@ -165,7 +165,7 @@ public class Jankson {
 	 * @throws IOException if there was a problem reading the String. This should almost never happen
 	 * @throws SyntaxError if there was a problem with the syntax or structure of the json document, or if the value is not a json Object element.
 	 */
-	public static ObjectElement readJsonObject(InputStream in, JsonReaderOptions opts) throws IOException, SyntaxError {
+	public static ObjectElement readJsonObject(InputStream in, JsonReaderOptions.Access opts) throws IOException, SyntaxError {
 		ValueElement elem = readJson(in, opts);
 		if (elem instanceof ObjectElement obj) {
 			return obj;
@@ -209,7 +209,7 @@ public class Jankson {
 	 * @throws IOException if there was a problem reading in data
 	 * @throws SyntaxError if there was a problem with the json data, or if there was a problem creating the object
 	 */
-	public static <T> T readJson(Reader r, JsonReaderOptions opts, Type type) throws IOException, SyntaxError {
+	public static <T> T readJson(Reader r, JsonReaderOptions.Access opts, Type type) throws IOException, SyntaxError {
 		JsonReader reader = new JsonReader(r);
 		ObjectWriter<T> writer = new ObjectWriter<>(type);
 		reader.transferTo(writer);
@@ -231,7 +231,7 @@ public class Jankson {
 	 * @see #readJsonObject(Reader, JsonReaderOptions)
 	 * @see #writeJson(Object, Writer)
 	 */
-	public static <T> T readJson(Reader r, JsonReaderOptions opts, Class<T> clazz) throws IOException, SyntaxError {
+	public static <T> T readJson(Reader r, JsonReaderOptions.Access opts, Class<T> clazz) throws IOException, SyntaxError {
 		JsonReader reader = new JsonReader(r);
 		ObjectWriter<T> writer = new ObjectWriter<>(clazz);
 		reader.transferTo(writer);
@@ -242,14 +242,14 @@ public class Jankson {
 		writeJson(obj, new ObjectReaderFactory(), writer, JsonWriterOptions.DEFAULTS);
 	}
 	
-	public static void writeJson(Object obj, ObjectReaderFactory factory, Writer writer, JsonWriterOptions options) throws SyntaxError, IOException {
+	public static void writeJson(Object obj, ObjectReaderFactory factory, Writer writer, JsonWriterOptions.Access options) throws SyntaxError, IOException {
 		StructuredDataReader r = factory.getReader(obj);
 		JsonWriter w = new JsonWriter(writer, options);
 		r.transferTo(w);
 		writer.flush();
 	}
 	
-	public static String writeJsonString(Object obj, ObjectReaderFactory factory, JsonWriterOptions options) throws SyntaxError, IOException {
+	public static String writeJsonString(Object obj, ObjectReaderFactory factory, JsonWriterOptions.Access options) throws SyntaxError, IOException {
 		try(StringWriter sw = new StringWriter()) {
 			StructuredDataReader r = factory.getReader(obj);
 			JsonWriter w = new JsonWriter(sw, options);
@@ -264,12 +264,12 @@ public class Jankson {
 		elem.write(out);
 	}
 
-	public static void writeJson(ValueElement elem, Writer writer, JsonWriterOptions options) throws SyntaxError, IOException {
+	public static void writeJson(ValueElement elem, Writer writer, JsonWriterOptions.Access options) throws SyntaxError, IOException {
 		JsonWriter out = new JsonWriter(writer, options);
 		elem.write(out);
 	}
 	
-	public static String toJsonString(ValueElement elem, JsonWriterOptions options) throws SyntaxError, IOException {
+	public static String toJsonString(ValueElement elem, JsonWriterOptions.Access options) throws SyntaxError, IOException {
 		try(StringWriter sw = new StringWriter()) {
 			JsonWriter out = new JsonWriter(sw, options);
 			elem.write(out);

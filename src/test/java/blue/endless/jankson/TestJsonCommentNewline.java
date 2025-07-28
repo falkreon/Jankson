@@ -28,6 +28,8 @@ import blue.endless.jankson.api.Jankson;
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.document.*;
 import blue.endless.jankson.api.io.json.JsonWriterOptions;
+import blue.endless.jankson.api.io.style.CommentStyle;
+import blue.endless.jankson.api.io.style.WhitespaceStyle;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -36,30 +38,35 @@ import java.io.IOException;
 import java.io.StringWriter;
 
 public class TestJsonCommentNewline {
-    private static final JsonWriterOptions JSON_WRITER_OPTIONS = new JsonWriterOptions("    ",
-            JsonWriterOptions.Hint.WRITE_COMMENTS, JsonWriterOptions.Hint.WRITE_NEWLINES);
-    private static final String EXPECTED_RESULT = """
-            {
-                // Comment
-                "key": "value"
-            }""";
-
-    @Test
-    public void testJsonCommentNewlineWriter() throws SyntaxError, IOException {
-        ObjectElement objectElement = new ObjectElement();
-        KeyValuePairElement keyValuePairElement = new KeyValuePairElement("key", PrimitiveElement.of("value"));
-        keyValuePairElement.getPrologue().add(new CommentElement(" Comment", CommentType.LINE_END));
-        objectElement.add(keyValuePairElement);
-        StringWriter stringWriter = new StringWriter();
-        Jankson.writeJson(objectElement, stringWriter, JSON_WRITER_OPTIONS);
-        Assertions.assertEquals(EXPECTED_RESULT, stringWriter.getBuffer().toString());
-    }
-
-    @Test
-    public void testJsonCommentNewlineReaderWriter() throws SyntaxError, IOException {
-        ValueElement valueElement = Jankson.readJson(EXPECTED_RESULT);
-        StringWriter stringWriter = new StringWriter();
-        Jankson.writeJson(valueElement, stringWriter, JSON_WRITER_OPTIONS);
-        Assertions.assertEquals(EXPECTED_RESULT, stringWriter.getBuffer().toString());
-    }
+	private static final JsonWriterOptions.Access JSON_WRITER_OPTIONS = JsonWriterOptions.builder()
+			.setIndentValue("    ")
+			.setComments(CommentStyle.STRICT)
+			.setWhitespace(WhitespaceStyle.PRETTY)
+			.setUnquotedKeys(false)
+			.build();
+			
+	private static final String EXPECTED_RESULT = """
+			{
+			    // Comment
+			    "key": "value"
+			}""";
+	
+	@Test
+	public void testJsonCommentNewlineWriter() throws SyntaxError, IOException {
+		ObjectElement objectElement = new ObjectElement();
+		KeyValuePairElement keyValuePairElement = new KeyValuePairElement("key", PrimitiveElement.of("value"));
+		keyValuePairElement.getPrologue().add(new CommentElement(" Comment", CommentType.LINE_END));
+		objectElement.add(keyValuePairElement);
+		StringWriter stringWriter = new StringWriter();
+		Jankson.writeJson(objectElement, stringWriter, JSON_WRITER_OPTIONS);
+		Assertions.assertEquals(EXPECTED_RESULT, stringWriter.getBuffer().toString());
+	}
+	
+	@Test
+	public void testJsonCommentNewlineReaderWriter() throws SyntaxError, IOException {
+		ValueElement valueElement = Jankson.readJson(EXPECTED_RESULT);
+		StringWriter stringWriter = new StringWriter();
+		Jankson.writeJson(valueElement, stringWriter, JSON_WRITER_OPTIONS);
+		Assertions.assertEquals(EXPECTED_RESULT, stringWriter.getBuffer().toString());
+	}
 }

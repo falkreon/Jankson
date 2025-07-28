@@ -24,57 +24,136 @@
 
 package blue.endless.jankson.api.io.json;
 
-import java.util.EnumSet;
+import blue.endless.jankson.api.io.style.CommentStyle;
+import blue.endless.jankson.api.io.style.WhitespaceStyle;
 
-public class JsonWriterOptions {
-	public static final JsonWriterOptions DEFAULTS = new JsonWriterOptions(Hint.UNQUOTED_KEYS, Hint.WRITE_COMMENTS, Hint.WRITE_NEWLINES, Hint.WRITE_WHITESPACE);
-	public static final JsonWriterOptions ONE_LINE = new JsonWriterOptions(Hint.UNQUOTED_KEYS, Hint.WRITE_COMMENTS, Hint.WRITE_WHITESPACE);
-	public static final JsonWriterOptions STRICT = new JsonWriterOptions(Hint.WRITE_NEWLINES, Hint.WRITE_WHITESPACE); // TODO: Add strict hints
-	public static final JsonWriterOptions INI_SON = new JsonWriterOptions(Hint.BARE_ROOT_OBJECT, Hint.KEY_EQUALS_VALUE, Hint.UNQUOTED_KEYS, Hint.OMIT_COMMAS, Hint.WRITE_NEWLINES, Hint.WRITE_WHITESPACE);
+public sealed abstract class JsonWriterOptions permits JsonWriterOptions.Builder, JsonWriterOptions.Access {
+	public static final JsonWriterOptions.Access DEFAULTS = JsonWriterOptions.builder()
+			.setUnquotedKeys(true)
+			.setWhitespace(WhitespaceStyle.PRETTY)
+			.setComments(CommentStyle.STRICT)
+			.build();
 	
-	private final EnumSet<Hint> hints = EnumSet.noneOf(Hint.class);
-	private final String indentString;
+	public static final JsonWriterOptions.Access STRICT = JsonWriterOptions.builder()
+			.setUnquotedKeys(false)
+			.setComments(CommentStyle.NONE)
+			.setWhitespace(WhitespaceStyle.PRETTY)
+			.setOmmitCommas(false)
+			.build();
 	
-	public JsonWriterOptions(Hint... hints) {
-		this("\t", hints);
+	public static final JsonWriterOptions.Access ONE_LINE = STRICT.asBuilder()
+			.setWhitespace(WhitespaceStyle.SPACES_ONLY)
+			.build();
+	
+	public static final JsonWriterOptions.Access MINIFIED = STRICT.asBuilder()
+			.setWhitespace(WhitespaceStyle.COMPACT)
+			.build();
+	
+	public static final JsonWriterOptions.Access INI_SON = JsonWriterOptions.builder()
+			.setBareRootObject(true)
+			.setKeyValueSeparator('=')
+			.setUnquotedKeys(true)
+			.setOmmitCommas(true)
+			.setWhitespace(WhitespaceStyle.PRETTY)
+			.build();
+	
+	protected boolean bareRootObject = false;
+	protected boolean unquotedKeys = true;
+	protected boolean ommitCommas = false;
+	protected CommentStyle comments = CommentStyle.STRICT;
+	protected WhitespaceStyle whitespace = WhitespaceStyle.PRETTY;
+	
+	protected char keyValueSeparator = ':';
+	protected String indentValue = "\t";
+	
+	public JsonWriterOptions() {}
+	
+	public JsonWriterOptions(JsonWriterOptions opts) {
+		this.bareRootObject = opts.bareRootObject;
+		this.unquotedKeys = opts.unquotedKeys;
+		this.ommitCommas = opts.ommitCommas;
+		this.comments = opts.comments;
+		this.whitespace = opts.whitespace;
+		this.keyValueSeparator = opts.keyValueSeparator;
+		this.indentValue = opts.indentValue;
 	}
 	
-	public JsonWriterOptions(String indentString, Hint... hints) {
-		for(Hint hint : hints) this.hints.add(hint);
-		this.indentString = indentString;
-	}
-	
-	public boolean get(Hint hint) {
-		return hints.contains(hint);
-	}
 	
 	public String getIndent(int count) {
 		if (count<=0) return "";
-		return indentString.repeat(count);
+		return indentValue.repeat(count);
 	}
 	
-	public static enum Hint {
-		/**
-		 * If the root element is an object, omit the curly braces around it.
-		 */
-		BARE_ROOT_OBJECT,
-		/**
-		 * Do not quote keys unless they contain spaces or other special characters that would make them ambiguous.
-		 */
-		UNQUOTED_KEYS,
-		/**
-		 * Write key=value instead of key:value.
-		 */
-		KEY_EQUALS_VALUE,
-		/**
-		 * Don't write commas between elements that don't need them.
-		 */
-		OMIT_COMMAS,
+	public boolean isBareRootObject() { return bareRootObject; }
+	public boolean isUnquotedKeys() { return unquotedKeys; }
+	public boolean shouldOmmitCommas() { return ommitCommas; }
+	public CommentStyle comments() { return comments; }
+	public WhitespaceStyle whitespace() { return whitespace; }
+	public char getKeyValueSeparator() { return keyValueSeparator; }
+	public String getIndentValue() { return indentValue; }
+	
+	public static Builder builder() {
+		return new Builder();
+	}
+	
+	public static final class Builder extends JsonWriterOptions {
+		public Builder() {}
 		
-		WRITE_COMMENTS,
+		public Builder(JsonWriterOptions opts) {
+			super(opts);
+		}
 		
-		WRITE_WHITESPACE,
+		public Builder setBareRootObject(boolean value) {
+			bareRootObject = value;
+			return this;
+		}
 		
-		WRITE_NEWLINES;
+		public Builder setUnquotedKeys(boolean value) {
+			unquotedKeys = value;
+			return this;
+		}
+		
+		public Builder setOmmitCommas(boolean value) {
+			ommitCommas = value;
+			return this;
+		}
+		
+		public Builder setComments(CommentStyle value) {
+			this.comments = value;
+			return this;
+		}
+		
+		public Builder setWhitespace(WhitespaceStyle value) {
+			this.whitespace = value;
+			return this;
+		}
+		
+		public Builder setKeyValueSeparator(char ch) {
+			if (Character.isJavaIdentifierPart(ch)) {
+				throw new IllegalArgumentException("Java identifier characters are not allowed as key-value separators.");
+			}
+			
+			this.keyValueSeparator = ch;
+			return this;
+		}
+		
+		public Builder setIndentValue(String value) {
+			this.indentValue = value;
+			return this;
+		}
+		
+		public Access build() {
+			return new Access(this);
+		}
+	}
+	
+	public static final class Access extends JsonWriterOptions {
+		public Access(JsonWriterOptions opts) {
+			super(opts);
+		}
+		
+		public Builder asBuilder() {
+			return new Builder(this);
+		}
 	}
 }

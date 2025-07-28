@@ -24,31 +24,63 @@
 
 package blue.endless.jankson.api.io.json;
 
-public final class JsonReaderOptions extends JsonReaderOptionsBuilder {
+public sealed abstract class JsonReaderOptions permits JsonReaderOptions.Builder, JsonReaderOptions.Access {
 	/**
 	 * This is the set of options configured when there are no options specified. Effectively this is the "default
 	 * Jankson behavior". Bare root objects are not allowed, unquoted keys are allowed, and commas are ignored.
 	 */
-	public static final JsonReaderOptions UNSPECIFIED = new JsonReaderOptionsBuilder().build();
+	public static final JsonReaderOptions.Access UNSPECIFIED = new JsonReaderOptions.Builder().build();
 	
-	public JsonReaderOptions(JsonReaderOptionsBuilder b) {
-		this.bareRootObject = b.bareRootObject;
-		this.unquotedKeys = b.unquotedKeys;
-		this.keyValueSeparator = b.keyValueSeparator;
+	
+	protected boolean bareRootObject = false;
+	protected boolean unquotedKeys = false;
+	protected char keyValueSeparator = ':';
+	
+	public boolean isBareRootObject() { return bareRootObject; }
+	public boolean isUnquotedKeys() { return unquotedKeys; }
+	public char getKeyValueSeparator() { return keyValueSeparator; }
+	
+	public JsonReaderOptions() {}
+	
+	public JsonReaderOptions(JsonReaderOptions opts) {
+		this.bareRootObject = opts.bareRootObject;
+		this.unquotedKeys = opts.unquotedKeys;
+		this.keyValueSeparator = opts.keyValueSeparator;
 	}
 	
-	@Override
-	public void setBareRootObject(boolean value) {
-		throw new UnsupportedOperationException();
+	public static Builder builder() {
+		return new Builder();
 	}
 	
-	@Override
-	public void setKeyValueSeparator(char ch) {
-		throw new UnsupportedOperationException();
+	public static final class Builder extends JsonReaderOptions {
+		
+		public Builder() {}
+		
+		public Builder(JsonReaderOptions opts) {
+			super(opts);
+		}
+		
+		public Builder setBareRootObject(boolean value) { bareRootObject = value; return this; }
+		public Builder setUnquotedKeys(boolean value) { unquotedKeys = value; return this;}
+		public Builder setKeyValueSeparator(char ch) {
+			if (Character.isJavaIdentifierPart(ch)) {
+				throw new IllegalArgumentException("Java identifier characters are not allowed as key-value separators.");
+			}
+			this.keyValueSeparator = ch;
+			return this;
+		}
+		
+		public Access build() { return new Access(this); }
 	}
 	
-	@Override
-	public void setUnquotedKeys(boolean value) {
-		throw new UnsupportedOperationException();
+	public static final class Access extends JsonReaderOptions {
+		
+		public Access(JsonReaderOptions opts) {
+			super(opts);
+		}
+		
+		public Builder asBuilder() {
+			return new Builder(this);
+		}
 	}
 }
