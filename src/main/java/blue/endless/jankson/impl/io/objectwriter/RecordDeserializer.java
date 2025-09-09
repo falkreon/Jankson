@@ -27,6 +27,7 @@ package blue.endless.jankson.impl.io.objectwriter;
 import java.io.IOException;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.RecordComponent;
 import java.lang.reflect.Type;
 import java.util.HashMap;
@@ -54,16 +55,46 @@ public class RecordDeserializer<T> extends AbstractDeserializer<T> {
 	
 	public RecordDeserializer(Class<T> clazz) {
 		this.clazz = clazz;
-		for (RecordComponent c : clazz.getRecordComponents()) {
-			requiredValues.add(c.getName());
+		
+		try {
+			Constructor<T> constructor = getCanonicalConstructor();
 			
-			AnnotatedType annoType = c.getAnnotatedType();
-			SerializedName altName = annoType.getAnnotation(SerializedName.class);
+			RecordComponent[] components = clazz.getRecordComponents();
+			AnnotatedType[] annoTypes = constructor.getAnnotatedParameterTypes();
+			Field[] fields = clazz.getDeclaredFields();
 			
-			serializedNameToFieldName.put(
-					(altName != null) ? altName.value() : c.getName(),
-					c.getName()
-				);
+			if (components.length != annoTypes.length) throw new IllegalStateException(); // Yikes!
+			
+			for(int i=0; i<components.length; i++) {
+				String baseName = components[i].getName();
+				requiredValues.add(baseName);
+				
+				String altNameValue = baseName;
+				
+				SerializedName altName = annoTypes[i].getAnnotation(SerializedName.class);
+				if (altName != null) {
+					altNameValue = altName.value();
+				} else {
+					for(Field f : fields) {
+						if (f.getName().equals(baseName)) {
+							SerializedName[] altNames = f.getAnnotationsByType(SerializedName.class);
+							if (altNames.length != 0) {
+								altNameValue = altNames[0].value();
+							}
+						}
+					}
+				}
+				
+				serializedNameToFieldName.put(altNameValue, baseName);
+			}
+		} catch (Throwable t) {
+			// Okay, fall back to a more durable system, ignoring SerializedName
+			requiredValues.clear();
+			serializedNameToFieldName.clear();
+			for (RecordComponent c : clazz.getRecordComponents()) {
+				requiredValues.add(c.getName());
+				serializedNameToFieldName.put(c.getName(), c.getName());
+			}
 		}
 	}
 	
