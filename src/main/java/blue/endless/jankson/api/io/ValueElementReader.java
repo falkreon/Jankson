@@ -56,19 +56,27 @@ public class ValueElementReader {
 	private static class ArrayValueReader extends DelegatingStructuredDataReader {
 		private final ArrayElement value;
 		private final Iterator<ValueElement> iterator;
+		private boolean complete = false;
 		
 		public ArrayValueReader(ArrayElement value) {
 			this.value = value;
 			this.iterator = value.iterator();
+			buffer(StructuredData.ARRAY_START);
 		}
 		
 		@Override
 		protected void onDelegateEmpty() throws IOException {
+			if (complete) {
+				buffer(StructuredData.EOF);
+				return;
+			}
+			
 			if (iterator.hasNext()) {
 				ValueElement cur = iterator.next();
 				setDelegate(of(cur));
 			} else {
-				buffer(StructuredData.EOF);
+				buffer(StructuredData.ARRAY_END);
+				complete = true;
 			}
 		}
 		
@@ -85,20 +93,28 @@ public class ValueElementReader {
 	private static class ObjectValueReader extends DelegatingStructuredDataReader {
 		private final ObjectElement value;
 		private final Iterator<Map.Entry<String, ValueElement>> iterator;
+		private boolean complete = false;
 		
 		public ObjectValueReader(ObjectElement value) {
 			this.value = value;
 			this.iterator = value.entrySet().iterator();
+			buffer(StructuredData.OBJECT_START);
 		}
 		
 		@Override
 		protected void onDelegateEmpty() throws IOException {
+			if (complete) {
+				buffer(StructuredData.EOF);
+				return;
+			}
+			
 			if (iterator.hasNext()) {
 				Map.Entry<String, ValueElement> entry = iterator.next();
 				buffer(StructuredData.objectKey(entry.getKey()));
 				setDelegate(ValueElementReader.of(entry.getValue()));
 			} else {
-				buffer(StructuredData.EOF);
+				buffer(StructuredData.OBJECT_END);
+				complete = true;
 			}
 		}
 		

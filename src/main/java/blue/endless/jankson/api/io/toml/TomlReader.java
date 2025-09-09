@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.api.io;
+package blue.endless.jankson.api.io.toml;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -36,6 +36,7 @@ import blue.endless.jankson.api.document.CommentElement;
 import blue.endless.jankson.api.document.ObjectElement;
 import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.api.document.ValueElement;
+import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.impl.io.AbstractStructuredDataReader;
 import blue.endless.jankson.impl.io.context.BooleanValueParser;
 import blue.endless.jankson.impl.io.context.CommentValueParser;

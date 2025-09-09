@@ -106,7 +106,7 @@ public class Jankson {
 	
 	/**
 	 * Reads in json data from a Reader, using the default settings.
-	 * @see #readJson(Reader, JsonReaderOptions)
+	 * @see #readJson(Reader, JsonReaderOptions.Access)
 	 */
 	public static ValueElement readJson(Reader r) throws IOException, SyntaxError {
 		return readJson(r, JsonReaderOptions.UNSPECIFIED);
@@ -114,7 +114,7 @@ public class Jankson {
 	
 	/**
 	 * Reads in json data from an InputStream, using the default settings.
-	 * @see #readJson(InputStream, JsonReaderOptions)
+	 * @see #readJson(InputStream, JsonReaderOptions.Access)
 	 */
 	public static ValueElement readJson(InputStream in) throws IOException, SyntaxError {
 		return readJson(in, JsonReaderOptions.UNSPECIFIED);
@@ -176,7 +176,7 @@ public class Jankson {
 	
 	/**
 	 * Reads in a json object from a String using the default settings.
-	 * @see #readJsonObject(String, JsonReaderOptions)
+	 * @see #readJsonObject(String, JsonReaderOptions.Access)
 	 */
 	public static ObjectElement readJsonObject(String s) throws IOException, SyntaxError {
 		return readJsonObject(s, JsonReaderOptions.UNSPECIFIED);
@@ -184,7 +184,7 @@ public class Jankson {
 	
 	/**
 	 * Reads in a json object from a Reader using the default settings.
-	 * @see #readJsonObject(Reader, JsonReaderOptions)
+	 * @see #readJsonObject(Reader, JsonReaderOptions.Access)
 	 */
 	public static ObjectElement readJsonObject(Reader r) throws IOException, SyntaxError {
 		return readJsonObject(r, JsonReaderOptions.UNSPECIFIED);
@@ -192,7 +192,7 @@ public class Jankson {
 	
 	/**
 	 * Reads in a json object from an InputStream using the default settings.
-	 * @see #readJsonObject(InputStream, JsonReaderOptions)
+	 * @see #readJsonObject(InputStream, JsonReaderOptions.Access)
 	 */
 	public static ObjectElement readJsonObject(InputStream in) throws IOException, SyntaxError {
 		return readJsonObject(in, JsonReaderOptions.UNSPECIFIED);
@@ -228,7 +228,7 @@ public class Jankson {
 	 * @throws IOException if there was a problem reading in data
 	 * @throws SyntaxError if there was a problem with the json data, or if there was a problem creating the object
 	 * 
-	 * @see #readJsonObject(Reader, JsonReaderOptions)
+	 * @see #readJsonObject(Reader, JsonReaderOptions.Access)
 	 * @see #writeJson(Object, Writer)
 	 */
 	public static <T> T readJson(Reader r, JsonReaderOptions.Access opts, Class<T> clazz) throws IOException, SyntaxError {

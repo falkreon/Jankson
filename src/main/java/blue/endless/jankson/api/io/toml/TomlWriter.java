@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.api.io;
+package blue.endless.jankson.api.io.toml;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -37,6 +37,7 @@ import blue.endless.jankson.api.document.KeyValuePairElement;
 import blue.endless.jankson.api.document.ObjectElement;
 import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.api.document.ValueElement;
+import blue.endless.jankson.api.io.BufferedStructuredDataWriter;
 import blue.endless.jankson.api.io.BufferedStructuredDataWriter.AbstractBufferedStructuredDataWriter;
 
 public class TomlWriter extends AbstractBufferedStructuredDataWriter {

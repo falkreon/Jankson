@@ -27,9 +27,9 @@ package blue.endless.jankson;
 import org.junit.jupiter.api.Test;
 
 import blue.endless.jankson.api.SyntaxError;
-import blue.endless.jankson.api.io.TomlReader;
 import blue.endless.jankson.api.io.json.JsonWriter;
 import blue.endless.jankson.api.io.json.JsonWriterOptions;
+import blue.endless.jankson.api.io.toml.TomlReader;
 
 import java.io.IOException;
 import java.io.StringReader;

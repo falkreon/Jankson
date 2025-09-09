@@ -34,7 +34,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import blue.endless.jankson.api.SyntaxError;
-import blue.endless.jankson.api.io.IniReader;
+import blue.endless.jankson.api.io.ini.IniReader;
 import blue.endless.jankson.api.io.json.JsonWriter;
 import blue.endless.jankson.api.io.json.JsonWriterOptions;
 

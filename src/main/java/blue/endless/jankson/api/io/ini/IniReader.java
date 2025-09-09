@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.api.io;
+package blue.endless.jankson.api.io.ini;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -37,6 +37,7 @@ import java.util.regex.Pattern;
 
 
 import blue.endless.jankson.api.SyntaxError;
+import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.impl.io.AbstractStructuredDataReader;
 import blue.endless.jankson.impl.io.LookaheadCodePointReader;
 import blue.endless.jankson.impl.io.context.StringValueParser;
