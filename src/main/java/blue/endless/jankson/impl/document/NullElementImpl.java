@@ -123,4 +123,9 @@ public class NullElementImpl extends PrimitiveElement {
 	public boolean equals(Object obj) {
 		return super.equals(obj) && obj instanceof NullElementImpl;
 	}
+	
+	@Override
+	public String toString() {
+		return "null";
+	}
 }

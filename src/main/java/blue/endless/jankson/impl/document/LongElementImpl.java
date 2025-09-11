@@ -68,12 +68,12 @@ public class LongElementImpl extends PrimitiveElement {
 
 	@Override
 	public Optional<String> asString() {
-		return Optional.empty();
+		return Optional.of(Long.toString(value));
 	}
 
 	@Override
 	public Optional<Boolean> asBoolean() {
-		return Optional.empty();
+		return Optional.of(value != 0L);
 	}
 
 	@Override
@@ -117,5 +117,10 @@ public class LongElementImpl extends PrimitiveElement {
 		} else {
 			return false;
 		}
+	}
+	
+	@Override
+	public String toString() {
+		return Long.toString(value);
 	}
 }

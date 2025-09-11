@@ -134,4 +134,9 @@ public class StringElementImpl extends PrimitiveElement {
 			return false;
 		}
 	}
+	
+	@Override
+	public String toString() {
+		return "\"" + value + "\"";
+	}
 }

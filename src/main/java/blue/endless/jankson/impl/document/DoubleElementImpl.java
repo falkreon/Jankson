@@ -113,4 +113,9 @@ public class DoubleElementImpl extends PrimitiveElement {
 			return false;
 		}
 	}
+	
+	@Override
+	public String toString() {
+		return Double.toString(value);
+	}
 }
