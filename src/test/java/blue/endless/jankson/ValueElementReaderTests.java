@@ -82,6 +82,7 @@ public class ValueElementReaderTests {
 	public void testFlexibleTypes() throws IOException, SyntaxError {
 		PrimitiveElement prim = PrimitiveElement.of(4.0);
 		Assertions.assertEquals(4, prim.asInt().getAsInt());
-		boolean b = PrimitiveElement.of(1);
+		boolean b = PrimitiveElement.of(1).asBoolean().get();
+		Assertions.assertEquals(true, b);
 	}
 }
