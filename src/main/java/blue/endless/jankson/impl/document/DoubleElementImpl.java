@@ -83,6 +83,9 @@ public class DoubleElementImpl extends PrimitiveElement {
 
 	@Override
 	public OptionalLong asLong() {
+		long result = (long) value;
+		if (((double) result) == value) return OptionalLong.of(result);
+		
 		return OptionalLong.empty();
 	}
 
