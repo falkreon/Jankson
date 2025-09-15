@@ -77,4 +77,11 @@ public class ValueElementReaderTests {
 		StructuredData eof2 = reader.next();
 		Assertions.assertEquals(StructuredData.EOF, eof2);
 	}
+	
+	@Test
+	public void testFlexibleTypes() throws IOException, SyntaxError {
+		PrimitiveElement prim = PrimitiveElement.of(4.0);
+		Assertions.assertEquals(4, prim.asInt().getAsInt());
+		boolean b = PrimitiveElement.of(1);
+	}
 }

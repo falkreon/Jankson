@@ -88,6 +88,16 @@ public class DoubleElementImpl extends PrimitiveElement {
 
 	@Override
 	public OptionalInt asInt() {
+		/* We'll do our best. Which is not very good.
+		 * You'll notice a "double == double" comparison here. THIS IS INTENDED. We've proactively turned, e.g. "4.0"
+		 * into a double precision floating point number. If and only if, after this conversion, we can still
+		 * confidently say that it is a whole number (not possible for all whole numbers!), then go ahead and interpret
+		 * it as an integer as desired. If there is any uncertainty, we must accurately report that there
+		 * is no integer here.
+		 */
+		int result = (int) value;
+		if (((double) result) == value) return OptionalInt.of(result);
+		
 		return OptionalInt.empty();
 	}
 
