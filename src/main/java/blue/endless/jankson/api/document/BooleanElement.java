@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.impl.document;
+package blue.endless.jankson.api.document;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -32,45 +32,45 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.function.Function;
-import java.util.function.IntFunction;
-import java.util.function.LongFunction;
 
 import blue.endless.jankson.api.SyntaxError;
-import blue.endless.jankson.api.document.NonValueElement;
-import blue.endless.jankson.api.document.PrimitiveElement;
-import blue.endless.jankson.api.document.ValueElement;
 import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.StructuredDataWriter;
 
-public class NullElementImpl extends PrimitiveElement {
-
-	public NullElementImpl() {}
+public final class BooleanElement extends PrimitiveElement {
+	private final boolean value;
+	
+	public BooleanElement(boolean value) {
+		this.value = value;
+	}
 	
 	@Override
-	public ValueElement clone() {
-		NullElementImpl result = new NullElementImpl();
+	public BooleanElement copy() {
+		BooleanElement result = new BooleanElement(value);
 		result.copyNonValueElementsFrom(this);
 		return result;
 	}
 
 	@Override
-	public Optional<Object> getValue() {
-		return Optional.empty();
+	public void write(StructuredDataWriter writer) throws SyntaxError, IOException {
+		for(NonValueElement elem : prologue) elem.write(writer);
+		writer.write(StructuredData.primitive(this));
+		for(NonValueElement elem : epilogue) elem.write(writer);
 	}
-	
+
 	@Override
-	public boolean isNull() {
-		return true;
+	public Optional<Object> getValue() {
+		return Optional.of(value);
 	}
 
 	@Override
 	public Optional<String> asString() {
-		return Optional.empty();
+		return Optional.of(Boolean.toString(value));
 	}
 
 	@Override
 	public Optional<Boolean> asBoolean() {
-		return Optional.empty();
+		return Optional.of(value);
 	}
 
 	@Override
@@ -89,19 +89,10 @@ public class NullElementImpl extends PrimitiveElement {
 	}
 	
 	@Override
-	public <T> Optional<T> mapAsInt(IntFunction<T> mapper) {
-		return Optional.empty();
+	public <T> Optional<T> mapAsBoolean(Function<Boolean, T> mapper) {
+		return Optional.of(mapper.apply(value));
 	}
 	
-	@Override
-	public <T> Optional<T> mapAsLong(LongFunction<T> mapper) {
-		return Optional.empty();
-	}
-	
-	public <T> Optional<T> mapAsString(Function<String, T> mapper) {
-		return Optional.empty();
-	}
-
 	@Override
 	public Optional<BigInteger> asBigInteger() {
 		return Optional.empty();
@@ -111,21 +102,18 @@ public class NullElementImpl extends PrimitiveElement {
 	public Optional<BigDecimal> asBigDecimal() {
 		return Optional.empty();
 	}
-
-	@Override
-	public void write(StructuredDataWriter writer) throws SyntaxError, IOException {
-		for(NonValueElement elem : prologue) elem.write(writer);
-		writer.write(StructuredData.NULL);
-		for(NonValueElement elem : epilogue) elem.write(writer);
-	}
 	
 	@Override
 	public boolean equals(Object obj) {
-		return super.equals(obj) && obj instanceof NullElementImpl;
+		if (obj instanceof BooleanElement v) {
+			return super.equals(obj) && v.value == this.value;
+		} else {
+			return false;
+		}
 	}
 	
 	@Override
 	public String toString() {
-		return "null";
+		return Boolean.toString(value);
 	}
 }

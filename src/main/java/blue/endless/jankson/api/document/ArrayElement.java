@@ -37,7 +37,7 @@ import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.StructuredDataWriter;
 
-public class ArrayElement extends AbstractList<ValueElement> implements ValueElement {
+public final class ArrayElement extends AbstractList<ValueElement> implements ValueElement {
 	protected boolean isDefault = false;
 	protected List<NonValueElement> prologue = new ArrayList<>();
 	protected List<ValueElement> entries = new ArrayList<>();
@@ -256,23 +256,23 @@ public class ArrayElement extends AbstractList<ValueElement> implements ValueEle
 		return this;
 	}
 		
-	public ArrayElement clone() {
+	public ArrayElement copy() {
 		ArrayElement result = new ArrayElement();
 		
 		for(NonValueElement elem : prologue) {
-			result.prologue.add(elem.clone());
+			result.prologue.add(elem.copy());
 		}
 		
 		for(ValueElement elem : entries) {
-			result.entries.add(elem.clone());
+			result.entries.add(elem.copy());
 		}
 		
 		for(NonValueElement elem : footer) {
-			result.footer.add(elem.clone());
+			result.footer.add(elem.copy());
 		}
 		
 		for(NonValueElement elem : epilogue) {
-			result.epilogue.add(elem.clone());
+			result.epilogue.add(elem.copy());
 		}
 		
 		result.isDefault = isDefault;

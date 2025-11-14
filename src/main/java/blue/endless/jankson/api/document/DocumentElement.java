@@ -39,7 +39,7 @@ import blue.endless.jankson.api.io.StructuredDataWriter;
  * 
  * <p>FormattingElements, at this moment, are line breaks.
  */
-public interface DocumentElement extends Cloneable {
+public sealed interface DocumentElement permits ValueElement, NonValueElement, KeyValuePairElement {
 	default boolean isCommentElement() { return false; }
 	default CommentElement asCommentElement() { throw new UnsupportedOperationException(); }
 	default boolean isValueElement() { return false; }
@@ -50,7 +50,7 @@ public interface DocumentElement extends Cloneable {
 	/**
 	 * Makes a deep copy of this DocumentElement, formatting and all, and returns it.
 	 */
-	public DocumentElement clone();
+	public DocumentElement copy();
 	
 	/**
 	 * Gets whether this DocumentElement has been marked as a default value. Default values are typically identical to

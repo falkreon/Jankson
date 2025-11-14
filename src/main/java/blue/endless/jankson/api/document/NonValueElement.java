@@ -27,7 +27,7 @@ package blue.endless.jankson.api.document;
 /**
  * Tagging interface for elements which are not value elements.
  */
-public interface NonValueElement extends DocumentElement {
+public sealed interface NonValueElement extends DocumentElement permits FormattingElement, CommentElement {
 	@Override
-	NonValueElement clone();
+	NonValueElement copy();
 }

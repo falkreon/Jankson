@@ -30,7 +30,7 @@ import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.StructuredDataWriter;
 
-public class FormattingElement implements NonValueElement {
+public final class FormattingElement implements NonValueElement {
 	public static FormattingElement NEWLINE = new FormattingElement("\n");
 	//TODO: Should we have additional elements such as INDENT and SPACE?
 	
@@ -55,7 +55,7 @@ public class FormattingElement implements NonValueElement {
 	}
 	
 	@Override
-	public FormattingElement clone() {
+	public FormattingElement copy() {
 		//Because formatting elements are singletons, cloning them just returns the same references to the singleton
 		return this;
 	}

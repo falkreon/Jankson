@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.impl.document;
+package blue.endless.jankson.api.document;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -31,44 +31,38 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
-import java.util.function.DoubleFunction;
+import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.function.LongFunction;
 
 import blue.endless.jankson.api.SyntaxError;
-import blue.endless.jankson.api.document.NonValueElement;
-import blue.endless.jankson.api.document.PrimitiveElement;
-import blue.endless.jankson.api.document.ValueElement;
 import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.StructuredDataWriter;
 
-public class DoubleElementImpl extends PrimitiveElement {
-	private final double value;
-	
-	public DoubleElementImpl(double value) {
-		this.value = value;
-	}
+public final class NullElement extends PrimitiveElement {
+
+	public NullElement() {}
 	
 	@Override
-	public ValueElement clone() {
-		DoubleElementImpl result = new DoubleElementImpl(value);
+	public NullElement copy() {
+		NullElement result = new NullElement();
 		result.copyNonValueElementsFrom(this);
 		return result;
 	}
 
 	@Override
-	public void write(StructuredDataWriter writer) throws SyntaxError, IOException {
-		for(NonValueElement elem : prologue) elem.write(writer);
-		writer.write(StructuredData.primitive(this));
-		for(NonValueElement elem : epilogue) elem.write(writer);
-	}
-
-	@Override
 	public Optional<Object> getValue() {
-		return Optional.of(value);
+		return Optional.empty();
+	}
+	
+	@Override
+	public boolean isNull() {
+		return true;
 	}
 
 	@Override
 	public Optional<String> asString() {
-		return Optional.of(Double.toString(value));
+		return Optional.empty();
 	}
 
 	@Override
@@ -78,30 +72,31 @@ public class DoubleElementImpl extends PrimitiveElement {
 
 	@Override
 	public OptionalDouble asDouble() {
-		return OptionalDouble.of(value);
+		return OptionalDouble.empty();
 	}
 
 	@Override
 	public OptionalLong asLong() {
-		long result = (long) value;
-		if (((double) result) == value) return OptionalLong.of(result);
-		
 		return OptionalLong.empty();
 	}
 
 	@Override
 	public OptionalInt asInt() {
-		/* We'll do our best. Which is not very good.
-		 * You'll notice a "double == double" comparison here. THIS IS INTENDED. We've proactively turned, e.g. "4.0"
-		 * into a double precision floating point number. If and only if, after this conversion, we can still
-		 * confidently say that it is a whole number (not possible for all whole numbers!), then go ahead and interpret
-		 * it as an integer as desired. If there is any uncertainty, we must accurately report that there
-		 * is no integer here.
-		 */
-		int result = (int) value;
-		if (((double) result) == value) return OptionalInt.of(result);
-		
 		return OptionalInt.empty();
+	}
+	
+	@Override
+	public <T> Optional<T> mapAsInt(IntFunction<T> mapper) {
+		return Optional.empty();
+	}
+	
+	@Override
+	public <T> Optional<T> mapAsLong(LongFunction<T> mapper) {
+		return Optional.empty();
+	}
+	
+	public <T> Optional<T> mapAsString(Function<String, T> mapper) {
+		return Optional.empty();
 	}
 
 	@Override
@@ -111,24 +106,23 @@ public class DoubleElementImpl extends PrimitiveElement {
 
 	@Override
 	public Optional<BigDecimal> asBigDecimal() {
-		return Optional.of(BigDecimal.valueOf(value));
+		return Optional.empty();
 	}
-	
-	public <T> Optional<T> mapAsDouble(DoubleFunction<T> d) {
-		return Optional.of(d.apply(value));
+
+	@Override
+	public void write(StructuredDataWriter writer) throws SyntaxError, IOException {
+		for(NonValueElement elem : prologue) elem.write(writer);
+		writer.write(StructuredData.NULL);
+		for(NonValueElement elem : epilogue) elem.write(writer);
 	}
 	
 	@Override
 	public boolean equals(Object obj) {
-		if (obj instanceof DoubleElementImpl v) {
-			return super.equals(obj) && v.value == this.value;
-		} else {
-			return false;
-		}
+		return super.equals(obj) && obj instanceof NullElement;
 	}
 	
 	@Override
 	public String toString() {
-		return Double.toString(value);
+		return "null";
 	}
 }

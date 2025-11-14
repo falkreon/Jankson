@@ -33,7 +33,7 @@ import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.StructuredDataWriter;
 
-public class KeyValuePairElement implements DocumentElement, Map.Entry<String, ValueElement> {
+public final class KeyValuePairElement implements DocumentElement, Map.Entry<String, ValueElement> {
 	protected boolean isDefault = false;
 	protected List<NonValueElement> prologue = new ArrayList<>();
 	protected String key;
@@ -91,8 +91,8 @@ public class KeyValuePairElement implements DocumentElement, Map.Entry<String, V
 		return this;
 	}
 	
-	public KeyValuePairElement clone() {
-		KeyValuePairElement result = new KeyValuePairElement(this.key, (ValueElement) this.value.clone());
+	public KeyValuePairElement copy() {
+		KeyValuePairElement result = new KeyValuePairElement(this.key, (ValueElement) this.value.copy());
 		result.isDefault = isDefault;
 		return result;
 	}

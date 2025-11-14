@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.impl.document;
+package blue.endless.jankson.api.document;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -31,25 +31,22 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
-import java.util.function.Function;
+import java.util.function.LongFunction;
 
 import blue.endless.jankson.api.SyntaxError;
-import blue.endless.jankson.api.document.NonValueElement;
-import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.StructuredDataWriter;
 
-public class StringElementImpl extends PrimitiveElement {
-	private final String value;
+public final class LongElement extends PrimitiveElement {
+	private final long value;
 	
-	public StringElementImpl(String value) {
-		if (value==null) throw new IllegalArgumentException();
+	public LongElement(long value) {
 		this.value = value;
 	}
 	
 	@Override
-	public StringElementImpl clone() {
-		StringElementImpl result = new StringElementImpl(value);
+	public LongElement copy() {
+		LongElement result = new LongElement(value);
 		result.copyNonValueElementsFrom(this);
 		return result;
 	}
@@ -68,68 +65,52 @@ public class StringElementImpl extends PrimitiveElement {
 
 	@Override
 	public Optional<String> asString() {
-		return Optional.of(value);
+		return Optional.of(Long.toString(value));
 	}
 
 	@Override
 	public Optional<Boolean> asBoolean() {
-		return Optional.empty();
+		return Optional.of(value != 0L);
 	}
 
 	@Override
 	public OptionalDouble asDouble() {
-		try {
-			return OptionalDouble.of(Double.parseDouble(value));
-		} catch (NumberFormatException nfe) {}
-		
-		return OptionalDouble.empty();
+		return OptionalDouble.of(value);
 	}
 
 	@Override
 	public OptionalLong asLong() {
-		try {
-			return OptionalLong.of(Long.parseLong(value));
-		} catch (NumberFormatException nfe) {}
-		
-		return OptionalLong.empty();
+		return OptionalLong.of(value);
 	}
 
 	@Override
 	public OptionalInt asInt() {
 		try {
-			return OptionalInt.of(Integer.parseInt(value));
-		} catch (NumberFormatException nfe) {}
-		
-		return OptionalInt.empty();
+			return OptionalInt.of(Math.toIntExact(value));
+		} catch (ArithmeticException ex) {
+			return OptionalInt.empty();
+		}
 	}
 	
 	@Override
-	public <T> Optional<T> mapAsString(Function<String, T> mapper) {
+	public <T> Optional<T> mapAsLong(LongFunction<T> mapper) {
 		return Optional.of(mapper.apply(value));
 	}
 	
 	@Override
 	public Optional<BigInteger> asBigInteger() {
-		try {
-			return Optional.of(new BigInteger(value, 16));
-		} catch (NumberFormatException ex) {
-			return Optional.empty();
-		}
+		return Optional.of(BigInteger.valueOf(value));
 	}
 
 	@Override
 	public Optional<BigDecimal> asBigDecimal() {
-		try {
-			return Optional.of(new BigDecimal(value));
-		} catch (NumberFormatException ex) {
-			return Optional.empty();
-		}
+		return Optional.of(BigDecimal.valueOf(value));
 	}
 	
 	@Override
 	public boolean equals(Object obj) {
-		if (obj instanceof StringElementImpl v) {
-			return super.equals(obj) && v.value.equals(this.value);
+		if (obj instanceof LongElement v) {
+			return super.equals(obj) && v.value == this.value;
 		} else {
 			return false;
 		}
@@ -137,6 +118,6 @@ public class StringElementImpl extends PrimitiveElement {
 	
 	@Override
 	public String toString() {
-		return "\"" + value + "\"";
+		return Long.toString(value);
 	}
 }

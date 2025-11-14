@@ -30,7 +30,7 @@ import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.StructuredDataWriter;
 
-public class CommentElement implements NonValueElement {
+public final class CommentElement implements NonValueElement {
 	protected boolean isDefault = false;
 	protected String value;
 	protected CommentType commentType;
@@ -67,7 +67,7 @@ public class CommentElement implements NonValueElement {
 		return this;
 	}
 	
-	public CommentElement clone() {
+	public CommentElement copy() {
 		CommentElement result = new CommentElement(this.value);
 		result.value = this.value;
 		result.commentType = this.commentType;

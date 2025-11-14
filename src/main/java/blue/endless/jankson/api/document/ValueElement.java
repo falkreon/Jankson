@@ -26,7 +26,7 @@ package blue.endless.jankson.api.document;
 
 import java.util.List;
 
-public interface ValueElement extends DocumentElement {
+public sealed interface ValueElement extends DocumentElement permits ObjectElement, ArrayElement, PrimitiveElement {
 	/**
 	 * Returns any NonValueElements between this ValueElement and the one preceding it, excluding any which occur on
 	 * the same line as the preceding ValueElement (its epilogue). In other words, all the comments and such above this value.
@@ -69,5 +69,5 @@ public interface ValueElement extends DocumentElement {
 	}
 	
 	@Override
-	ValueElement clone();
+	public ValueElement copy();
 }

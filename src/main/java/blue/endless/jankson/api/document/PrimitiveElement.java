@@ -37,13 +37,7 @@ import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.LongFunction;
 
-import blue.endless.jankson.impl.document.BooleanElementImpl;
-import blue.endless.jankson.impl.document.DoubleElementImpl;
-import blue.endless.jankson.impl.document.LongElementImpl;
-import blue.endless.jankson.impl.document.NullElementImpl;
-import blue.endless.jankson.impl.document.StringElementImpl;
-
-public abstract class PrimitiveElement implements ValueElement {
+public abstract sealed class PrimitiveElement implements ValueElement permits BooleanElement, DoubleElement, LongElement, StringElement, NullElement {
 	
 	protected boolean isDefault = false;
 	protected List<NonValueElement> prologue = new ArrayList<>();
@@ -192,34 +186,34 @@ public abstract class PrimitiveElement implements ValueElement {
 	}
 	
 	public static PrimitiveElement ofNull() {
-		return new NullElementImpl();
+		return new NullElement();
 	}
 	
 	public static PrimitiveElement of(String value) {
 		if (value==null) return ofNull();
-		return new StringElementImpl(value);
+		return new StringElement(value);
 	}
 	
 	public static PrimitiveElement of(boolean value) {
-		return new BooleanElementImpl(value);
+		return new BooleanElement(value);
 	}
 	
 	public static PrimitiveElement of(long value) {
-		return new LongElementImpl(value);
+		return new LongElement(value);
 	}
 	
 	public static PrimitiveElement of(double value) {
-		return new DoubleElementImpl(value);
+		return new DoubleElement(value);
 	}
 	
 	public static PrimitiveElement of(BigInteger value) {
 		if (value==null) return ofNull();
-		return new StringElementImpl(value.toString(16));
+		return new StringElement(value.toString(16));
 	}
 	
 	public static PrimitiveElement of(BigDecimal value) {
 		if (value==null) return ofNull();
-		return new StringElementImpl(value.toString());
+		return new StringElement(value.toString());
 	}
 	
 	public static boolean canBox(Object value) {
@@ -267,7 +261,7 @@ public abstract class PrimitiveElement implements ValueElement {
 	}
 	
 	@Override
-	public abstract ValueElement clone();
+	public abstract PrimitiveElement copy();
 	
 	@Override
 	public boolean equals(Object obj) {

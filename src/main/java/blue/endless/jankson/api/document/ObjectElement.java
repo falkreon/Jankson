@@ -43,7 +43,7 @@ import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.StructuredDataWriter;
 import blue.endless.jankson.api.io.json.JsonWriter;
 
-public class ObjectElement implements ValueElement, Map<String, ValueElement>, Iterable<KeyValuePairElement> {
+public final class ObjectElement implements ValueElement, Map<String, ValueElement>, Iterable<KeyValuePairElement> {
 	protected boolean isDefault = false;
 	protected List<NonValueElement> prologue = new ArrayList<>();
 	protected List<KeyValuePairElement> entries = new ArrayList<>();
@@ -94,22 +94,22 @@ public class ObjectElement implements ValueElement, Map<String, ValueElement>, I
 		return this;
 	}
 	
-	public ObjectElement clone() {
+	public ObjectElement copy() {
 		ObjectElement result = new ObjectElement();
 		for(NonValueElement elem : prologue) {
-			result.prologue.add(elem.clone());
+			result.prologue.add(elem.copy());
 		}
 		
 		for(KeyValuePairElement elem : entries) {
-			result.entries.add(elem.clone());
+			result.entries.add(elem.copy());
 		}
 		
 		for(NonValueElement elem : footer) {
-			result.footer.add(elem.clone());
+			result.footer.add(elem.copy());
 		}
 		
 		for(NonValueElement elem : epilogue) {
-			result.epilogue.add(elem.clone());
+			result.epilogue.add(elem.copy());
 		}
 		
 		result.isDefault = isDefault;
@@ -330,11 +330,6 @@ public class ObjectElement implements ValueElement, Map<String, ValueElement>, I
 		@Nullable
 		@Override
 		public ValueElement put(String key, ValueElement value) {
-			//Validate
-			if (
-					value instanceof KeyValuePairElement ||
-					value instanceof CommentElement) throw new IllegalArgumentException();
-			
 			for(DocumentElement entry : entries) {
 				if (entry instanceof KeyValuePairElement pair) {
 					

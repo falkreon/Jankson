@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.impl.document;
+package blue.endless.jankson.api.document;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -31,25 +31,22 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
-import java.util.function.Function;
+import java.util.function.DoubleFunction;
 
 import blue.endless.jankson.api.SyntaxError;
-import blue.endless.jankson.api.document.NonValueElement;
-import blue.endless.jankson.api.document.PrimitiveElement;
-import blue.endless.jankson.api.document.ValueElement;
 import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.StructuredDataWriter;
 
-public class BooleanElementImpl extends PrimitiveElement {
-	private final boolean value;
+public final class DoubleElement extends PrimitiveElement {
+	private final double value;
 	
-	public BooleanElementImpl(boolean value) {
+	public DoubleElement(double value) {
 		this.value = value;
 	}
 	
 	@Override
-	public ValueElement clone() {
-		BooleanElementImpl result = new BooleanElementImpl(value);
+	public DoubleElement copy() {
+		DoubleElement result = new DoubleElement(value);
 		result.copyNonValueElementsFrom(this);
 		return result;
 	}
@@ -68,34 +65,42 @@ public class BooleanElementImpl extends PrimitiveElement {
 
 	@Override
 	public Optional<String> asString() {
-		return Optional.of(Boolean.toString(value));
+		return Optional.of(Double.toString(value));
 	}
 
 	@Override
 	public Optional<Boolean> asBoolean() {
-		return Optional.of(value);
+		return Optional.empty();
 	}
 
 	@Override
 	public OptionalDouble asDouble() {
-		return OptionalDouble.empty();
+		return OptionalDouble.of(value);
 	}
 
 	@Override
 	public OptionalLong asLong() {
+		long result = (long) value;
+		if (((double) result) == value) return OptionalLong.of(result);
+		
 		return OptionalLong.empty();
 	}
 
 	@Override
 	public OptionalInt asInt() {
+		/* We'll do our best. Which is not very good.
+		 * You'll notice a "double == double" comparison here. THIS IS INTENDED. We've proactively turned, e.g. "4.0"
+		 * into a double precision floating point number. If and only if, after this conversion, we can still
+		 * confidently say that it is a whole number (not possible for all whole numbers!), then go ahead and interpret
+		 * it as an integer as desired. If there is any uncertainty, we must accurately report that there
+		 * is no integer here.
+		 */
+		int result = (int) value;
+		if (((double) result) == value) return OptionalInt.of(result);
+		
 		return OptionalInt.empty();
 	}
-	
-	@Override
-	public <T> Optional<T> mapAsBoolean(Function<Boolean, T> mapper) {
-		return Optional.of(mapper.apply(value));
-	}
-	
+
 	@Override
 	public Optional<BigInteger> asBigInteger() {
 		return Optional.empty();
@@ -103,12 +108,16 @@ public class BooleanElementImpl extends PrimitiveElement {
 
 	@Override
 	public Optional<BigDecimal> asBigDecimal() {
-		return Optional.empty();
+		return Optional.of(BigDecimal.valueOf(value));
+	}
+	
+	public <T> Optional<T> mapAsDouble(DoubleFunction<T> d) {
+		return Optional.of(d.apply(value));
 	}
 	
 	@Override
 	public boolean equals(Object obj) {
-		if (obj instanceof BooleanElementImpl v) {
+		if (obj instanceof DoubleElement v) {
 			return super.equals(obj) && v.value == this.value;
 		} else {
 			return false;
@@ -117,6 +126,6 @@ public class BooleanElementImpl extends PrimitiveElement {
 	
 	@Override
 	public String toString() {
-		return Boolean.toString(value);
+		return Double.toString(value);
 	}
 }
