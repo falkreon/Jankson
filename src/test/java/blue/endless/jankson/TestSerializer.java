@@ -25,10 +25,12 @@
 package blue.endless.jankson;
 
 import blue.endless.jankson.api.document.ObjectElement;
+import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.api.document.ValueElement;
 import blue.endless.jankson.api.io.ObjectReaderFactory;
 import blue.endless.jankson.api.io.StructuredDataReader;
 import blue.endless.jankson.api.io.ValueElementWriter;
+import blue.endless.jankson.api.io.json.JsonReader;
 import blue.endless.jankson.api.io.json.JsonWriter;
 import blue.endless.jankson.api.io.json.JsonWriterOptions;
 import blue.endless.jankson.impl.io.objectreader.ObjectStructuredDataReader;
@@ -82,35 +84,30 @@ public class TestSerializer {
 		private String y = "Hello";
 	}*/
 	
-	/*
+	
 	@Test
-	public void testArraySerialization() throws IOException, MarshallerException {
-		ValueElement array = ObjectStructuredDataWriter.toStructuredData(new int[] { 3, 2, 1 });
+	public void testVoidArraySerialization() throws IOException, MarshallerException, SyntaxError {
+		Void[] voidArray = new Void[] {null, null}; // We must not simply break at the first sign of black magic.
+		String actual = Jankson.writeJsonString(voidArray, new ObjectReaderFactory(), JsonWriterOptions.ONE_LINE);
 		
-		String actual = Jankson.toJsonString(array, JsonWriterOptions.DEFAULTS);
+		//ValueElement asValue = ObjectStructuredDataWriter.toStructuredData(voidArray);
+		//String actual = Jankson.toJsonString(asValue, JsonWriterOptions.ONE_LINE);
+
+		// Note: Restores the original whitespace around array elements
+		Assertions.assertEquals("[ null, null ]", actual);
+	}
+	
+	@Test
+	public void testStringEscapes() throws SyntaxError, IOException {
+		String subject = "\n\t\\\"";
 		
-		String expected =
-				"""
-				[
-					3,
-					2,
-					1
-				]
-				""";
+		String expected = "\"\\n\\t\\\\\\\"\"";
+		
+		String actual = Jankson.toJsonString(PrimitiveElement.of(subject), JsonWriterOptions.STRICT);
 		Assertions.assertEquals(expected, actual);
 	}
 	
-	@Test
-	public void testVoidArraySerialization() throws IOException, MarshallerException {
-		Void[] voidArray = new Void[] {null, null}; // We must not simply break at the first sign of black magic.
-		ValueElement asValue = ObjectStructuredDataWriter.toStructuredData(voidArray);
-		
-		String actual = Jankson.toJsonString(asValue, JsonWriterOptions.ONE_LINE);
-		
-		// Note: This is a change from earlier behavior, which is "[ null, null ]". I felt this additional whitespace was unnecessary.
-		Assertions.assertEquals("[null, null]", actual);
-	}
-	
+	/*
 	@Test
 	public void testNestedCollections() throws IOException, MarshallerException {
 		List<Double[]> doubleArrayList = new ArrayList<Double[]>();

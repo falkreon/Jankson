@@ -100,6 +100,15 @@ public abstract sealed class PrimitiveElement implements ValueElement permits Bo
 	 */
 	public abstract OptionalInt asInt();
 	
+	public abstract long orElse(long value);
+	
+	public abstract double orElse(double value);
+	
+	public abstract boolean orElse(boolean value);
+	
+	public abstract String orElse(String value);
+	
+	
 	/**
 	 * If this value can be interpreted as a boolean, map it and return a new optional with the
 	 * mapped value. If not, returns an empty optional.

@@ -93,6 +93,26 @@ public final class LongElement extends PrimitiveElement {
 	}
 	
 	@Override
+	public boolean orElse(boolean value) {
+		return this.value != 0;
+	}
+	
+	@Override
+	public double orElse(double value) {
+		return this.value;
+	}
+	
+	@Override
+	public long orElse(long value) {
+		return this.value;
+	}
+	
+	@Override
+	public String orElse(String value) {
+		return Long.toString(this.value);
+	}
+	
+	@Override
 	public <T> Optional<T> mapAsLong(LongFunction<T> mapper) {
 		return Optional.of(mapper.apply(value));
 	}

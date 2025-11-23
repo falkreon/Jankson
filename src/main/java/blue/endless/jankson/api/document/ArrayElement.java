@@ -36,6 +36,7 @@ import java.util.OptionalLong;
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.StructuredDataWriter;
+import blue.endless.jankson.impl.datastruct.FilteredIteratorView;
 
 public final class ArrayElement extends AbstractList<ValueElement> implements ValueElement {
 	protected boolean isDefault = false;
@@ -154,6 +155,14 @@ public final class ArrayElement extends AbstractList<ValueElement> implements Va
 			}
 		}
 		return Optional.of(result);
+	}
+	
+	public Iterable<ObjectElement> asObjectArray() {
+		return FilteredIteratorView.iterableOf(entries, ObjectElement.class);
+	}
+	
+	public Iterable<PrimitiveElement> asPrimitiveArray() {
+		return FilteredIteratorView.iterableOf(entries, PrimitiveElement.class);
 	}
 	
 	public PrimitiveElement getPrimitive(int index) {

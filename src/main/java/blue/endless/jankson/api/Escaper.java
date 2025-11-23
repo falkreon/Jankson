@@ -58,56 +58,45 @@ public final class Escaper {
 			
 			//Encode easy stuff
 			switch(ch) {
-			case '\\':
-				result.append("\\\\");
-			break;
-			case '\r': 
-				result.append("\\r");
-				break;
-			case '\n':
-				result.append("\\n");
-				break;
-			case '\b':
-				result.append("\\b");
-				break;
-			case '\f':
-				result.append("\\f");
-				break;
-			case '\t':
-				result.append("\\t");
-				break;
-			case '\"':
-				if (quoteChar==ch) {
-					result.append("\\\"");
-				} else {
-					result.append(ch);
-				}
-				break;
-			case '\'':
-				if (quoteChar==ch) {
-					result.append("\\'");
-				} else {
-					result.append(ch);
-				}
-				break;
-			default:
-				if (Character.isBmpCodePoint(ch)) {
-					//Use unicode notation if it's not especially printable - lies in a special unicode block, is a control character, etc.
-					Character.UnicodeBlock block = Character.UnicodeBlock.of(ch);
-					
-					if (ch!=65535 && !Character.isISOControl(ch) && block != null && unquotedBlocks.contains(block)) { //Note: 65535 is the value of awt's KeyEvent.CHARACTER_UNDEFINED. Just in case it leaks into a document.
-						result.append(ch);
+				case '\\' -> result.append("\\\\");
+				case '\r' -> result.append("\\r");
+				case '\n' -> result.append("\\n");
+				case '\b' -> result.append("\\b");
+				case '\f' -> result.append("\\f");
+				case '\t' -> result.append("\\t");
+				case '\"' -> {
+					if (quoteChar==ch) {
+						result.append("\\\"");
 					} else {
-						result.append(unicodeEscape(ch));
+						result.append(ch);
 					}
-				} else {
-					//Always use Unicode notation
-					i++;
-					char upper = s.charAt(i);
-					int codePoint = Character.toCodePoint(ch, upper);
-					result.append(unicodeEscape(codePoint));
 				}
-				break;
+				case '\'' -> {
+					if (quoteChar==ch) {
+						result.append("\\'");
+					} else {
+						result.append(ch);
+					}
+				}
+				default -> {
+					if (Character.isBmpCodePoint(ch)) {
+						//Use unicode notation if it's not especially printable - lies in a special unicode block, is a control character, etc.
+						Character.UnicodeBlock block = Character.UnicodeBlock.of(ch);
+						
+						if (ch!=65535 && !Character.isISOControl(ch) && block != null && unquotedBlocks.contains(block)) {
+							//Note: 65535 is the value of awt's KeyEvent.CHARACTER_UNDEFINED. Just in case it leaks into a document.
+							result.append(ch);
+						} else {
+							result.append(unicodeEscape(ch));
+						}
+					} else {
+						//Always use Unicode notation
+						i++;
+						char upper = s.charAt(i);
+						int codePoint = Character.toCodePoint(ch, upper);
+						result.append(unicodeEscape(codePoint));
+					}
+				}
 			}
 		}
 		return result.toString();

@@ -89,6 +89,26 @@ public final class BooleanElement extends PrimitiveElement {
 	}
 	
 	@Override
+	public boolean orElse(boolean value) {
+		return this.value;
+	}
+	
+	@Override
+	public double orElse(double value) {
+		return value;
+	}
+	
+	@Override
+	public long orElse(long value) {
+		return value;
+	}
+	
+	@Override
+	public String orElse(String value) {
+		return value;
+	}
+	
+	@Override
 	public <T> Optional<T> mapAsBoolean(Function<Boolean, T> mapper) {
 		return Optional.of(mapper.apply(value));
 	}

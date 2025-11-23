@@ -31,6 +31,7 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -191,16 +192,32 @@ public interface ObjectWrapper<T> {
 			
 			try {
 				Class<?> clazz = ClassHierarchy.getErasedClass(tType);
+				
+				if (clazz.getEnclosingClass() != null) {
+					boolean isStatic = Modifier.isStatic(clazz.getModifiers());
+					if (!isStatic) {
+						throw new IllegalArgumentException("Cannot create an object of type "+tType.getTypeName()+".\n"+
+							"""
+							You may have intended to make this class a static inner class, and instead made it a
+							non-static inner class. This means there can never be a no-arg constructor; there is an
+							implicit argument of an instance of the enclosing class. If you did not intend this, you
+							can fix this by declaring this class as "static". If not, you'll have to supply a deserializer
+							some other way.
+							""");
+					}
+				}
 				@SuppressWarnings("unchecked")
 				Constructor<T> constructor = (Constructor<T>) clazz.getConstructor();
 				result = constructor.newInstance();
-			} catch (Throwable t) {
+			} catch (NoSuchMethodException t) {
 				throw new IllegalArgumentException("Cannot create an object of type "+tType.getTypeName()+".\n"+
 						"""
 						For uninitialized fields or root values of mutable classes, Jankson needs a zero-arg constructor.
 						Classes come with these by default, but declaring a constructor removes this "default" constructor.
 						You can fix this by declaring a no-arg constructor, or by marking this class as @Immutable.
 						""", t);
+			} catch (InvocationTargetException | IllegalAccessException | InstantiationException t) {
+				throw new RuntimeException("An unexpected error occurred creating this object.", t);
 			}
 			
 			fieldNames = getFields(tType);

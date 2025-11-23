@@ -25,6 +25,10 @@
 package blue.endless.jankson;
 
 import blue.endless.jankson.api.annotation.Deserializer;
+import blue.endless.jankson.api.document.ObjectElement;
+
+import java.io.IOException;
+import java.io.StringReader;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,25 +38,29 @@ import blue.endless.jankson.api.Jankson;
 import blue.endless.jankson.api.Marshaller;
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.JsonIOException;
+import blue.endless.jankson.api.io.ObjectWriter;
+import blue.endless.jankson.api.io.ObjectWriterFactory;
+import blue.endless.jankson.api.io.json.JsonReader;
 
 public class TestDeserializer {
 	
-	/*
-	@Test
-	public void testBaseDeserialization() {
-		try {
-			JsonObject parsed = jankson.load("{x: 4, y: 4}");
-			
-			TestObject des = jankson.fromJson(parsed, TestObject.class);
-			
-			Assert.assertEquals(4, des.x);
-			Assert.assertEquals("4", des.y);
-			
-		} catch (SyntaxError ex) {
-			Assert.fail("Should not get a syntax error for a well-formed object: "+ex.getCompleteMessage());
-		}
+	public static class TestObject {
+		public int x;
+		public String y;
 	}
-	 */
+	
+	@Test
+	public void testBaseDeserialization() throws SyntaxError, IOException {
+		JsonReader jsonReader = new JsonReader(new StringReader("{x: 4, y: 4}"));
+		ObjectWriter<TestObject> w = new ObjectWriter<>(TestObject.class);
+		jsonReader.transferTo(w);
+		
+		TestObject des = w.toObject();
+		
+		Assertions.assertEquals(4, des.x);
+		Assertions.assertEquals("4", des.y);
+	}
+	
 	
 	
 	

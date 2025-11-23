@@ -26,7 +26,10 @@ package blue.endless.jankson.api.io.json;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.lang.Character.UnicodeBlock;
+import java.util.Set;
 
+import blue.endless.jankson.api.Escaper;
 import blue.endless.jankson.api.document.CommentElement;
 import blue.endless.jankson.api.document.CommentType;
 import blue.endless.jankson.api.io.StructuredData;
@@ -54,6 +57,8 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 		if (ch == '\n') {
 			line++;
 			column = 0;
+		} else {
+			column++;
 		}
 		dest.write(ch);
 	}
@@ -282,7 +287,9 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 		assertValue();
 		
 		write('"');
-		write(value);
+		String escaped = Escaper.escapeString(value, '"', Set.of(UnicodeBlock.BASIC_LATIN));
+		//System.out.println(escaped);
+		write(escaped);
 		write('"');
 		
 		valueWritten();

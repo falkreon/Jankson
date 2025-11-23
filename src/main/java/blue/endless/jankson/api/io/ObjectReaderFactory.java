@@ -148,6 +148,12 @@ public class ObjectReaderFactory {
 	 * @return A StructuredDataReader which will provide data representing the object
 	 */
 	public StructuredDataReader getReader(Object object) {
+		if (object == null) {
+			StructuredDataBuffer buf = new StructuredDataBuffer();
+			buf.write(StructuredData.NULL);
+			return buf;
+		}
+		
 		return getReader(object.getClass(), object);
 	}
 	

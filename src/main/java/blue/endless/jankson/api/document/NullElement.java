@@ -86,6 +86,26 @@ public final class NullElement extends PrimitiveElement {
 	}
 	
 	@Override
+	public boolean orElse(boolean value) {
+		return value;
+	}
+	
+	@Override
+	public double orElse(double value) {
+		return value;
+	}
+	
+	@Override
+	public long orElse(long value) {
+		return value;
+	}
+	
+	@Override
+	public String orElse(String value) {
+		return value;
+	}
+	
+	@Override
 	public <T> Optional<T> mapAsInt(IntFunction<T> mapper) {
 		return Optional.empty();
 	}

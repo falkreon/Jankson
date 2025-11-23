@@ -111,6 +111,28 @@ public final class DoubleElement extends PrimitiveElement {
 		return Optional.of(BigDecimal.valueOf(value));
 	}
 	
+	@Override
+	public boolean orElse(boolean value) {
+		return Double.doubleToLongBits(this.value) != 0L;
+	}
+	
+	@Override
+	public double orElse(double value) {
+		return this.value;
+	}
+	
+	@Override
+	public long orElse(long value) {
+		long result = (long) this.value;
+		if (result == this.value) return result;
+		return value;
+	}
+	
+	@Override
+	public String orElse(String value) {
+		return Double.toString(this.value);
+	}
+	
 	public <T> Optional<T> mapAsDouble(DoubleFunction<T> d) {
 		return Optional.of(d.apply(value));
 	}

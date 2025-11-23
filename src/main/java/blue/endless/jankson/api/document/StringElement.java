@@ -102,6 +102,34 @@ public final class StringElement extends PrimitiveElement {
 	}
 	
 	@Override
+	public boolean orElse(boolean value) {
+		return Boolean.parseBoolean(this.value);
+	}
+	
+	@Override
+	public double orElse(double value) {
+		try {
+			return Double.parseDouble(this.value);
+		} catch (NumberFormatException nfe) {}
+		
+		return value;
+	}
+	
+	@Override
+	public long orElse(long value) {
+		try {
+			return Long.parseLong(this.value);
+		} catch (NumberFormatException nfe) {}
+		
+		return value;
+	}
+	
+	@Override
+	public String orElse(String value) {
+		return this.value;
+	}
+	
+	@Override
 	public <T> Optional<T> mapAsString(Function<String, T> mapper) {
 		return Optional.of(mapper.apply(value));
 	}
