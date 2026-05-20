@@ -39,6 +39,7 @@ import blue.endless.jankson.api.document.ValueElement;
 import blue.endless.jankson.api.io.ObjectReaderFactory;
 import blue.endless.jankson.api.io.ObjectWriter;
 import blue.endless.jankson.api.io.StructuredDataReader;
+import blue.endless.jankson.api.io.ValueElementReader;
 import blue.endless.jankson.api.io.ValueElementWriter;
 import blue.endless.jankson.api.io.json.JsonReader;
 import blue.endless.jankson.api.io.json.JsonReaderOptions;
@@ -274,6 +275,17 @@ public class Jankson {
 			JsonWriter out = new JsonWriter(sw, options);
 			elem.write(out);
 			return sw.toString();
+		}
+	}
+	
+	public static <T> T convert(ValueElement value, Type type) throws MarshallerException {
+		try {
+			StructuredDataReader reader = ValueElementReader.of(value);
+			ObjectWriter<T> writer = new ObjectWriter<>(type);
+			reader.transferTo(writer);
+			return writer.toObject();
+		} catch (Throwable t) {
+			throw new MarshallerException("Could not convert to the specified type.", t);
 		}
 	}
 }
