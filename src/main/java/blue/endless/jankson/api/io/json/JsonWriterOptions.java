@@ -24,32 +24,35 @@
 
 package blue.endless.jankson.api.io.json;
 
+import java.util.Objects;
+
 import blue.endless.jankson.api.io.style.CommentStyle;
 import blue.endless.jankson.api.io.style.WhitespaceStyle;
 
-public sealed abstract class JsonWriterOptions permits JsonWriterOptions.Builder, JsonWriterOptions.Access {
-	public static final JsonWriterOptions.Access DEFAULTS = JsonWriterOptions.builder()
+/** Immutable writer configuration with an independent builder. */
+public final class JsonWriterOptions {
+	public static final JsonWriterOptions DEFAULTS = JsonWriterOptions.builder()
 			.setUnquotedKeys(true)
 			.setWhitespace(WhitespaceStyle.PRETTY)
 			.setComments(CommentStyle.STRICT)
 			.build();
 	
-	public static final JsonWriterOptions.Access STRICT = JsonWriterOptions.builder()
+	public static final JsonWriterOptions STRICT = JsonWriterOptions.builder()
 			.setUnquotedKeys(false)
 			.setComments(CommentStyle.NONE)
 			.setWhitespace(WhitespaceStyle.PRETTY)
 			.setOmmitCommas(false)
 			.build();
 	
-	public static final JsonWriterOptions.Access ONE_LINE = STRICT.asBuilder()
+	public static final JsonWriterOptions ONE_LINE = STRICT.asBuilder()
 			.setWhitespace(WhitespaceStyle.SPACES_ONLY)
 			.build();
 	
-	public static final JsonWriterOptions.Access MINIFIED = STRICT.asBuilder()
+	public static final JsonWriterOptions MINIFIED = STRICT.asBuilder()
 			.setWhitespace(WhitespaceStyle.COMPACT)
 			.build();
 	
-	public static final JsonWriterOptions.Access INI_SON = JsonWriterOptions.builder()
+	public static final JsonWriterOptions INI_SON = JsonWriterOptions.builder()
 			.setBareRootObject(true)
 			.setKeyValueSeparator('=')
 			.setUnquotedKeys(true)
@@ -57,62 +60,56 @@ public sealed abstract class JsonWriterOptions permits JsonWriterOptions.Builder
 			.setWhitespace(WhitespaceStyle.PRETTY)
 			.build();
 	
-	protected boolean bareRootObject = false;
-	protected boolean unquotedKeys = true;
-	protected boolean ommitCommas = false;
-	protected CommentStyle comments = CommentStyle.STRICT;
-	protected WhitespaceStyle whitespace = WhitespaceStyle.PRETTY;
-	
-	protected char keyValueSeparator = ':';
-	protected String indentValue = "\t";
-	
-	public JsonWriterOptions() {}
-	
-	public JsonWriterOptions(JsonWriterOptions opts) {
-		this.bareRootObject = opts.bareRootObject;
-		this.unquotedKeys = opts.unquotedKeys;
-		this.ommitCommas = opts.ommitCommas;
-		this.comments = opts.comments;
-		this.whitespace = opts.whitespace;
-		this.keyValueSeparator = opts.keyValueSeparator;
-		this.indentValue = opts.indentValue;
-	}
-	
-	
-	public String getIndent(int count) {
-		if (count<=0) return "";
-		return indentValue.repeat(count);
-	}
-	
-	public boolean isBareRootObject() { return bareRootObject; }
-	public boolean isUnquotedKeys() { return unquotedKeys; }
-	public boolean shouldOmmitCommas() { return ommitCommas; }
-	public CommentStyle comments() { return comments; }
-	public WhitespaceStyle whitespace() { return whitespace; }
-	public char getKeyValueSeparator() { return keyValueSeparator; }
-	public String getIndentValue() { return indentValue; }
-	
 	public static Builder builder() {
 		return new Builder();
 	}
 	
-	public static final class Builder extends JsonWriterOptions {
+	public static final class Builder {
+		private boolean bareRootObject = false;
+		private boolean unquotedKeys = true;
+		private JsonFormat format = null;
+		private boolean ommitCommas = false;
+		private CommentStyle comments = CommentStyle.STRICT;
+		private WhitespaceStyle whitespace = WhitespaceStyle.PRETTY;
+		private char keyValueSeparator = ':';
+		private String indentValue = "\t";
+
 		public Builder() {}
 		
 		public Builder(JsonWriterOptions opts) {
-			super(opts);
+			this.bareRootObject = opts.isBareRootObject();
+			this.unquotedKeys = opts.isUnquotedKeys();
+			this.format = opts.getFormat();
+			this.ommitCommas = opts.shouldOmmitCommas();
+			this.comments = opts.comments();
+			this.whitespace = opts.whitespace();
+			this.keyValueSeparator = opts.getKeyValueSeparator();
+			this.indentValue = opts.getIndentValue();
 		}
+
 		
 		public Builder setBareRootObject(boolean value) {
 			bareRootObject = value;
 			return this;
 		}
 		
+		/** Prefer unquoted keys when the selected syntax permits the literal key. */
 		public Builder setUnquotedKeys(boolean value) {
 			unquotedKeys = value;
 			return this;
 		}
 		
+		/** Selects a document grammar; formatting may be customized without violating it. */
+		public Builder setFormat(JsonFormat value) {
+			format = Objects.requireNonNull(value);
+			unquotedKeys = value != JsonFormat.JSON && value != JsonFormat.JSONC;
+			bareRootObject = false;
+			ommitCommas = false;
+			keyValueSeparator = ':';
+			comments = value == JsonFormat.JSON ? CommentStyle.NONE : CommentStyle.STRICT;
+			return this;
+		}
+
 		public Builder setOmmitCommas(boolean value) {
 			ommitCommas = value;
 			return this;
@@ -142,18 +139,51 @@ public sealed abstract class JsonWriterOptions permits JsonWriterOptions.Builder
 			return this;
 		}
 		
-		public Access build() {
-			return new Access(this);
+		public JsonWriterOptions build() {
+			return new JsonWriterOptions(this);
 		}
 	}
 	
-	public static final class Access extends JsonWriterOptions {
-		public Access(JsonWriterOptions opts) {
-			super(opts);
+	private final boolean bareRootObject;
+	private final boolean unquotedKeys;
+	private final JsonFormat format;
+	private final boolean ommitCommas;
+	private final CommentStyle comments;
+	private final WhitespaceStyle whitespace;
+	private final char keyValueSeparator;
+	private final String indentValue;
+
+	private JsonWriterOptions(Builder opts) {
+		this.bareRootObject = opts.bareRootObject;
+		this.unquotedKeys = opts.unquotedKeys;
+		this.format = opts.format;
+		this.ommitCommas = opts.ommitCommas;
+		this.comments = Objects.requireNonNull(opts.comments);
+		this.whitespace = Objects.requireNonNull(opts.whitespace);
+		this.keyValueSeparator = opts.keyValueSeparator;
+		this.indentValue = Objects.requireNonNull(opts.indentValue);
+		if (format != null && (keyValueSeparator != ':'
+				|| bareRootObject && format != JsonFormat.HJSON
+				|| ommitCommas && (format != JsonFormat.HJSON || !whitespace.newlines())
+				|| (format == JsonFormat.JSON || format == JsonFormat.JSONC) && unquotedKeys
+				|| format == JsonFormat.JSON && comments != CommentStyle.NONE
+				|| !indentValue.chars().allMatch(ch -> ch == ' ' || ch == '\t'))) {
+			throw new IllegalArgumentException("Writer options conflict with " + format);
 		}
-		
-		public Builder asBuilder() {
-			return new Builder(this);
-		}
+	}
+
+	public String getIndent(int count) { return count <= 0 ? "" : indentValue.repeat(count); }
+	public boolean isBareRootObject() { return bareRootObject; }
+	public boolean isUnquotedKeys() { return unquotedKeys; }
+	/** Null selects the legacy output rules. */
+	public JsonFormat getFormat() { return format; }
+	public boolean shouldOmmitCommas() { return ommitCommas; }
+	public CommentStyle comments() { return comments; }
+	public WhitespaceStyle whitespace() { return whitespace; }
+	public char getKeyValueSeparator() { return keyValueSeparator; }
+	public String getIndentValue() { return indentValue; }
+
+	public Builder asBuilder() {
+		return new Builder(this);
 	}
 }

@@ -1,6 +1,6 @@
 # [Jankson](https://falkreon.github.io/Jankson)
 
-JSON5 / HJSON parser and preprocessor that preserves ordering and comments
+JSONC / JSON5 / HJSON parser and preprocessor that preserves ordering and comments
 
 Official Discord: https://discord.gg/tV6FYXE8QH
 
@@ -9,6 +9,11 @@ Official Discord: https://discord.gg/tV6FYXE8QH
 The full list of JSON5 quirks, and several HJSON quirks are supported.
 
 A full list of supported quirks is available [on the wiki](https://falkreon.github.io/Jankson/quirks)!
+
+For 2.x object-key behavior and escaping, see [Object key syntax](docs/object_keys.md).
+Recent fixes and compatibility notes are recorded in [CHANGELOG.md](CHANGELOG.md).
+For full JSON/JSONC/JSON5/HJSON profiles and file-extension-based loading, see
+[Document formats](docs/formats.md).
 
 ## [Compiling](https://falkreon.github.io/Jankson/getting_started)
 
@@ -38,7 +43,7 @@ syntax for another parser to consume.
 try {
 	// configObject will represent the document root of the config file, and contains comments and formatting
 	// that can be used to recreate the file with some minor formatting and indentation cleanup.
-	ObjectElement configObject = Jankson.loadJsonObject(new File(configPath, "config.json"));
+	ValueElement configObject = Jankson.read(Path.of(configPath, "config.json5"));
 	
 	
 	String json5 = configObject.toString(); // toString for any JsonElement is its serialized form
@@ -46,7 +51,7 @@ try {
 	
 	// Asking the writer to use STRICT json allows you to use Jankson as a preprocessor for other libraries
 	StringWriter stringWriter = new StringWriter();
-	JsonWriter jsonWriter = new JsonWriter(stringWriter, JsonWriterOptions.STRICT);
+	JsonWriter jsonWriter = new JsonWriter(stringWriter, JsonFormat.JSON.writerOptions());
 	configObject.write(jsonWriter);
 	stringWriter.flush();
 	String strictJson = stringWriter.toString(); //strictJson is your preprocessed data

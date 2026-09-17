@@ -33,10 +33,12 @@ import blue.endless.jankson.api.Escaper;
 import blue.endless.jankson.api.document.CommentElement;
 import blue.endless.jankson.api.document.CommentType;
 import blue.endless.jankson.api.io.StructuredData;
+import blue.endless.jankson.api.io.style.CommentStyle;
 import blue.endless.jankson.impl.io.AbstractStructuredDataWriter;
+import blue.endless.jankson.impl.io.context.KeyRules;
 
 public class JsonWriter extends AbstractStructuredDataWriter {
-	private final JsonWriterOptions.Access options;
+	private final JsonWriterOptions options;
 	private int indentLevel = 0;
 	
 	private String resource = "";
@@ -48,7 +50,7 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 		this(destination, JsonWriterOptions.DEFAULTS);
 	}
 	
-	public JsonWriter(Writer destination, JsonWriterOptions.Access options) {
+	public JsonWriter(Writer destination, JsonWriterOptions options) {
 		super(destination);
 		this.options = options;
 	}
@@ -65,7 +67,7 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 	
 	private void write(String s) throws IOException {
 		for(int i=0; i<s.length(); i++) {
-			dest.write(s.charAt(i));
+			write(s.charAt(i));
 		}
 	}
 	
@@ -122,9 +124,27 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 	}
 	
 	private void writeComment(String value, CommentType type) throws IOException {
+		if (options.comments() == CommentStyle.NONE) return;
+		State state = peek();
+		boolean deferSeparator = options.getFormat() == JsonFormat.JSONC
+				&& (state == State.ARRAY_BEFORE_COMMA || state == State.DICTIONARY_BEFORE_COMMA);
+		if (options.comments() == CommentStyle.STRICT && options.getFormat() != null) {
+			// Normalize each physical line so comment text cannot terminate a block
+			// or inject syntax, even when the destination uses compact formatting.
+			if (!deferSeparator) addCommas();
+			for (String line : value.split("\\r\\n|[\\r\\n\\u2028\\u2029]", -1)) {
+				write("//");
+				write(line);
+				write('\n');
+				write(options.getIndent(indentLevel));
+			}
+			skipNewline = true;
+			return;
+		}
+		if (options.comments() == CommentStyle.STRICT && type == CommentType.OCTOTHORPE) type = CommentType.LINE_END;
 		switch(type) {
 		case LINE_END:
-			addCommas();
+			if (!deferSeparator) addCommas();
 			write("//");
 			write(value);
 			skipNewline = false;
@@ -132,7 +152,7 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 			break;
 		
 		case OCTOTHORPE:
-			addCommas();
+			if (!deferSeparator) addCommas();
 			if (options.whitespace().newlines()) writeNewline();
 			write("#");
 			write(value);
@@ -141,7 +161,7 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 			break;
 		
 		case MULTILINE:
-			addCommas();
+			if (!deferSeparator) addCommas();
 			if (options.whitespace().newlines()) writeNewline();
 			write("/*");
 			write(value);
@@ -149,7 +169,7 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 			break;
 		
 		case DOC:
-			addCommas();
+			if (!deferSeparator) addCommas();
 			if (options.whitespace().newlines()) writeNewline();
 			write("/**");
 			write(value);
@@ -158,7 +178,7 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 		}
 		
 		State peek = peek();
-		if (peek == State.ARRAY_BEFORE_COMMA || peek == State.DICTIONARY_BEFORE_COMMA) {
+		if (!deferSeparator && (peek == State.ARRAY_BEFORE_COMMA || peek == State.DICTIONARY_BEFORE_COMMA)) {
 			pop();
 		}
 	}
@@ -172,14 +192,14 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 		
 		assertKey();
 		
-		//TODO: escape parts of the key if needed, omit quotes if possible + configured
-		boolean quoted = !options.isUnquotedKeys(); //TODO: Check to make sure it CAN be unquoted
+		boolean quoted = !options.isUnquotedKeys()
+				|| !KeyRules.canWriteUnquoted(key, options.getFormat(), options.getKeyValueSeparator());
 		if (quoted) {
 			write('"');
-		}
-		dest.write(key);
-		if (quoted) {
+			write(Escaper.escapeString(key, '"', Set.of(UnicodeBlock.BASIC_LATIN)));
 			write('"');
+		} else {
+			write(key);
 		}
 		
 		write(options.getKeyValueSeparator());
@@ -220,7 +240,7 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 		addCommas();
 		
 		assertValue();
-		if (!isWritingRoot() || !options.isBareRootObject()) {
+		if (peek() != State.ROOT || !options.isBareRootObject()) {
 			write('{');
 			indentLevel++;
 		}
@@ -304,6 +324,9 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 	}
 	
 	private void writeDoubleLiteral(double value) throws IOException {
+		if (!Double.isFinite(value) && options.getFormat() != null && options.getFormat() != JsonFormat.JSON5) {
+			throw new IOException("Non-finite numbers cannot be represented in " + options.getFormat());
+		}
 		addCommas();
 		
 		assertValue();

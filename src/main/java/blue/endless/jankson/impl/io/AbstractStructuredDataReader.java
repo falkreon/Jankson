@@ -41,7 +41,10 @@ public abstract class AbstractStructuredDataReader implements StructuredDataRead
 	private final Deque<ParserContext> contextStack = new ArrayDeque<>();
 	
 	public AbstractStructuredDataReader(Reader src) {
-		this.src = new LookaheadCodePointReader(src);
+		this(new LookaheadCodePointReader(src));
+	}
+	protected AbstractStructuredDataReader(LookaheadCodePointReader src) {
+		this.src = src;
 	}
 	
 	protected ParserContext getContext() {

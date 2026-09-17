@@ -1,5 +1,9 @@
 # JSON Quirks
 
+This page describes the **legacy permissive parser**. For explicit JSON, JSON5,
+and HJSON document profiles (including HJSON quoteless and multiline values), see
+[Document formats](formats.md). Their accepted syntax is intentionally different.
+
 Jankson produces reliable behavior when encountering many quirks
 which are normal for configuration files:
 

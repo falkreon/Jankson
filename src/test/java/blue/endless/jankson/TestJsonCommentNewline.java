@@ -38,7 +38,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 
 public class TestJsonCommentNewline {
-	private static final JsonWriterOptions.Access JSON_WRITER_OPTIONS = JsonWriterOptions.builder()
+	private static final JsonWriterOptions JSON_WRITER_OPTIONS = JsonWriterOptions.builder()
 			.setIndentValue("    ")
 			.setComments(CommentStyle.STRICT)
 			.setWhitespace(WhitespaceStyle.PRETTY)

@@ -58,11 +58,12 @@ public class ValueElementWriter implements Deserializer<ValueElement> {
 		} else {
 			if (delegate != null && delegate.isComplete()) {
 				result = delegate.getResult();
+				result.getPrologue().addAll(bufferedComments);
+				bufferedComments.clear();
 				delegate = null;
 				
 				if (data.type() == StructuredData.Type.EOF) return;
 				if (data.type().isSemantic()) throw new IOException("Illegal data after end of value: "+data);
-				if (data.isComment()) result.getEpilogue().add(data.asComment());
 			}
 			
 			switch(data.type()) {

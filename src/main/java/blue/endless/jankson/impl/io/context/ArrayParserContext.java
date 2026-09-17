@@ -30,19 +30,28 @@ import java.util.function.Consumer;
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.json.JsonReaderOptions;
+import blue.endless.jankson.api.io.json.JsonFormat;
 import blue.endless.jankson.impl.io.LookaheadCodePointReader;
 
 public class ArrayParserContext implements ParserContext {
 	private JsonReaderOptions options;
 	private boolean foundStart = false;
 	private boolean foundEnd = false;
+	private final int depth;
+	private enum State { START, VALUE_OR_END, VALUE_AFTER_COMMA, COMMA_OR_END, COMPLETE }
+	private State state = State.START;
 	
 	public ArrayParserContext(JsonReaderOptions options) {
+		this(options, 1);
+	}
+	ArrayParserContext(JsonReaderOptions options, int depth) {
 		this.options = options;
+		this.depth = depth;
 	}
 	
 	@Override
 	public void parse(LookaheadCodePointReader reader, Consumer<StructuredData> elementConsumer, Consumer<ParserContext> pusher) throws IOException, SyntaxError {
+		if (options.getFormat() != null) { parseFormatted(reader, elementConsumer, pusher); return; }
 		emitComments(reader, elementConsumer);
 		
 		if (!foundStart) {
@@ -77,7 +86,36 @@ public class ArrayParserContext implements ParserContext {
 
 	@Override
 	public boolean isComplete(LookaheadCodePointReader reader) {
-		return foundStart && foundEnd;
+		return options.getFormat() == null ? foundStart && foundEnd : state == State.COMPLETE;
+	}
+	private void parseFormatted(LookaheadCodePointReader r, Consumer<StructuredData> out, Consumer<ParserContext> push) throws IOException, SyntaxError {
+		JsonFormat format = options.getFormat();
+		if (JsonGrammar.trivia(r, format, out)) return;
+		int ch = r.peek();
+		switch (state) {
+			case START -> {
+				if (r.read() != '[') throw JsonGrammar.error(r, "Expected '['.");
+				out.accept(StructuredData.ARRAY_START); state = State.VALUE_OR_END;
+			}
+			case VALUE_OR_END, VALUE_AFTER_COMMA -> {
+				if (ch == ']') {
+					if (state == State.VALUE_AFTER_COMMA && !options.allowsTrailingCommas()) {
+						throw JsonGrammar.error(r, "Trailing commas are not allowed in " + format + ".");
+					}
+					finish(r, out);
+				} else { JsonGrammar.value(r, options, depth, out, push); state = State.COMMA_OR_END; }
+			}
+			case COMMA_OR_END -> {
+				if (ch == ']') finish(r, out);
+				else if (ch == ',') { r.read(); state = State.VALUE_AFTER_COMMA; }
+				else if (format == JsonFormat.HJSON) state = State.VALUE_OR_END;
+				else throw JsonGrammar.error(r, "Expected ',' between array elements.");
+			}
+			case COMPLETE -> { }
+		}
+	}
+	private void finish(LookaheadCodePointReader r, Consumer<StructuredData> out) throws IOException {
+		r.read(); out.accept(StructuredData.ARRAY_END); state = State.COMPLETE;
 	}
 
 }

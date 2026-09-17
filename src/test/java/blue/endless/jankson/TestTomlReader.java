@@ -178,7 +178,6 @@ public class TestTomlReader {
 					"name": "Hammer",
 					"sku": 738594937
 				},
-				# empty table within the array
 				{ },
 				{
 					"name": "Nail",

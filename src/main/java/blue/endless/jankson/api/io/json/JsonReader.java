@@ -28,32 +28,37 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.nio.charset.CodingErrorAction;
 
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.impl.io.AbstractStructuredDataReader;
+import blue.endless.jankson.impl.io.LookaheadCodePointReader;
 import blue.endless.jankson.impl.io.context.ParserContext;
 import blue.endless.jankson.impl.io.context.RootParserContext;
 
 public class JsonReader extends AbstractStructuredDataReader {
-	private final JsonReaderOptions.Access options;
+	private boolean failed;
 	
 	public JsonReader(Reader source) {
 		this(source, JsonReaderOptions.UNSPECIFIED);
 	}
 	
-	public JsonReader(Reader source, JsonReaderOptions.Access options) {
-		super(source);
-		this.options = options;
+	public JsonReader(Reader source, JsonReaderOptions options) {
+		super(new LookaheadCodePointReader(source, options.getFormat(), 0, 0));
 		pushContext(new RootParserContext(options));
 	}
 	
-	public JsonReader(InputStream source, JsonReaderOptions.Access options) {
-		this(new InputStreamReader(source), options);
+	public JsonReader(InputStream source, JsonReaderOptions options) {
+		this(options.getFormat() == null ? new InputStreamReader(source, StandardCharsets.UTF_8)
+				: new InputStreamReader(source, StandardCharsets.UTF_8.newDecoder()
+						.onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT)), options);
 	}
 	
 	@Override
 	protected void readNext() throws IOException {
+		if (failed) throw new IOException("Reader cannot continue after a parse failure.");
 		ParserContext context = getContext();
 		if (context==null) throw new IllegalStateException("Root context was popped");
 		if (context.isComplete(src)) {
@@ -71,8 +76,16 @@ public class JsonReader extends AbstractStructuredDataReader {
 					this::pushContext
 					);
 			} catch (SyntaxError err) {
+				failed = true;
 				throw new IOException(err);
+			} catch (IOException err) {
+				failed = true;
+				throw err;
 			}
 		}
+	}
+	@Override public StructuredData next() throws SyntaxError, IOException {
+		if (failed) throw new IOException("Reader cannot continue after a parse failure.");
+		return super.next();
 	}
 }

@@ -30,6 +30,7 @@ import java.util.function.Consumer;
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.json.JsonReaderOptions;
+import blue.endless.jankson.api.io.json.JsonFormat;
 import blue.endless.jankson.impl.io.LookaheadCodePointReader;
 
 public class RootParserContext implements ParserContext {
@@ -38,13 +39,21 @@ public class RootParserContext implements ParserContext {
 	private boolean complete = false;
 	
 	private String bufferedKey = null;
+	private boolean started;
+	private boolean valueStarted;
+	private final boolean resolveHjsonRoot;
 	
 	public RootParserContext(JsonReaderOptions options) {
+		this(options, true);
+	}
+	RootParserContext(JsonReaderOptions options, boolean resolveHjsonRoot) {
 		this.options = options;
+		this.resolveHjsonRoot = resolveHjsonRoot;
 	}
 	
 	@Override
 	public void parse(LookaheadCodePointReader reader, Consumer<StructuredData> elementConsumer, Consumer<ParserContext> pusher) throws IOException, SyntaxError {
+		if (options.getFormat() != null) { parseFormatted(reader, elementConsumer, pusher); return; }
 		emitComments(reader, elementConsumer);
 		
 		int ch = reader.peek();
@@ -98,6 +107,22 @@ public class RootParserContext implements ParserContext {
 		int extra = reader.peek(5);
 		if (Character.isLetterOrDigit(extra)) return false; //some token *starts with* "null" but is not null.
 		return maybeNull.equals("null");
+	}
+	private void parseFormatted(LookaheadCodePointReader r, Consumer<StructuredData> out, Consumer<ParserContext> push) throws IOException, SyntaxError {
+		JsonFormat format = options.getFormat();
+		if (!started) {
+			started = true;
+			if (format == JsonFormat.HJSON && r.peek() == 0xFEFF) r.read();
+		}
+		if (JsonGrammar.trivia(r, format, out)) return;
+		if (valueStarted) {
+			if (r.peek() != -1) throw JsonGrammar.error(r, "Unexpected data after the document root.");
+			complete = true; out.accept(StructuredData.EOF); return;
+		}
+		valueStarted = true;
+		if (format == JsonFormat.HJSON && options.isBareRootObject() && r.peek() != '{' && r.peek() != '[') {
+			push.accept(resolveHjsonRoot ? new HjsonRootContext(options) : new ObjectParserContext(options, false, 1));
+		} else JsonGrammar.value(r, options, 0, out, push);
 	}
 	
 	@Override

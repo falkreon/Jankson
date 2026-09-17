@@ -30,19 +30,30 @@ import java.util.function.Consumer;
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.json.JsonReaderOptions;
+import blue.endless.jankson.api.io.json.JsonFormat;
 import blue.endless.jankson.impl.io.LookaheadCodePointReader;
 
 public class ObjectParserContext implements ParserContext {
 	private JsonReaderOptions options;
 	private boolean foundStart = false;
 	private boolean foundEnd = false;
+	private final boolean braced;
+	private final int depth;
+	private enum State { START, KEY_OR_END, KEY_AFTER_COMMA, COLON, VALUE, COMMA_OR_END, COMPLETE }
+	private State state = State.START;
 	
 	public ObjectParserContext(JsonReaderOptions options) {
+		this(options, true, 1);
+	}
+	ObjectParserContext(JsonReaderOptions options, boolean braced, int depth) {
 		this.options = options;
+		this.braced = braced;
+		this.depth = depth;
 	}
 	
 	@Override
 	public void parse(LookaheadCodePointReader reader, Consumer<StructuredData> elementConsumer, Consumer<ParserContext> pusher) throws IOException, SyntaxError {
+		if (options.getFormat() != null) { parseFormatted(reader, elementConsumer, pusher); return; }
 		emitComments(reader, elementConsumer);
 		
 		if (!foundStart) {
@@ -76,20 +87,12 @@ public class ObjectParserContext implements ParserContext {
 				//	CommentValueParser.readStatic(reader);
 				//} else {
 					//Read a key
-					if (StringValueParser.canReadStatic(reader)) {
-						//Read a quoted key
-						String s = StringValueParser.readStatic(reader);
-						elementConsumer.accept(StructuredData.objectKey(s));
-					} else {
-						//TODO: Accept bare String tokens
-						String token = TokenValueParser.readStatic(reader);
-						elementConsumer.accept(StructuredData.objectKey(token));
-					}
+					elementConsumer.accept(StructuredData.objectKey(KeyRules.read(reader, options)));
 					
 					//Look for the colon
 					emitComments(reader, elementConsumer);
 					ch = reader.peek();
-					if (ch==':') {
+					if (ch==options.getKeyValueSeparator()) {
 						//Eat it and proceed to the value parsing
 						reader.read();
 						
@@ -102,7 +105,7 @@ public class ObjectParserContext implements ParserContext {
 						//foreach reader
 						//if we can read it, do and break.
 					} else {
-						throw new SyntaxError("Couldn't find key-value separator (:)", reader.getLine(), reader.getCharacter());
+						throw new SyntaxError("Couldn't find key-value separator ("+options.getKeyValueSeparator()+")", reader.getLine(), reader.getCharacter());
 					}
 					
 				//}
@@ -114,7 +117,42 @@ public class ObjectParserContext implements ParserContext {
 
 	@Override
 	public boolean isComplete(LookaheadCodePointReader reader) {
-		return foundStart && foundEnd;
+		return options.getFormat() == null ? foundStart && foundEnd : state == State.COMPLETE;
+	}
+	private void parseFormatted(LookaheadCodePointReader r, Consumer<StructuredData> out, Consumer<ParserContext> push) throws IOException, SyntaxError {
+		JsonFormat format = options.getFormat();
+		if (JsonGrammar.trivia(r, format, out)) return;
+		int ch = r.peek();
+		boolean end = braced ? ch == '}' : ch == -1;
+		switch (state) {
+			case START -> {
+				if (braced && r.read() != '{') throw JsonGrammar.error(r, "Expected '{'.");
+				out.accept(StructuredData.OBJECT_START); state = State.KEY_OR_END;
+			}
+			case KEY_OR_END, KEY_AFTER_COMMA -> {
+				if (end) {
+					if (state == State.KEY_AFTER_COMMA && !options.allowsTrailingCommas()) {
+						throw JsonGrammar.error(r, "Trailing commas are not allowed in " + format + ".");
+					}
+					finish(r, out);
+				} else {
+					out.accept(StructuredData.objectKey(KeyRules.read(r, options))); state = State.COLON;
+				}
+			}
+			case COLON -> { if (r.read() != ':') throw JsonGrammar.error(r, "Expected ':'."); state = State.VALUE; }
+			case VALUE -> { JsonGrammar.value(r, options, depth, out, push); state = State.COMMA_OR_END; }
+			case COMMA_OR_END -> {
+				if (end) finish(r, out);
+				else if (ch == ',') { r.read(); state = State.KEY_AFTER_COMMA; }
+				else if (format == JsonFormat.HJSON) state = State.KEY_OR_END;
+				else throw JsonGrammar.error(r, "Expected ',' between object members.");
+			}
+			case COMPLETE -> { }
+		}
+	}
+	private void finish(LookaheadCodePointReader r, Consumer<StructuredData> out) throws IOException {
+		if (braced) r.read();
+		out.accept(StructuredData.OBJECT_END); state = State.COMPLETE;
 	}
 	
 }

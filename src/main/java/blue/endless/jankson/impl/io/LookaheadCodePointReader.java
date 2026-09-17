@@ -26,6 +26,7 @@ package blue.endless.jankson.impl.io;
 
 import java.io.IOException;
 import java.io.Reader;
+import blue.endless.jankson.api.io.json.JsonFormat;
 
 public class LookaheadCodePointReader implements CodePointReader, Lookahead {
 	private static final int REPLACEMENT_CHARACTER = 0xFFFD;
@@ -40,6 +41,9 @@ public class LookaheadCodePointReader implements CodePointReader, Lookahead {
 	
 	private int line = 0;
 	private int character = 0;
+	private boolean explicitFormat;
+	private boolean json5Lines;
+	private boolean previousCR;
 	
 	public LookaheadCodePointReader(Reader in) {
 		this(in, 16);
@@ -48,6 +52,14 @@ public class LookaheadCodePointReader implements CodePointReader, Lookahead {
 	public LookaheadCodePointReader(Reader in, int lookahead) {
 		this.in = in;
 		this.lookahead = new int[lookahead];
+	}
+	/** Format-aware cursor; legacy constructors retain their existing behavior. */
+	public LookaheadCodePointReader(Reader in, JsonFormat format, int line, int column) {
+		this(in);
+		explicitFormat = format != null;
+		json5Lines = format == JsonFormat.JSON5;
+		this.line = line;
+		this.character = column;
 	}
 	
 	@Override
@@ -93,7 +105,7 @@ public class LookaheadCodePointReader implements CodePointReader, Lookahead {
 		
 		if (Character.isLowSurrogate((char) high)) {
 			charLookahead = -1;
-			return REPLACEMENT_CHARACTER;
+			return explicitFormat ? high : REPLACEMENT_CHARACTER;
 		}
 		
 		if (Character.isHighSurrogate((char) high)) {
@@ -101,7 +113,7 @@ public class LookaheadCodePointReader implements CodePointReader, Lookahead {
 			if (low==-1) {
 				//High surrogate followed by EOF, report this as an error
 				charLookahead = -1;
-				return REPLACEMENT_CHARACTER;
+				return explicitFormat ? high : REPLACEMENT_CHARACTER;
 			}
 			if (Character.isLowSurrogate((char) low)) {
 				charLookahead = -1;
@@ -109,7 +121,7 @@ public class LookaheadCodePointReader implements CodePointReader, Lookahead {
 			} else {
 				//High surrogate followed by anything that isn't a low surrogate. Stash the new character as a lookahead
 				charLookahead = low;
-				return REPLACEMENT_CHARACTER;
+				return explicitFormat ? high : REPLACEMENT_CHARACTER;
 			}
 		}
 		
@@ -130,7 +142,13 @@ public class LookaheadCodePointReader implements CodePointReader, Lookahead {
 			result = readInternal();
 		}
 		
-		if (result=='\n') {
+		if (explicitFormat) {
+			if (result == -1) return result;
+			if (result == '\r' || result == '\n' && !previousCR || json5Lines && (result == 0x2028 || result == 0x2029)) {
+				line++; character = 0;
+			} else if (result != '\n' || !previousCR) character++;
+			previousCR = result == '\r';
+		} else if (result=='\n') {
 			line++;
 			character = 0;
 		} else {
