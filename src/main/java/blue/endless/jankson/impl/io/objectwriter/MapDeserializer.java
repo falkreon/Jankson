@@ -28,7 +28,10 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Type;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.ObjectWriter;
@@ -49,6 +52,7 @@ public class MapDeserializer<K, V> extends AbstractDeserializer<Map<K, V>> {
 
 	private final KeyParser<K> toKFunction;
 	private final Map<K, V> result;
+	private final Map<K, String> keysSeen;
 	private K bufferedKey = null;
 	
 	private boolean startFound = false;
@@ -60,6 +64,7 @@ public class MapDeserializer<K, V> extends AbstractDeserializer<Map<K, V>> {
 		this.keyType = keyType;
 		this.valueType = valueType;
 		this.result = new HashMap<K, V>();
+		this.keysSeen = keyTracker(result);
 		this.toKFunction = getKeyFunction(keyType);
 		
 	}
@@ -68,11 +73,13 @@ public class MapDeserializer<K, V> extends AbstractDeserializer<Map<K, V>> {
 		this.keyType = keyType;
 		this.valueType = valueType;
 		this.result = map;
+		this.keysSeen = keyTracker(result);
 		this.toKFunction = getKeyFunction(keyType);
 	}
 	
 	public MapDeserializer(Type mapType) {
 		this.result = new HashMap<>();
+		this.keysSeen = keyTracker(result);
 		var mapTypes = ClassHierarchy.getMapTypeArguments(mapType);
 		this.keyType = mapTypes.keyType();
 		this.valueType = mapTypes.valueType();
@@ -81,17 +88,32 @@ public class MapDeserializer<K, V> extends AbstractDeserializer<Map<K, V>> {
 	
 	public MapDeserializer(Type mapType, Map<K, V> map) {
 		this.result = map;
+		this.keysSeen = keyTracker(result);
 		var mapTypes = ClassHierarchy.getMapTypeArguments(mapType);
 		this.keyType = mapTypes.keyType();
 		this.valueType = mapTypes.valueType();
 		this.toKFunction = getKeyFunction(keyType);
 	}
 	
+	private static <K> Map<K, String> keyTracker(Map<K, ?> target) {
+		// Track only this input, not existing entries which may legitimately be updated.
+		if (target instanceof SortedMap<K, ?> sorted) return new TreeMap<>(sorted.comparator());
+		if (target instanceof IdentityHashMap<?, ?>) return new IdentityHashMap<>();
+		return new HashMap<>();
+	}
+
 	@SuppressWarnings("unchecked")
 	private static <K> KeyParser<K> getKeyFunction(Type keyType) throws IllegalArgumentException {
 		if (keyType.equals(String.class) || ClassHierarchy.getErasedClass(keyType).equals(Object.class)) return (it) -> (K) it;
 		
 		Class<K> keyClass = (Class<K>) ClassHierarchy.getErasedClass(keyType);
+		if (keyClass == Boolean.class || keyClass == boolean.class) {
+			return wireName -> switch (wireName) {
+				case "true" -> (K) Boolean.TRUE;
+				case "false" -> (K) Boolean.FALSE;
+				default -> throw new SyntaxError("Invalid boolean map key '"+wireName+"'; expected 'true' or 'false'");
+			};
+		}
 		if (keyClass.isEnum()) {
 			Map<String, Enum<?>> names = EnumNames.of(keyClass);
 			return wireName -> {
@@ -149,7 +171,15 @@ public class MapDeserializer<K, V> extends AbstractDeserializer<Map<K, V>> {
 			if (bufferedKey == null) {
 				switch(data.type()) {
 					case OBJECT_KEY -> {
-						bufferedKey = toKFunction.parse(data.value().toString());
+						String textualKey = data.value().toString();
+						K decodedKey = toKFunction.parse(textualKey);
+						if (keysSeen.containsKey(decodedKey)) {
+							throw new SyntaxError("Map key '"+textualKey+"' decodes to duplicate "
+									+keyType.getTypeName()+" key '"+decodedKey+"'; it was already decoded from '"
+									+keysSeen.get(decodedKey)+"'.");
+						}
+						keysSeen.put(decodedKey, textualKey);
+						bufferedKey = decodedKey;
 					}
 					
 					case OBJECT_END -> {

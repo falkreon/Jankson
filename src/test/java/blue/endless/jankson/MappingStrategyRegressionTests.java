@@ -27,6 +27,9 @@ package blue.endless.jankson;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.StringReader;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -44,6 +47,7 @@ import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.json.JsonReader;
 import blue.endless.jankson.impl.io.objectwriter.MapDeserializer;
 import blue.endless.jankson.impl.io.objectwriter.RecordDeserializer;
+import blue.endless.jankson.impl.io.objectwriter.factory.InstanceFactory;
 import blue.endless.jankson.impl.io.objectwriter.factory.ObjectWrapper;
 
 public class MappingStrategyRegressionTests {
@@ -157,6 +161,42 @@ public class MappingStrategyRegressionTests {
 			BoxedFactory result = new BoxedFactory();
 			result.known = value + 1;
 			return result;
+		}
+	}
+
+	private static class WrongGenericFactory {
+		private List<String> known;
+		private WrongGenericFactory() {}
+		@Deserializer private static WrongGenericFactory create(@SerializedName("known") List<Integer> value) {
+			return null;
+		}
+	}
+
+	private static class AssignableGenericFactory {
+		private List<String> known;
+		private AssignableGenericFactory() {}
+		@Deserializer private static AssignableGenericFactory create(@SerializedName("known") Collection<String> value) {
+			AssignableGenericFactory result = new AssignableGenericFactory();
+			result.known = List.copyOf(value);
+			return result;
+		}
+	}
+
+	private static class ThrowingConstructorFactory {
+		private static final IllegalStateException FAILURE = new IllegalStateException("constructor failure");
+		private final String known;
+		public ThrowingConstructorFactory(@SerializedName("known") String known) {
+			this.known = known;
+			throw FAILURE;
+		}
+	}
+
+	private static class ThrowingMethodFactory {
+		private static final IllegalArgumentException FAILURE = new IllegalArgumentException("method failure");
+		private String known;
+		private ThrowingMethodFactory() {}
+		@Deserializer private static ThrowingMethodFactory create(@SerializedName("known") String known) {
+			throw FAILURE;
 		}
 	}
 
@@ -411,6 +451,33 @@ public class MappingStrategyRegressionTests {
 	public void factoryParametersSupportReflectiveBoxingAndWidening() throws Exception {
 		assertEquals(43, read("{known: 42}", WideningFactory.class).known);
 		assertEquals(43, read("{known: 42}", BoxedFactory.class).known);
+	}
+
+	@Test
+	public void factoryParametersRespectGenericArgumentsAndAssignableRawTypes() throws Exception {
+		IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+				() -> ObjectWrapper.of(WrongGenericFactory.class, null));
+		assertTrue(error.getMessage().contains("@Deserializer"));
+		assertEquals(List.of("a", "b"), read("{known: ['a', 'b']}", AssignableGenericFactory.class).known);
+	}
+
+	@SuppressWarnings("deprecation")
+	@Test
+	public void reflectiveFactoriesPreserveUserCausesAndRestoreAccessibility() throws Exception {
+		Constructor<ThrowingConstructorFactory> constructor = ThrowingConstructorFactory.class
+				.getDeclaredConstructor(String.class);
+		constructor.setAccessible(false);
+		InstantiationException constructorError = assertThrows(InstantiationException.class,
+				() -> InstanceFactory.of(constructor).newInstance(Map.of("known", "value")));
+		assertSame(ThrowingConstructorFactory.FAILURE, constructorError.getCause());
+		assertFalse(constructor.isAccessible());
+
+		Method method = ThrowingMethodFactory.class.getDeclaredMethod("create", String.class);
+		method.setAccessible(false);
+		InstantiationException methodError = assertThrows(InstantiationException.class,
+				() -> InstanceFactory.<ThrowingMethodFactory>of(method).newInstance(Map.of("known", "value")));
+		assertSame(ThrowingMethodFactory.FAILURE, methodError.getCause());
+		assertFalse(method.isAccessible());
 	}
 
 	@Test

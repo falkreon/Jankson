@@ -28,6 +28,7 @@ import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -42,6 +43,9 @@ import blue.endless.jankson.impl.magic.ClassHierarchy;
  * readers externally.
  */
 public class ObjectReaderFactory {
+	private static final Object REFLECTIVE_STRATEGY = new Object();
+	private final ThreadLocal<IdentityHashMap<Object, IdentityHashMap<Object, Boolean>>> resolving =
+			ThreadLocal.withInitial(IdentityHashMap::new);
 	private final Map<Type, Function<Object, StructuredDataReader>> functionMap = new HashMap<>();
 	/** If true, only match exact types given **/
 	private boolean precise = false;
@@ -74,6 +78,9 @@ public class ObjectReaderFactory {
 	
 	/**
 	 * Registers a "classic" serializer for the specified type
+	 *
+	 * <p>Serializers are never invoked for {@code null}. A null value is always represented by a
+	 * single {@link StructuredData#NULL} event, regardless of registrations or precise mode.
 	 * @param type The type to specify a serializer for
 	 * @param function A function which will receive an object of the specified type, and produce a
 	 *                 ValueElement representing it.
@@ -123,16 +130,22 @@ public class ObjectReaderFactory {
 	 * @return A StructuredDataReader which will provide data representing the object
 	 */
 	public StructuredDataReader getReader(Type type, final Object objectOfType) {
+		if (objectOfType == null) {
+			StructuredDataBuffer buf = new StructuredDataBuffer();
+			buf.write(StructuredData.NULL);
+			return buf;
+		}
+
 		// Strip annotations - we don't want to differentiate between String and @Nullable String.
 		if (type instanceof AnnotatedType annoType) {
 			type = annoType.getType();
 		}
 		
 		Function<Object, StructuredDataReader> function = functionMap.get(type);
-		if (function != null) return function.apply(objectOfType);
+		if (function != null) return apply(function, objectOfType);
 		if (!precise && objectOfType != null) {
 			function = functionMap.get(objectOfType.getClass());
-			if (function != null) return function.apply(objectOfType);
+			if (function != null) return apply(function, objectOfType);
 		}
 		
 		if (!precise) {
@@ -147,7 +160,7 @@ public class ObjectReaderFactory {
 							&& ClassHierarchy.getErasedClass(candidate.getKey()).isAssignableFrom(ClassHierarchy.getErasedClass(other.getKey()))
 							&& !ClassHierarchy.getErasedClass(candidate.getKey()).equals(ClassHierarchy.getErasedClass(other.getKey()))))
 					.toList();
-			if (mostSpecific.size() == 1) return mostSpecific.getFirst().getValue().apply(objectOfType);
+			if (mostSpecific.size() == 1) return apply(mostSpecific.getFirst().getValue(), objectOfType);
 			if (mostSpecific.size() > 1) {
 				List<String> names = mostSpecific.stream().map(entry -> entry.getKey().getTypeName()).sorted().toList();
 				throw new IllegalArgumentException("Ambiguous reader registrations for "+targetClass.getTypeName()+": "
@@ -155,7 +168,35 @@ public class ObjectReaderFactory {
 			}
 		}
 		
-		return ObjectStructuredDataReader.of(objectOfType, this);
+		return tracked(ObjectStructuredDataReader.of(objectOfType, type, this), objectOfType);
+	}
+
+	private static StructuredDataReader tracked(StructuredDataReader reader, Object object) {
+		return blue.endless.jankson.impl.io.objectreader.DelegatingStructuredDataReader.iterative(
+				reader, object, REFLECTIVE_STRATEGY);
+	}
+
+	private StructuredDataReader apply(Function<Object, StructuredDataReader> function, Object object) {
+		IdentityHashMap<Object, IdentityHashMap<Object, Boolean>> activeResolutions = resolving.get();
+		IdentityHashMap<Object, Boolean> strategies = activeResolutions.computeIfAbsent(object, ignored -> new IdentityHashMap<>());
+		if (strategies.containsKey(function)) {
+			return new StructuredDataReader() {
+				@Override public boolean hasNext() { return true; }
+				@Override public StructuredData next() throws java.io.IOException {
+					throw new java.io.IOException("Cyclic object reference while resolving a registered serializer for "
+							+object.getClass().getTypeName());
+				}
+			};
+		}
+		strategies.put(function, Boolean.TRUE);
+		try {
+			return blue.endless.jankson.impl.io.objectreader.DelegatingStructuredDataReader.iterative(
+					function.apply(object), object, function);
+		} finally {
+			strategies.remove(function);
+			if (strategies.isEmpty()) activeResolutions.remove(object);
+			if (activeResolutions.isEmpty()) resolving.remove();
+		}
 	}
 	
 	/**
@@ -165,13 +206,7 @@ public class ObjectReaderFactory {
 	 * @return A StructuredDataReader which will provide data representing the object
 	 */
 	public StructuredDataReader getReader(Object object) {
-		if (object == null) {
-			StructuredDataBuffer buf = new StructuredDataBuffer();
-			buf.write(StructuredData.NULL);
-			return buf;
-		}
-		
-		return getReader(object.getClass(), object);
+		return getReader(object == null ? Object.class : object.getClass(), object);
 	}
 	
 	public ObjectReaderFactory copy() {

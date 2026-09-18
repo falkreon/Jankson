@@ -24,6 +24,7 @@
 
 package blue.endless.jankson;
 
+import java.io.IOException;
 import java.io.StringWriter;
 import java.util.List;
 
@@ -40,12 +41,139 @@ import blue.endless.jankson.api.document.KeyValuePairElement;
 import blue.endless.jankson.api.document.ObjectElement;
 import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.api.document.ValueElement;
+import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.json.JsonFormat;
 import blue.endless.jankson.api.io.json.JsonWriter;
 import blue.endless.jankson.api.io.json.JsonWriterOptions;
+import blue.endless.jankson.api.io.style.CommentStyle;
 import blue.endless.jankson.api.io.style.WhitespaceStyle;
 
 public class TestJsonWriterComments {
+	@Test
+	public void disabledCommentsDoNotStartDeferralDuringLongStreams() throws Exception {
+		StringWriter destination = new StringWriter();
+		JsonWriter writer = new JsonWriter(destination, JsonFormat.JSONC.writerOptions().asBuilder()
+				.setComments(CommentStyle.NONE).setMaxDeferredTriviaEvents(1)
+				.setMaxDeferredTriviaCharacters(1).build());
+		writer.write(StructuredData.ARRAY_START);
+		writer.write(StructuredData.primitive(1));
+		for (int i = 0; i < 10_000; i++) {
+			writer.write(StructuredData.comment("discarded comment", CommentType.LINE_END));
+			writer.write(StructuredData.NEWLINE);
+			writer.write(StructuredData.whitespace("   "));
+		}
+		writer.write(StructuredData.primitive(2));
+		writer.write(StructuredData.ARRAY_END);
+		Assertions.assertFalse(destination.toString().contains("discarded"));
+		Assertions.assertEquals(2, ((ArrayElement) Jankson.read(destination.toString(), JsonFormat.JSONC)).size());
+	}
+
+	@Test
+	public void retainedLongRunsHaveFiniteEventAndTextBudgets() throws Exception {
+		JsonWriter writer = pendingArray(new StringWriter(), JsonFormat.JSONC.writerOptions());
+		for (int i = 0; i < JsonWriterOptions.DEFAULT_MAX_DEFERRED_TRIVIA_EVENTS; i++) {
+			writer.write(switch (i % 3) {
+				case 0 -> StructuredData.comment("", CommentType.LINE_END);
+				case 1 -> StructuredData.NEWLINE;
+				default -> StructuredData.whitespace("");
+			});
+		}
+		IOException failure = Assertions.assertThrows(IOException.class,
+				() -> writer.write(StructuredData.NEWLINE));
+		Assertions.assertTrue(failure.getMessage().contains("4096 events"));
+
+		JsonWriter textLimited = pendingArray(new StringWriter(), JsonFormat.JSONC.writerOptions());
+		String chunk = "x".repeat(1024);
+		for (int i = 0; i < 1024; i++) textLimited.write(StructuredData.comment(chunk, CommentType.LINE_END));
+		Assertions.assertTrue(Assertions.assertThrows(IOException.class,
+				() -> textLimited.write(StructuredData.comment("x", CommentType.LINE_END)))
+				.getMessage().contains("1048576 characters"));
+	}
+
+	@ParameterizedTest
+	@EnumSource(WhitespaceStyle.class)
+	public void exactBudgetsPreservePlacementAndResetBetweenRuns(WhitespaceStyle whitespace) throws Exception {
+		StringWriter destination = new StringWriter();
+		JsonWriter writer = pendingArray(destination, JsonFormat.JSONC.writerOptions().asBuilder()
+				.setWhitespace(whitespace).setMaxDeferredTriviaEvents(3).setMaxDeferredTriviaCharacters(3).build());
+		writer.write(StructuredData.comment("ab", CommentType.LINE_END));
+		writer.write(StructuredData.NEWLINE);
+		writer.write(StructuredData.whitespace(" "));
+		writer.write(StructuredData.primitive(2));
+		writer.write(StructuredData.comment("end", CommentType.LINE_END));
+		writer.write(StructuredData.ARRAY_END);
+		String output = destination.toString();
+		assertBefore(output, ",", "//ab");
+		assertBefore(output, "//ab", "2");
+		assertBefore(output, "2", "//end");
+		Assertions.assertFalse(output.substring(output.indexOf("2")).contains(","), output);
+		Assertions.assertEquals(2, ((ArrayElement) Jankson.read(output, JsonFormat.JSONC)).size());
+	}
+
+	@Test
+	public void overflowIsRejectedBeforeRetentionAndIncludesWhitespace() throws Exception {
+		var options = JsonFormat.JSONC.writerOptions().asBuilder()
+				.setMaxDeferredTriviaEvents(3).setMaxDeferredTriviaCharacters(2).build();
+		StringWriter destination = new StringWriter();
+		JsonWriter writer = pendingArray(destination, options);
+		Assertions.assertThrows(IOException.class, () -> writer.write(StructuredData.comment("abc", CommentType.LINE_END)));
+		// The rejected event must not be retained or consume the budget.
+		writer.write(StructuredData.comment("\uD83D\uDE00", CommentType.LINE_END));
+		Assertions.assertThrows(IOException.class, () -> writer.write(StructuredData.whitespace(" ")));
+		writer.write(StructuredData.NEWLINE);
+		writer.write(StructuredData.whitespace(""));
+		Assertions.assertThrows(IOException.class, () -> writer.write(StructuredData.NEWLINE));
+		writer.write(StructuredData.ARRAY_END);
+		Assertions.assertFalse(destination.toString().contains("abc"));
+		Assertions.assertTrue(destination.toString().contains("\uD83D\uDE00"));
+		Assertions.assertEquals(1, ((ArrayElement) Jankson.read(destination.toString(), JsonFormat.JSONC)).size());
+	}
+
+	@Test
+	public void deferredCommentsSnapshotMutableElements() throws Exception {
+		StringWriter destination = new StringWriter();
+		JsonWriter writer = pendingArray(destination, JsonFormat.JSONC.writerOptions().asBuilder()
+				.setMaxDeferredTriviaCharacters(2).build());
+		CommentElement comment = comment("ok");
+		writer.write(new StructuredData(StructuredData.Type.COMMENT, comment));
+		comment.setValue("changed and over budget");
+		writer.write(StructuredData.ARRAY_END);
+		Assertions.assertTrue(destination.toString().contains("//ok"));
+		Assertions.assertFalse(destination.toString().contains("changed"));
+	}
+
+	@Test
+	public void bufferOptionsAreImmutableCopiedAndValidated() {
+		for (JsonWriterOptions preset : List.of(JsonWriterOptions.DEFAULTS, JsonWriterOptions.STRICT,
+				JsonWriterOptions.ONE_LINE, JsonWriterOptions.MINIFIED, JsonWriterOptions.INI_SON)) {
+			Assertions.assertEquals(4096, preset.getMaxDeferredTriviaEvents());
+			Assertions.assertEquals(1024 * 1024, preset.getMaxDeferredTriviaCharacters());
+		}
+		for (JsonFormat format : JsonFormat.values()) {
+			var builder = format.writerOptions().asBuilder().setMaxDeferredTriviaEvents(2).setMaxDeferredTriviaCharacters(3);
+			var original = builder.build();
+			builder.setMaxDeferredTriviaEvents(4).setMaxDeferredTriviaCharacters(5);
+			var copy = original.asBuilder().setFormat(format).build();
+			Assertions.assertEquals(2, copy.getMaxDeferredTriviaEvents());
+			Assertions.assertEquals(3, copy.getMaxDeferredTriviaCharacters());
+			Assertions.assertEquals(4, builder.build().getMaxDeferredTriviaEvents());
+			Assertions.assertEquals(5, builder.build().getMaxDeferredTriviaCharacters());
+		}
+		for (int invalid : new int[]{0, -1}) {
+			Assertions.assertThrows(IllegalArgumentException.class,
+					() -> JsonWriterOptions.builder().setMaxDeferredTriviaEvents(invalid));
+			Assertions.assertThrows(IllegalArgumentException.class,
+					() -> JsonWriterOptions.builder().setMaxDeferredTriviaCharacters(invalid));
+		}
+	}
+
+	private static JsonWriter pendingArray(StringWriter destination, JsonWriterOptions options) throws IOException {
+		JsonWriter writer = new JsonWriter(destination, options);
+		writer.write(StructuredData.ARRAY_START);
+		writer.write(StructuredData.primitive(1));
+		return writer;
+	}
+
 	@ParameterizedTest
 	@EnumSource(WhitespaceStyle.class)
 	public void jsoncPlacesPropertyProloguesAfterTheirSeparators(WhitespaceStyle whitespace) throws Exception {

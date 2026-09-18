@@ -28,5 +28,9 @@ import java.io.IOException;
 
 @FunctionalInterface
 public interface ConfigValidator<T> {
+	/**
+	 * Validates a decoded or about-to-be-encoded value.
+	 * Implementations must support concurrent calls.
+	 */
 	void validate(T value) throws IOException;
 }

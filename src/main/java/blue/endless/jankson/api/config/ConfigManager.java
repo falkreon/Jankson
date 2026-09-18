@@ -193,6 +193,8 @@ public final class ConfigManager<T> {
 		public Builder<T> atomicWrites(AtomicWritePolicy value) { file.atomicWrites(value); return this; }
 		public Builder<T> creationPolicy(ConfigCreationPolicy value) { file.creationPolicy(value); return this; }
 		public Builder<T> maxBytes(int value) { file.maxBytes(value); return this; }
+		/** Limits non-EOF parser events, including comments, keys, formatting, and container boundaries. */
+		public Builder<T> maxParseEvents(long value) { file.maxParseEvents(value); return this; }
 		Builder<T> publicationOperation(ConfigFile.PublicationOperation value) { file.publicationOperation(value); return this; }
 		Builder<T> cleanupOperation(ConfigFile.CleanupOperation value) { file.cleanupOperation(value); return this; }
 		Builder<T> exitCleanupOperation(Consumer<Path> value) { file.exitCleanupOperation(value); return this; }

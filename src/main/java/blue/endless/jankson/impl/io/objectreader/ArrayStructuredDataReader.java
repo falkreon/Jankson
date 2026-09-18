@@ -25,6 +25,7 @@
 package blue.endless.jankson.impl.io.objectreader;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.Type;
 
 import blue.endless.jankson.api.io.ObjectReaderFactory;
 import blue.endless.jankson.api.io.StructuredData;
@@ -32,13 +33,19 @@ import blue.endless.jankson.api.io.StructuredData;
 class ArrayStructuredDataReader extends DelegatingStructuredDataReader {
 	
 	private final Object arr;
+	private final Type elementType;
 	private final ObjectReaderFactory factory;
 	private int index = 0;
 	
 	public ArrayStructuredDataReader(Object array, ObjectReaderFactory factory) {
+		this(array, array.getClass().getComponentType(), factory);
+	}
+
+	ArrayStructuredDataReader(Object array, Type elementType, ObjectReaderFactory factory) {
 		if (!array.getClass().isArray()) throw new IllegalArgumentException("This class can only be used with arrays.");
 		
 		this.arr = array;
+		this.elementType = elementType;
 		this.factory = (factory == null) ? new ObjectReaderFactory() : factory;
 		buffer(StructuredData.ARRAY_START);
 	}
@@ -51,7 +58,7 @@ class ArrayStructuredDataReader extends DelegatingStructuredDataReader {
 		} else {
 			Object o = Array.get(arr, index);
 			index++;
-			setDelegate(factory.getReader(o));
+			setDelegate(o == null ? factory.getReader(null) : factory.getReader(elementType, o));
 		}
 	}
 }

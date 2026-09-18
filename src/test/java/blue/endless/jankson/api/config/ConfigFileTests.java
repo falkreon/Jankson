@@ -419,9 +419,53 @@ class ConfigFileTests {
 				() -> linked.overwrite(PrimitiveElement.of(2L))).stage());
 	}
 
+	@Test void rejectsStagedFileReplacedWithSymbolicLinkBeforePublication() throws Exception {
+		Path probe = directory.resolve("symlink-probe");
+		Path attacker = directory.resolve("attacker.json");
+		Files.writeString(attacker, "3");
+		try {
+			Files.createSymbolicLink(probe, attacker.getFileName());
+		} catch (IOException | UnsupportedOperationException | SecurityException ex) {
+			Assumptions.assumeTrue(false, "Symbolic links are unavailable: " + ex);
+		} finally {
+			Files.deleteIfExists(probe);
+		}
+
+		Path path = directory.resolve("staged-symlink.json");
+		Files.writeString(path, "1");
+		AtomicInteger publications = new AtomicInteger();
+		var file = ConfigFile.builder(path, ConfigCodecs.document())
+				.beforePublicationOperation(temporary -> {
+					Files.delete(temporary);
+					Files.createSymbolicLink(temporary, attacker.getFileName());
+				})
+				.moveOperation((source, target, atomic) -> publications.incrementAndGet()).build();
+		var failure = assertThrows(ConfigFileException.class, () -> file.overwrite(PrimitiveElement.of(2L)));
+		assertEquals(ConfigStage.WRITE_TEMPORARY, failure.stage());
+		assertEquals(0, publications.get());
+		assertEquals("1", Files.readString(path));
+		assertEquals("3", Files.readString(attacker));
+		assertNoTemporaryFiles();
+	}
+
+	@Test void rejectsStagedFileModifiedInPlaceBeforePublication() throws Exception {
+		Path path = directory.resolve("staged-content.json");
+		Files.writeString(path, "1");
+		AtomicInteger publications = new AtomicInteger();
+		var file = ConfigFile.builder(path, ConfigCodecs.document())
+				.beforePublicationOperation(temporary -> Files.writeString(temporary, "3"))
+				.moveOperation((source, target, atomic) -> publications.incrementAndGet()).build();
+		var failure = assertThrows(ConfigFileException.class, () -> file.overwrite(PrimitiveElement.of(2L)));
+		assertEquals(ConfigStage.WRITE_TEMPORARY, failure.stage());
+		assertEquals(0, publications.get());
+		assertEquals("1", Files.readString(path));
+		assertNoTemporaryFiles();
+	}
+
 	@Test void genericAndMutableMappingsRoundTrip() throws Exception {
-		var type = ConfigFileTests.class.getField("servers").getGenericType();
-		var file = ConfigFile.builder(directory.resolve("list.json5"), ConfigCodecs.<List<Server>>reflective(type)).build();
+		var type = new TypeRef<List<Server>>() {};
+		assertEquals(ConfigFileTests.class.getField("servers").getGenericType(), type.type());
+		var file = ConfigFile.builder(directory.resolve("list.json5"), ConfigCodecs.reflective(type)).build();
 		var servers = List.of(new Server(1, "one"), new Server(2, "two"));
 		file.overwrite(servers);
 		assertEquals(servers, file.load().value());

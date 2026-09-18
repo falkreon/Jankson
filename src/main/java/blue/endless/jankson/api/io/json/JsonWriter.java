@@ -49,6 +49,7 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 	private boolean skipNewline = false;
 	// JSONC needs the next structural token to distinguish an item prologue from a container footer.
 	private final List<StructuredData> deferredTrivia = new ArrayList<>();
+	private int deferredTriviaCharacters = 0;
 	
 	public JsonWriter(Writer destination) {
 		this(destination, JsonWriterOptions.DEFAULTS);
@@ -85,8 +86,9 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 	
 	@Override
 	public void write(StructuredData data) throws IOException {
+		if (data.type() == StructuredData.Type.COMMENT && options.comments() == CommentStyle.NONE) return;
 		if (shouldDefer(data)) {
-			deferredTrivia.add(data);
+			deferTrivia(data);
 			return;
 		}
 		if (!deferredTrivia.isEmpty()) {
@@ -96,8 +98,28 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 			}
 			for (StructuredData trivia : deferredTrivia) writeImmediately(trivia, true);
 			deferredTrivia.clear();
+			deferredTriviaCharacters = 0;
 		}
 		writeImmediately(data, false);
+	}
+
+	private void deferTrivia(StructuredData data) throws IOException {
+		if (deferredTrivia.size() >= options.getMaxDeferredTriviaEvents()) {
+			throw new IOException("JSONC deferred trivia exceeds " + options.getMaxDeferredTriviaEvents() + " events");
+		}
+		String text = data.value() instanceof CommentElement comment ? comment.getValue()
+				: data.value() == null ? "" : data.value().toString();
+		if (text.length() > options.getMaxDeferredTriviaCharacters() - deferredTriviaCharacters) {
+			throw new IOException("JSONC deferred trivia exceeds " + options.getMaxDeferredTriviaCharacters()
+					+ " characters (UTF-16 code units)");
+		}
+		// Snapshot mutable CommentElements and avoid retaining arbitrary value objects.
+		StructuredData snapshot = data.type() == StructuredData.Type.COMMENT
+				? StructuredData.comment(text, data.value() instanceof CommentElement comment
+						? comment.getCommentType() : CommentType.MULTILINE)
+				: new StructuredData(data.type(), text);
+		deferredTrivia.add(snapshot);
+		deferredTriviaCharacters += text.length();
 	}
 
 	private boolean shouldDefer(StructuredData data) {

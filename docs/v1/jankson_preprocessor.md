@@ -1,5 +1,8 @@
 # Using Jankson as a Gson Preprocessor
 
+This guide targets **Jankson 1.x**. For the current branch, see
+[2.x document output](../formats.md#output-and-preservation).
+
 If you're migrating from another JSON library,
 and just want to use Jankson to strip comments and utilize quirks,
 you can just ask Jankson to output standard JSON and keep your original workflow.

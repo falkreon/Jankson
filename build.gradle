@@ -1,3 +1,6 @@
+import java.time.Duration
+import java.util.Locale
+
 plugins {
 	id 'java'
 	id 'eclipse'
@@ -39,6 +42,11 @@ java {
 	}
 	withSourcesJar();
 	withJavadocJar();
+}
+
+tasks.withType(Jar).configureEach {
+	preserveFileTimestamps = false
+	reproducibleFileOrder = true
 }
 
 jar {
@@ -97,6 +105,10 @@ publishing {
 	}
 	
 	repositories {
+		maven {
+			name = 'artifactSmoke'
+			url = layout.buildDirectory.dir('artifact-smoke/repository')
+		}
 		if (project.hasProperty("ossrhUsername")) {
 			maven {
 				def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
@@ -129,6 +141,33 @@ if (file("private.gradle").exists()) {
 }
 
 defaultTasks "clean", "build";
+
+// Deliberately depend on one named local publication, never publish/publishToMavenLocal.
+def cleanArtifactSmokeRepository = tasks.register('cleanArtifactSmokeRepository', Delete) {
+	delete layout.buildDirectory.dir('artifact-smoke/repository')
+}
+tasks.withType(org.gradle.api.publish.maven.tasks.PublishToMavenRepository).configureEach {
+	if (name == 'publishMavenPrimaryPublicationToArtifactSmokeRepository') {
+		dependsOn cleanArtifactSmokeRepository
+	}
+}
+def prepareArtifactSmokeConsumer = tasks.register('prepareArtifactSmokeConsumer', Sync) {
+	from 'integration-tests/consumer'
+	into layout.buildDirectory.dir('artifact-smoke/consumer')
+}
+tasks.register('artifactSmokeTest', Exec) {
+	group = 'verification'
+	description = 'Publish locally and verify an independent Maven consumer on classpath and module path.'
+	dependsOn 'publishMavenPrimaryPublicationToArtifactSmokeRepository', prepareArtifactSmokeConsumer
+	timeout = Duration.ofMinutes(5)
+	workingDir rootDir
+	def windows = System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')
+	def wrapperCommand = windows ? ['cmd', '/d', '/c', file('gradlew.bat').absolutePath] : [file('gradlew').absolutePath]
+	commandLine wrapperCommand + ['--no-daemon', '--max-workers=1', '--offline',
+			'--project-dir', layout.buildDirectory.dir('artifact-smoke/consumer').get().asFile.absolutePath,
+			"-PartifactRepository=${layout.buildDirectory.dir('artifact-smoke/repository').get().asFile.absolutePath}",
+			"-PjanksonVersion=${project.version}", 'clean', 'smoke', 'moduleSmoke']
+}
 
 
 dependencies {

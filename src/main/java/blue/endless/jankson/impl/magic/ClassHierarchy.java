@@ -177,6 +177,54 @@ public class ClassHierarchy {
 		return substitute(candidate, arguments, new HashSet<>(), true);
 	}
 
+	/** Unifies invariant type arguments, retaining declaration identity and repeated-variable constraints. */
+	public static boolean inferTypeArguments(Type pattern, Type actual, Set<TypeVariable<?>> variables,
+			Map<TypeVariable<?>, Type> bindings) {
+		if (pattern instanceof TypeVariable<?> variable && variables.contains(variable)) {
+			Type previous = bindings.putIfAbsent(variable, actual);
+			return previous == null || previous.equals(actual);
+		}
+		if (pattern instanceof ParameterizedType p && actual instanceof ParameterizedType a) {
+			if (!p.getRawType().equals(a.getRawType())) return false;
+			if (p.getOwnerType() != null && (a.getOwnerType() == null
+					|| !inferTypeArguments(p.getOwnerType(), a.getOwnerType(), variables, bindings))) return false;
+			Type[] pp = p.getActualTypeArguments();
+			Type[] aa = a.getActualTypeArguments();
+			if (pp.length != aa.length) return false;
+			for (int i = 0; i < pp.length; i++) {
+				if (!inferTypeArguments(pp[i], aa[i], variables, bindings)) return false;
+			}
+			return true;
+		}
+		if (pattern instanceof GenericArrayType array) {
+			Type component = actual instanceof GenericArrayType a ? a.getGenericComponentType()
+					: actual instanceof Class<?> c && c.isArray() ? c.getComponentType() : null;
+			return component != null && inferTypeArguments(array.getGenericComponentType(), component, variables, bindings);
+		}
+		return pattern.equals(actual);
+	}
+
+	/** Keeps runtime properties while recovering subclass variables from the declared ancestor context. */
+	public static Type specializeRuntimeType(Type declaredType, Class<?> runtimeClass) {
+		Class<?> declaredClass = getErasedClass(declaredType);
+		if (declaredClass == runtimeClass) return declaredType;
+		if (!(declaredType instanceof ParameterizedType) || !declaredClass.isAssignableFrom(runtimeClass)) return runtimeClass;
+		Type runtimeType = SyntheticType.withOwner(runtimeClass.getDeclaringClass(), runtimeClass, runtimeClass.getTypeParameters());
+		Map<TypeVariable<?>, Type> inherited = getTypeBindings(runtimeType, declaredClass);
+		Map<TypeVariable<?>, Type> declared = getDeclaredGenerics(declaredType);
+		Map<TypeVariable<?>, Type> inferred = new HashMap<>();
+		Set<TypeVariable<?>> variables = new HashSet<>(Arrays.asList(runtimeClass.getTypeParameters()));
+		for (Map.Entry<TypeVariable<?>, Type> entry : declared.entrySet()) {
+			Type pattern = inherited.get(entry.getKey());
+			if (pattern != null && !inferTypeArguments(pattern, entry.getValue(), variables, inferred)) {
+				// A fixed runtime argument may be narrower than a declared wildcard.
+				// In that case retain the runtime class's own generic hierarchy.
+				return runtimeClass;
+			}
+		}
+		return substitute(runtimeType, inferred);
+	}
+
 	private static Type substitute(Type candidate, Map<TypeVariable<?>, Type> arguments,
 			Set<TypeVariable<?>> visiting, boolean finalSubstitution) {
 		if (candidate instanceof AnnotatedType annotated) candidate = annotated.getType();

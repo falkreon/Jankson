@@ -42,7 +42,15 @@ public interface StructuredDataReader {
 	
 	public boolean hasNext();
 	
+	/**
+	 * Transfers the remaining events. Buffered writers receive the completed value after exhaustion,
+	 * including trailing comments, even when this reader does not produce an explicit EOF event.
+	 */
 	public default void transferTo(StructuredDataWriter writer) throws SyntaxError, IOException {
+		if (writer instanceof BufferedStructuredDataWriter.AbstractBufferedStructuredDataWriter buffered) {
+			buffered.transferFrom(this);
+			return;
+		}
 		while(hasNext()) {
 			var d = next();
 			writer.write(d);

@@ -25,7 +25,6 @@
 package blue.endless.jankson.api.io;
 
 import java.io.IOException;
-import java.io.Writer;
 
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.document.ValueElement;
@@ -61,20 +60,53 @@ public interface BufferedStructuredDataWriter extends StructuredDataWriter {
 		return new ComposedBufferedStructuredDataWriter(valueWriter);
 	}
 	
+	/**
+	 * Delivers each buffered root once. Direct event writes deliver as soon as the value is complete;
+	 * subsequent trivia updates the captured tree without repeating output. Use reader transfer when
+	 * the output callback must see the entire trailing comment sequence before rendering the value.
+	 */
 	public static abstract class AbstractBufferedStructuredDataWriter implements BufferedStructuredDataWriter {
 		private final ValueElementWriter valueWriter = new ValueElementWriter();
 		private boolean complete = false;
-		
-		@Override
-		public final void write(StructuredData data) throws SyntaxError, IOException {
-			if (complete && data.type().isSemantic()) throw new SyntaxError("Too much data found while buffering a value");
-			
-			valueWriter.write(data);
-			
-			if (valueWriter.isComplete()) {
+		private boolean transferring = false;
+
+		/**
+		 * Buffers the remaining events of a reader before delivering the value once. Reader exhaustion,
+		 * rather than an EOF event (which readers need not emit), includes trailing comments in the value.
+		 */
+		public final void transferFrom(StructuredDataReader reader) throws SyntaxError, IOException {
+			transferring = true;
+			try {
+				while (reader.hasNext()) write(reader.next());
+				// Finalize primitive delegates even for readers that do not emit EOF.
+				write(StructuredData.EOF);
+			} finally {
+				transferring = false;
+			}
+			deliver();
+		}
+
+		private void deliver() throws SyntaxError, IOException {
+			if (!complete && valueWriter.isComplete()) {
 				complete = true;
 				write(valueWriter.getResult());
 			}
+		}
+		
+		@Override
+		public final void write(StructuredData data) throws SyntaxError, IOException {
+			// EOF is semantic in this protocol, but terminates the stream rather than starting
+			// another root. It must still reach valueWriter to finalize primitive delegates.
+			if ((complete || valueWriter.isComplete()) && data.type().isSemantic()
+					&& data.type() != StructuredData.Type.EOF) {
+				throw new SyntaxError("Too much data found while buffering a value");
+			}
+			
+			valueWriter.write(data);
+			
+			// Direct event writes retain immediate completion. Later trivia may update the captured
+			// tree, but must never invoke the output callback a second time.
+			if (!transferring) deliver();
 		}
 	}
 	

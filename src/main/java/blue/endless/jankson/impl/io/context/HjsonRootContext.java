@@ -65,8 +65,10 @@ final class HjsonRootContext implements ParserContext {
 			try {
 				parse(text, options, line, column, events);
 			} catch (SyntaxError objectError) {
+				if (objectError instanceof JsonGrammar.ResourceLimitError) throw objectError;
 				events.clear();
 				try { parse(text, options.asBuilder().setBareRootObject(false).build(), line, column, events); }
+				catch (JsonGrammar.ResourceLimitError limitError) { throw limitError; }
 				catch (SyntaxError scalarError) { throw objectError; }
 			}
 			result = events.iterator();

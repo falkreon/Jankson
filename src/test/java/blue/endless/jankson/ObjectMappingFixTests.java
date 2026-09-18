@@ -28,7 +28,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.StringReader;
 import java.lang.reflect.Type;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
@@ -61,6 +63,27 @@ public class ObjectMappingFixTests {
 	public static final class ExplodingKey {
 		public ExplodingKey(String value) { throw new IllegalArgumentException("bad key: "+value); }
 	}
+
+	public record NormalizedKey(String value) {
+		public NormalizedKey {
+			value = value.toLowerCase(Locale.ROOT);
+		}
+	}
+
+	private static class SerializedFields {
+		List<String> direct = List.of("direct");
+		List<List<String>> nested = List.of(List.of("first"), List.of("second"));
+		@SuppressWarnings("unchecked")
+		List<String>[] array = new List[] {List.of("array")};
+	}
+
+	private static class GenericSerializedField<T> {
+		T value;
+		GenericSerializedField(T value) { this.value = value; }
+	}
+
+	@SuppressWarnings("unused")
+	private GenericSerializedField<List<String>> genericSerializedFieldType;
 
 	private static class Animal {}
 	private static class Dog extends Animal implements Tagged, Named {}
@@ -127,6 +150,69 @@ public class ObjectMappingFixTests {
 		assertTrue(error.getMessage().contains("broken"));
 		assertTrue(error.getMessage().contains(ExplodingKey.class.getTypeName()));
 		assertInstanceOf(IllegalArgumentException.class, error.getCause());
+	}
+
+	@Test
+	public void mapRejectsDistinctTextKeysThatDecodeToTheSameKey() throws Exception {
+		MapDeserializer<NormalizedKey, String> reader = new MapDeserializer<>(NormalizedKey.class, String.class);
+		reader.write(StructuredData.OBJECT_START);
+		reader.write(StructuredData.objectKey("Alpha"));
+		reader.write(StructuredData.primitive("first"));
+
+		SyntaxError error = assertThrows(SyntaxError.class,
+				() -> reader.write(StructuredData.objectKey("ALPHA")));
+		assertTrue(error.getMessage().contains("Alpha"));
+		assertTrue(error.getMessage().contains("ALPHA"));
+		assertTrue(error.getMessage().contains(NormalizedKey.class.getTypeName()));
+	}
+
+	@Test
+	public void mapRejectsRepeatedDecodedKeys() throws Exception {
+		MapDeserializer<String, String> reader = new MapDeserializer<>(String.class, String.class);
+		reader.write(StructuredData.OBJECT_START);
+		reader.write(StructuredData.objectKey("same"));
+		reader.write(StructuredData.primitive("first"));
+
+		SyntaxError error = assertThrows(SyntaxError.class,
+				() -> reader.write(StructuredData.objectKey("same")));
+		assertTrue(error.getMessage().contains("same"));
+		assertTrue(error.getMessage().contains("duplicate"));
+	}
+
+	@Test
+	public void mapDuplicateTrackingDoesNotIncludePreexistingKeys() throws Exception {
+		NormalizedKey key = new NormalizedKey("existing");
+		Map<NormalizedKey, String> subject = new HashMap<>(Map.of(key, "old"));
+		MapDeserializer<NormalizedKey, String> reader = new MapDeserializer<>(NormalizedKey.class, String.class, subject);
+		reader.write(StructuredData.OBJECT_START);
+		reader.write(StructuredData.objectKey("EXISTING"));
+		reader.write(StructuredData.primitive("new"));
+		reader.write(StructuredData.OBJECT_END);
+
+		assertEquals(Map.of(key, "new"), reader.getResult());
+	}
+
+	@Test
+	public void reflectiveSerializationPreservesParameterizedFieldAndElementTypes() throws Exception {
+		Type listOfStrings = SerializedFields.class.getDeclaredField("direct").getGenericType();
+		ObjectReaderFactory factory = new ObjectReaderFactory();
+		factory.setPrecise(true);
+		factory.registerSerializer(listOfStrings, ignored -> PrimitiveElement.of("string-list"));
+
+		List<Object> values = semanticValues(factory.getReader(new SerializedFields()));
+		assertEquals(List.of("string-list", "string-list", "string-list", "string-list"), values);
+	}
+
+	@Test
+	public void reflectiveSerializationResolvesParameterizedOwnerFields() throws Exception {
+		Type listOfStrings = SerializedFields.class.getDeclaredField("direct").getGenericType();
+		Type ownerType = ObjectMappingFixTests.class.getDeclaredField("genericSerializedFieldType").getGenericType();
+		ObjectReaderFactory factory = new ObjectReaderFactory();
+		factory.setPrecise(true);
+		factory.registerSerializer(listOfStrings, ignored -> PrimitiveElement.of("generic-list"));
+
+		GenericSerializedField<List<String>> subject = new GenericSerializedField<>(List.of("value"));
+		assertEquals(List.of("generic-list"), semanticValues(factory.getReader(ownerType, subject)));
 	}
 
 	@Test
@@ -234,6 +320,15 @@ public class ObjectMappingFixTests {
 
 	private static Object firstValue(StructuredDataReader reader) throws Exception {
 		return reader.next().value();
+	}
+
+	private static List<Object> semanticValues(StructuredDataReader reader) throws Exception {
+		java.util.ArrayList<Object> result = new java.util.ArrayList<>();
+		while (reader.hasNext()) {
+			StructuredData event = reader.next();
+			if (event.type() == StructuredData.Type.PRIMITIVE) result.add(event.value());
+		}
+		return result;
 	}
 
 	private static <T> T read(String json, Type type) throws Exception {

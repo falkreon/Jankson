@@ -25,6 +25,8 @@
 package blue.endless.jankson.impl.io.objectreader;
 
 import java.io.IOException;
+import java.lang.reflect.GenericArrayType;
+import java.lang.reflect.Type;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Map;
@@ -34,6 +36,7 @@ import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.api.io.ObjectReaderFactory;
 import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.StructuredDataReader;
+import blue.endless.jankson.impl.magic.ClassHierarchy;
 import blue.endless.jankson.impl.magic.EnumNames;
 import blue.endless.jankson.impl.magic.ReflectiveProperty;
 
@@ -50,12 +53,13 @@ public class ObjectStructuredDataReader extends DelegatingStructuredDataReader {
 	private final ObjectReaderFactory factory;
 	private ArrayDeque<ReflectiveProperty> pendingFields = new ArrayDeque<>();
 	
-	private ObjectStructuredDataReader(Object object, ObjectReaderFactory factory) {
+	private ObjectStructuredDataReader(Object object, Type type, ObjectReaderFactory factory) {
 		this.obj = object;
 		this.buffer(StructuredData.OBJECT_START);
 		this.factory = (factory == null) ? new ObjectReaderFactory() : factory;
-		
-		pendingFields.addAll(ReflectiveProperty.of(obj.getClass()));
+
+		Type reflectiveType = ClassHierarchy.specializeRuntimeType(type, object.getClass());
+		pendingFields.addAll(ReflectiveProperty.of(reflectiveType));
 	}
 	
 	@Override
@@ -77,7 +81,7 @@ public class ObjectStructuredDataReader extends DelegatingStructuredDataReader {
 			if (value == null) {
 				buffer(StructuredData.NULL);
 			} else {
-				setDelegate(factory.getReader(value));
+				setDelegate(factory.getReader(cur.type(), value));
 			}
 		} catch (Throwable t) {
 			throw new IOException("Could not access field data for field \""+fieldName+"\" ("+cur.javaName()+").", t);
@@ -98,13 +102,35 @@ public class ObjectStructuredDataReader extends DelegatingStructuredDataReader {
 	 * @see ObjectReaderFactory
 	 */
 	public static StructuredDataReader of(Object o, ObjectReaderFactory factory) {
+		return of(o, o.getClass(), factory);
+	}
+
+	/**
+	 * Do not use this method directly. Obtain an ObjectReaderFactory and ask it for an appropriate
+	 * StructuredDataReader for the object in question.
+	 * @see ObjectReaderFactory
+	 */
+	public static StructuredDataReader of(Object o, Type type, ObjectReaderFactory factory) {
 		if (o instanceof Enum<?> value) {
 			return new PrimitiveStructuredDataReader(EnumNames.wireName(value));
 		}
-		if (o.getClass().isArray()) return new ArrayStructuredDataReader(o, factory);
-		if (o instanceof Collection val) return new CollectionStructuredDataReader(val, factory);
-		if (o instanceof Map val) return new MapStructuredDataReader(val, factory);
+		if (o.getClass().isArray()) {
+			Type elementType = type instanceof GenericArrayType array ? array.getGenericComponentType()
+					: ClassHierarchy.getErasedClass(type).isArray() ? ClassHierarchy.getErasedClass(type).getComponentType()
+					: o.getClass().getComponentType();
+			return new ArrayStructuredDataReader(o, elementType, factory);
+		}
+		if (o instanceof Collection val) {
+			Type elementType = Collection.class.isAssignableFrom(ClassHierarchy.getErasedClass(type))
+					? ClassHierarchy.getCollectionTypeArgument(type) : Object.class;
+			return new CollectionStructuredDataReader(val, elementType, factory);
+		}
+		if (o instanceof Map val) {
+			Type valueType = Map.class.isAssignableFrom(ClassHierarchy.getErasedClass(type))
+					? ClassHierarchy.getMapTypeArguments(type).valueType() : Object.class;
+			return new MapStructuredDataReader(val, valueType, factory);
+		}
 		if (PrimitiveElement.canBox(o)) return new PrimitiveStructuredDataReader(o);
-		return new ObjectStructuredDataReader(o, factory);
+		return new ObjectStructuredDataReader(o, type, factory);
 	}
 }

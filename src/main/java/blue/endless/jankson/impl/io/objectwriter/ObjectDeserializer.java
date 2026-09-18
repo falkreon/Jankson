@@ -44,6 +44,7 @@ public class ObjectDeserializer<T> extends AbstractDeserializer<T>{
 	private boolean discarding = false;
 	
 	private final ObjectWrapper<T> wrapper;
+	private T immutableResult;
 	
 	public ObjectDeserializer(Type t) {
 		tType = t;
@@ -76,6 +77,7 @@ public class ObjectDeserializer<T> extends AbstractDeserializer<T>{
 	
 	@Override
 	public T getResult() {
+		if (wrapper.isImmutable()) return immutableResult;
 		try {
 			return wrapper.getResult();
 		} catch (InstantiationException ex) {
@@ -119,8 +121,15 @@ public class ObjectDeserializer<T> extends AbstractDeserializer<T>{
 				}
 				
 				case OBJECT_END -> {
-					foundEnd = true;
 					if (delegateKey != null) throw new SyntaxError("Missing value for key \""+delegateKey+"\" (found end of object)");
+					if (wrapper.isImmutable()) {
+						try {
+							immutableResult = wrapper.getResult();
+						} catch (InstantiationException e) {
+							throw new SyntaxError("Could not create immutable object of type "+tType.getTypeName(), e);
+						}
+					}
+					foundEnd = true;
 				}
 				
 				default -> {

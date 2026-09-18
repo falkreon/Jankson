@@ -142,6 +142,16 @@ class ConfigManagerTests {
 		assertTrue(Files.readString(manager.path()).contains("Chance that a flip occurs"));
 	}
 
+	@Test void parseEventLimitIsForwardedToConfigFile() throws Exception {
+		Path path = directory.resolve("limited.json");
+		Files.writeString(path, "{}");
+		assertThrows(IllegalArgumentException.class,
+				() -> ConfigManager.builder(path, ModConfig.class).maxParseEvents(0));
+		var limited = ConfigManager.builder(path, ModConfig.class).maxParseEvents(1).build();
+		assertEquals(ConfigStage.PARSE, assertThrows(ConfigFileException.class, limited::load).stage());
+		assertNotNull(ConfigManager.builder(path, ModConfig.class).maxParseEvents(2).build().load());
+	}
+
 	@Test void initializationIsIdempotentAndReloadIsExplicit() throws Exception {
 		var manager = ConfigManager.builder(directory.resolve("mod.json"), ModConfig.class).build();
 		ModConfig original = manager.loadOrCreate();

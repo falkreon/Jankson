@@ -28,6 +28,10 @@ import java.util.Objects;
 
 /** Immutable reader configuration. Builders have no initialization dependency on this class. */
 public final class JsonReaderOptions {
+	/** Default source limit, in Unicode code points, for ambiguous HJSON root parsing. */
+	public static final int DEFAULT_MAX_BUFFERED_CHARACTERS = 16 * 1024 * 1024;
+	/** Default non-EOF event limit for ambiguous HJSON root parsing. */
+	public static final long DEFAULT_MAX_BUFFERED_EVENTS = 1_000_000L;
 	/**
 	 * This is the set of options configured when there are no options specified. Effectively this is the "default
 	 * Jankson behavior". Bare root objects are not allowed, unquoted keys are allowed, and commas are ignored.
@@ -92,8 +96,8 @@ public final class JsonReaderOptions {
 		private JsonFormat format = null;
 		private char keyValueSeparator = ':';
 		private int maxContainerDepth = 256;
-		private long maxBufferedEvents = Long.MAX_VALUE;
-		private int maxBufferedCharacters = Integer.MAX_VALUE;
+		private long maxBufferedEvents = DEFAULT_MAX_BUFFERED_EVENTS;
+		private int maxBufferedCharacters = DEFAULT_MAX_BUFFERED_CHARACTERS;
 		
 		public Builder() {}
 		

@@ -29,11 +29,26 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
+import java.util.NavigableSet;
+import java.util.Queue;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.SortedSet;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import blue.endless.jankson.api.Jankson;
 import blue.endless.jankson.api.SyntaxError;
@@ -45,6 +60,163 @@ import blue.endless.jankson.api.io.json.JsonWriterOptions;
 import blue.endless.jankson.impl.magic.ClassHierarchy;
 
 public class TestObjectWriter {
+	private static <T> T read(Type type, T subject, String json) throws IOException, SyntaxError {
+		ObjectWriter<T> writer = new ObjectWriter<>(type, subject);
+		new JsonReader(new StringReader(json)).transferTo(writer);
+		Assertions.assertTrue(writer.isReady());
+		return writer.toObject();
+	}
+
+	private static Type fieldType(String name) {
+		try {
+			return InterfaceTypes.class.getDeclaredField(name).getGenericType();
+		} catch (ReflectiveOperationException e) {
+			throw new AssertionError(e);
+		}
+	}
+
+	private static class InterfaceTypes {
+		Collection<Integer> collection;
+		List<Integer> list;
+		Set<Integer> set;
+		SortedSet<Integer> sortedSet;
+		NavigableSet<Integer> navigableSet;
+		Queue<Integer> queue;
+		Deque<Integer> deque;
+		Map<String, Integer> map;
+		SortedMap<String, Integer> sortedMap;
+		NavigableMap<String, Integer> navigableMap;
+		ConcurrentMap<String, Integer> concurrentMap;
+		BlockingQueue<Integer> blockingQueue;
+	}
+
+	private static class BoundedTypes<T extends List<Integer>> {
+		List<? extends List<Integer>> wildcard;
+	}
+
+	private record ExistingRecord(int value) {}
+
+	private static Stream<Arguments> collectionInterfaces() {
+		return Stream.of(
+				Arguments.of("collection", ArrayList.class),
+				Arguments.of("list", ArrayList.class),
+				Arguments.of("set", java.util.LinkedHashSet.class),
+				Arguments.of("sortedSet", java.util.TreeSet.class),
+				Arguments.of("navigableSet", java.util.TreeSet.class),
+				Arguments.of("queue", java.util.LinkedList.class),
+				Arguments.of("deque", java.util.LinkedList.class));
+	}
+
+	private static Stream<Arguments> mapInterfaces() {
+		return Stream.of(
+				Arguments.of("map", java.util.HashMap.class),
+				Arguments.of("sortedMap", java.util.TreeMap.class),
+				Arguments.of("navigableMap", java.util.TreeMap.class),
+				Arguments.of("concurrentMap", java.util.concurrent.ConcurrentHashMap.class));
+	}
+
+	@ParameterizedTest
+	@MethodSource("collectionInterfaces")
+	public void testCollectionInterfaceDefaults(String field, Class<?> implementation) throws IOException, SyntaxError {
+		Object result = read(fieldType(field), null, "[2, 1]");
+		Assertions.assertEquals(implementation, result.getClass());
+		Assertions.assertTrue(fieldType(field) instanceof java.lang.reflect.ParameterizedType);
+	}
+
+	@ParameterizedTest
+	@MethodSource("mapInterfaces")
+	public void testMapInterfaceDefaults(String field, Class<?> implementation) throws IOException, SyntaxError {
+		Object result = read(fieldType(field), null, "{\"b\": 2, \"a\": 1}");
+		Assertions.assertEquals(implementation, result.getClass());
+	}
+
+	@Test
+	public void testUnsupportedSpecializedInterfaceRejected() {
+		Assertions.assertThrows(IllegalArgumentException.class,
+				() -> read(fieldType("blockingQueue"), null, "[]"));
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {"\"\"", "\"ab\"", "-1", "65536", "2147483648"})
+	public void testInvalidCharacterIsSyntaxError(String json) {
+		IOException error = Assertions.assertThrows(IOException.class,
+				() -> read(Character.class, null, json));
+		Assertions.assertInstanceOf(SyntaxError.class, error.getCause());
+	}
+
+	private static Stream<Arguments> outOfRangeIntegers() {
+		return Stream.of(
+				Arguments.of(Byte.class, "128"),
+				Arguments.of(Byte.class, "-129"),
+				Arguments.of(Short.class, "32768"),
+				Arguments.of(Short.class, "-32769"),
+				Arguments.of(Integer.class, "2147483648"),
+				Arguments.of(Integer.class, "-2147483649"));
+	}
+
+	@ParameterizedTest
+	@MethodSource("outOfRangeIntegers")
+	public void testOutOfRangeIntegerIsSyntaxError(Type type, String json) {
+		IOException error = Assertions.assertThrows(IOException.class, () -> read(type, null, json));
+		Assertions.assertInstanceOf(SyntaxError.class, error.getCause());
+	}
+
+	private static Stream<Type> parameterizedUpperBounds() {
+		Type variable = BoundedTypes.class.getTypeParameters()[0];
+		Type wildcard = ((java.lang.reflect.ParameterizedType) fieldType(BoundedTypes.class, "wildcard"))
+				.getActualTypeArguments()[0];
+		return Stream.of(variable, wildcard);
+	}
+
+	private static Type fieldType(Class<?> owner, String name) {
+		try {
+			return owner.getDeclaredField(name).getGenericType();
+		} catch (ReflectiveOperationException e) {
+			throw new AssertionError(e);
+		}
+	}
+
+	@ParameterizedTest
+	@MethodSource("parameterizedUpperBounds")
+	public void testParameterizedUpperBoundPreserved(Type type) throws IOException, SyntaxError {
+		List<?> result = read(type, null, "[1]");
+		Assertions.assertInstanceOf(Integer.class, result.getFirst());
+	}
+
+	@Test
+	public void testExistingMutableSubjectsAreUpdatedInPlace() throws IOException, SyntaxError {
+		List<Integer> list = new ArrayList<>();
+		Assertions.assertSame(list, read(fieldType("list"), list, "[1, 2]"));
+
+		Map<String, Integer> map = new java.util.HashMap<>();
+		Assertions.assertSame(map, read(fieldType("map"), map, "{\"value\": 3}"));
+
+		PojoConfig config = new PojoConfig();
+		Assertions.assertSame(config, read(PojoConfig.class, config,
+				"{\"port-number\": 25565, \"host-name\": \"localhost\"}"));
+		Assertions.assertEquals(25565, config.portNumber);
+	}
+
+	@Test
+	public void testExistingReplacementSubjectsAreReturned() throws IOException, SyntaxError {
+		Assertions.assertEquals(2, read(Integer.class, 1, "2"));
+
+		ExistingRecord record = new ExistingRecord(1);
+		ExistingRecord replacedRecord = read(ExistingRecord.class, record, "{\"value\": 2}");
+		Assertions.assertNotSame(record, replacedRecord);
+		Assertions.assertEquals(new ExistingRecord(2), replacedRecord);
+
+		int[] array = {1};
+		int[] replacedArray = read(int[].class, array, "[2, 3]");
+		Assertions.assertNotSame(array, replacedArray);
+		Assertions.assertArrayEquals(new int[] {2, 3}, replacedArray);
+
+		ImmutableConfig immutable = new ImmutableConfig(1, 1);
+		ImmutableConfig replacedImmutable = read(ImmutableConfig.class, immutable, "{\"x\": 2, \"y\": 3}");
+		Assertions.assertNotSame(immutable, replacedImmutable);
+		Assertions.assertEquals(2, replacedImmutable.x);
+		Assertions.assertEquals(3, replacedImmutable.y);
+	}
 	
 	/*
 	 * This set of tests checks requested types that canonically correspond to bare values. For

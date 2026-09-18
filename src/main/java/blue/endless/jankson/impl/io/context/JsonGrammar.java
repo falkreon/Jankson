@@ -46,6 +46,13 @@ final class JsonGrammar {
 	static SyntaxError error(LookaheadCodePointReader r, String message) {
 		return new SyntaxError(message, r.getLine(), r.getCharacter());
 	}
+	/** A parser budget failure must never trigger an alternative grammar interpretation. */
+	static final class ResourceLimitError extends SyntaxError {
+		private static final long serialVersionUID = 1L;
+		ResourceLimitError(LookaheadCodePointReader r, String message) {
+			super(message, r.getLine(), r.getCharacter());
+		}
+	}
 	static boolean whitespace(int ch, JsonFormat format) {
 		return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n'
 				|| format == JsonFormat.JSON5 && (ch == 0x0B || ch == 0x0C || ch == 0xFEFF
@@ -97,7 +104,7 @@ final class JsonGrammar {
 		int ch = r.peek();
 		if (ch == '{' || ch == '[') {
 			if (depth >= opts.getMaxContainerDepth()) {
-				throw error(r, "Maximum nesting depth of " + opts.getMaxContainerDepth() + " exceeded.");
+				throw new ResourceLimitError(r, "Maximum nesting depth of " + opts.getMaxContainerDepth() + " exceeded.");
 			}
 			push.accept(ch == '{' ? new ObjectParserContext(opts, true, depth + 1) : new ArrayParserContext(opts, depth + 1));
 		} else if (ch == '"' || ch == '\'') {
@@ -126,12 +133,12 @@ final class JsonGrammar {
 			if (end || ",]}".indexOf(ch) >= 0 || comment(r)) {
 				StructuredData value = primitive(text.toString().trim(), JsonFormat.HJSON, r);
 				if (value != null) { out.accept(value); return; }
-				while (r.peek() != -1 && r.peek() != '\r' && r.peek() != '\n') text.appendCodePoint(r.read());
+				while (r.peek() != -1 && r.peek() != '\r' && r.peek() != '\n') appendHjsonStringCharacter(r, text);
 				String result = text.toString().trim();
 				if (result.isEmpty()) throw error(r, "Expected an HJSON value.");
 				out.accept(StructuredData.primitive(result)); return;
 			}
-			text.appendCodePoint(r.read());
+			appendHjsonStringCharacter(r, text);
 		}
 	}
 	private static String multiline(LookaheadCodePointReader r) throws IOException, SyntaxError {
@@ -144,12 +151,21 @@ final class JsonGrammar {
 			int ch = r.read();
 			if (ch == -1) throw error(r, "Unclosed multiline HJSON string.");
 			if (ch == '\r') continue;
+			if (invalidHjsonStringCharacter(ch)) throw error(r, "Unescaped control character in HJSON string.");
 			text.appendCodePoint(ch);
 			if (ch == '\n') skipIndent(r, indent);
 		}
 		r.read(); r.read(); r.read();
 		if (!text.isEmpty() && text.charAt(text.length() - 1) == '\n') text.setLength(text.length() - 1);
 		return text.toString();
+	}
+	private static void appendHjsonStringCharacter(LookaheadCodePointReader r, StringBuilder text) throws IOException, SyntaxError {
+		int ch = r.read();
+		if (invalidHjsonStringCharacter(ch)) throw error(r, "Unescaped control character in HJSON string.");
+		text.appendCodePoint(ch);
+	}
+	private static boolean invalidHjsonStringCharacter(int ch) {
+		return ch >= 0 && ch <= 0x1F && ch != '\t' && ch != '\n' && ch != '\r';
 	}
 	private static void skipIndent(LookaheadCodePointReader r, int count) throws IOException {
 		while (count-- > 0 && (r.peek() == ' ' || r.peek() == '\t' || r.peek() == '\r')) r.read();

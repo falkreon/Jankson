@@ -1,5 +1,8 @@
 # Creating Custom (De)serializers
 
+This guide targets **Jankson 1.x**. The current branch uses different APIs; see
+[2.x serializers and codecs](../object_mapping.md#custom-serializers-and-codecs).
+
 Suppose you have an object that's not straightforward like a POJO, and you want to serialize it in a special way.
 
 In this example, Class A may contain information about either an array or an instance of Class B.

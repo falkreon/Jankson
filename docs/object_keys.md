@@ -76,6 +76,11 @@ identifiers as well as their literal equivalents.
 
 ## Compatibility and limitations
 
+Key spelling and Java map-key equivalence are separate concerns. Decoding into a
+sorted map rejects incoming keys that its comparator considers equal, such as
+`"1.0"` and `"1.00"` for `BigDecimal` natural ordering, even though the textual
+names differ. See [Map keys and enums](object_mapping.md#map-keys-and-enums).
+
 - Existing option-free calls retain the permissive Jankson document parser. The
   default key policy adds hyphenated key reading to match existing writer output.
 - Unsafe default output keys are now quoted instead of being written verbatim.

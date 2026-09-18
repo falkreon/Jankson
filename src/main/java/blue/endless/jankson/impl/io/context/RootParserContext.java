@@ -112,7 +112,9 @@ public class RootParserContext implements ParserContext {
 		JsonFormat format = options.getFormat();
 		if (!started) {
 			started = true;
-			if (format == JsonFormat.HJSON && r.peek() == 0xFEFF) r.read();
+			if (format == JsonFormat.HJSON && r.peek() == 0xFEFF) {
+				throw JsonGrammar.error(r, "HJSON must not begin with a byte order mark.");
+			}
 		}
 		if (JsonGrammar.trivia(r, format, out)) return;
 		if (valueStarted) {

@@ -1,6 +1,7 @@
-# JSON Quirks
+# Legacy JSON quirks
 
-This page describes the **legacy permissive parser**. For explicit JSON, JSON5,
+This page describes the **legacy permissive parser** used by option-free calls.
+For explicit JSON, JSONC, JSON5,
 and HJSON document profiles (including HJSON quoteless and multiline values), see
 [Document formats](formats.md). Their accepted syntax is intentionally different.
 
@@ -9,7 +10,8 @@ which are normal for configuration files:
 
 * Comments<br>
   Normally disallowed in JSON, but completely legal, inspectable,
-  and preserved across re-saves of the file with Jankson.
+  and retained in the document model. Comment-capable document output preserves
+  supported comments; typed mapping does not retain arbitrary source comments.
 
 * Missing or extra commas<br>
   These are completely ignored, allowing smaller config file
@@ -34,7 +36,8 @@ Jankson will also reliably produce descriptive errors for certain other quirks:
 
 
 ???+ info "JSON5"
-    The full set of JSON5 quirks are supported. And it's backward-compatible with JSON.
+    The legacy grammar accepts JSON5-like extensions, but is not the JSON5 validation
+    profile. Select `JsonFormat.JSON5` for its identifier, comma and comment rules.
 
     === "Supported"
         - Unquoted keys
@@ -43,7 +46,7 @@ Jankson will also reliably produce descriptive errors for certain other quirks:
         - `.` Leading / trailing decimal points in values
         - `+` Positive signs before values
         - `0x` Hexadecimal values
-        - `#` `//` `/**/` Comments
+        - `//` and `/* ... */` comments (`#` is an additional legacy extension, not JSON5)
 
     ??? info "Example"
         ```
@@ -62,7 +65,9 @@ Jankson will also reliably produce descriptive errors for certain other quirks:
         ```
 
 ???+ info "HJSON"
-    A selection of HJSON quirks are supported.
+    A selection of HJSON-like extensions is supported by the legacy grammar.
+    Explicit `JsonFormat.HJSON` additionally supports brace-less roots, quoteless
+    values and triple-single-quoted multiline strings.
 
     === "Supported"
         - Unquoted keys
@@ -87,12 +92,12 @@ Jankson will also reliably produce descriptive errors for certain other quirks:
               ]
             }
             ```
-    === "NOT supported"
+    === "Use the explicit HJSON profile"
         - Unquoted string values
-            - These will *NEVER* be supported by Jankson.<br>
-              This is because other quirks require parsing out unquoted line text.
         - Multi-line block strings
-            - Support is planned but incomplete.
+
+        Both forms below are supported by `JsonFormat.HJSON`, not by the legacy
+        parser. See [HJSON string boundaries](formats.md#hjson-string-boundaries).
         
         ??? info "Example"
             ```

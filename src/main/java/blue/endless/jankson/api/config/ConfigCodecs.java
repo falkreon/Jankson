@@ -52,11 +52,20 @@ public final class ConfigCodecs {
 	}
 
 	public static <T> ConfigCodec<T> reflective(Class<T> type) {
-		return reflective((Type) type);
+		return createReflective(type, new ObjectReaderFactory(), DEFAULT_MAX_ENCODE_EVENTS);
 	}
 
+	/** Creates a reflective codec for a captured generic type. */
+	public static <T> ConfigCodec<T> reflective(TypeRef<T> type) {
+		return createReflective(Objects.requireNonNull(type).type(), new ObjectReaderFactory(), DEFAULT_MAX_ENCODE_EVENTS);
+	}
+
+	/**
+	 * Creates a reflective codec for a runtime type. The caller is responsible for ensuring that
+	 * the inferred {@code T} matches {@code type}; prefer {@link #reflective(TypeRef)} when possible.
+	 */
 	public static <T> ConfigCodec<T> reflective(Type type) {
-		return reflective(type, new ObjectReaderFactory());
+		return createReflective(type, new ObjectReaderFactory(), DEFAULT_MAX_ENCODE_EVENTS);
 	}
 
 	/**
@@ -66,8 +75,18 @@ public final class ConfigCodecs {
 	 * Built-in readers are depth-bounded while streaming. Custom serializers/readers must bound any
 	 * recursion inside their own callbacks; their returned stream is checked before tree construction.
 	 */
+	public static <T> ConfigCodec<T> reflective(Class<T> type, ObjectReaderFactory factory) {
+		return createReflective(type, factory, DEFAULT_MAX_ENCODE_EVENTS);
+	}
+
+	/** Creates a reflective codec for a captured generic type using the supplied encoding customizations. */
+	public static <T> ConfigCodec<T> reflective(TypeRef<T> type, ObjectReaderFactory factory) {
+		return createReflective(Objects.requireNonNull(type).type(), factory, DEFAULT_MAX_ENCODE_EVENTS);
+	}
+
+	/** Creates a runtime-type codec with caller-checked {@code T} and the supplied encoding customizations. */
 	public static <T> ConfigCodec<T> reflective(Type type, ObjectReaderFactory factory) {
-		return reflective(type, factory, DEFAULT_MAX_ENCODE_EVENTS);
+		return createReflective(type, factory, DEFAULT_MAX_ENCODE_EVENTS);
 	}
 
 	/**
@@ -79,9 +98,24 @@ public final class ConfigCodecs {
 	 * Exceeding the budget throws IOException before the excess event reaches the tree writer.
 	 * Custom callbacks must bound their own recursion and allocations, including inside hasNext().
 	 */
+	public static <T> ConfigCodec<T> reflective(Class<T> type, ObjectReaderFactory factory, long maxEncodeEvents) {
+		return createReflective(type, factory, maxEncodeEvents);
+	}
+
+	/** Creates a budgeted reflective codec for a captured generic type. */
+	public static <T> ConfigCodec<T> reflective(
+			TypeRef<T> type, ObjectReaderFactory factory, long maxEncodeEvents) {
+		return createReflective(Objects.requireNonNull(type).type(), factory, maxEncodeEvents);
+	}
+
+	/** Creates a budgeted runtime-type codec whose inferred {@code T} must match {@code type}. */
 	public static <T> ConfigCodec<T> reflective(Type type, ObjectReaderFactory factory, long maxEncodeEvents) {
+		return createReflective(type, factory, maxEncodeEvents);
+	}
+
+	private static <T> ConfigCodec<T> createReflective(Type type, ObjectReaderFactory factory, long maxEncodeEvents) {
 		if (maxEncodeEvents <= 0) throw new IllegalArgumentException("maxEncodeEvents must be positive");
-		Objects.requireNonNull(type);
+		TypeRef.requireResolved(type);
 		ObjectReaderFactory serializers = Objects.requireNonNull(factory).copy();
 		return new ConfigCodec<>() {
 			public T decode(ValueElement document) throws IOException, SyntaxError {

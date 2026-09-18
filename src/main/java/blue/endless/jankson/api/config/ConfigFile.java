@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.nio.ByteBuffer;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.FileAlreadyExistsException;
@@ -38,7 +40,15 @@ import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.util.Arrays;
 import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -55,7 +65,8 @@ import blue.endless.jankson.impl.config.ConfigDepthGuard;
 /**
  * An immutable file handle with one fixed format and no cached current value.
  * Revisions detect content changes, not an atomic compare-and-swap against external writers.
- * Target symlinks are rejected; callers must not mutate values during save.
+ * Target symlinks observed by an operation are rejected; callers must not mutate values during save.
+ * The target's parent directory must be trusted against concurrent namespace changes.
  *
  * <p>Configuration values have a maximum depth of 256, with the root at depth zero.
  * Input tokens and returned codec documents are checked before tree construction and serialization,
@@ -82,6 +93,7 @@ public final class ConfigFile<T> {
 	private final PublicationOperation publisher;
 	private final CleanupOperation cleaner;
 	private final Consumer<Path> exitCleaner;
+	private final BeforePublicationOperation beforePublication;
 
 	private ConfigFile(Builder<T> builder) {
 		path = builder.path.toAbsolutePath().normalize();
@@ -107,6 +119,7 @@ public final class ConfigFile<T> {
 		publisher = builder.publisher;
 		cleaner = builder.cleaner;
 		exitCleaner = builder.exitCleaner;
+		beforePublication = builder.beforePublication;
 		lock = LOCKS[Math.floorMod(path.hashCode(), LOCKS.length)];
 	}
 
@@ -164,7 +177,7 @@ public final class ConfigFile<T> {
 	}
 
 	private byte[] readBytes() throws IOException {
-		rejectSymlink();
+		requireRegularTarget();
 		try (InputStream input = Files.newInputStream(path, LinkOption.NOFOLLOW_LINKS)) {
 			byte[] result = input.readNBytes(maxBytes + 1);
 			if (result.length > maxBytes) throw new ChangedStateException("Configuration exceeds " + maxBytes + " bytes");
@@ -174,6 +187,24 @@ public final class ConfigFile<T> {
 
 	private void rejectSymlink() throws IOException {
 		if (Files.isSymbolicLink(path)) throw new ChangedStateException("Symbolic link targets are not supported: " + path);
+	}
+
+	private void requireRegularTarget() throws IOException {
+		BasicFileAttributes attributes = Files.readAttributes(path, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+		if (attributes.isSymbolicLink()) throw new ChangedStateException("Symbolic link targets are not supported: " + path);
+		if (!attributes.isRegularFile()) throw new IOException("Configuration target is not a regular file: " + path);
+	}
+
+	private void checkRevision(FileRevision expected) throws ConfigFileException {
+		FileRevision actual;
+		try { actual = at(ConfigStage.CHECK_CONFLICT, () -> FileRevision.of(path, readBytes())); }
+		catch (ConfigFileException ex) {
+			if (ex.getCause() instanceof NoSuchFileException || ex.getCause() instanceof ChangedStateException) {
+				throw new ConfigConflictException(path, format);
+			}
+			throw ex;
+		}
+		if (!expected.equals(actual)) throw new ConfigConflictException(path, format);
 	}
 
 	private ValueElement parse(byte[] bytes) throws IOException, SyntaxError {
@@ -203,24 +234,24 @@ public final class ConfigFile<T> {
 	private ConfigSnapshot<T> writePrepared(T value, Prepared prepared, FileRevision expected, boolean create)
 			throws ConfigFileException {
 		byte[] bytes = prepared.bytes();
-		Path temporary = at(ConfigStage.WRITE_TEMPORARY, () -> {
-			rejectSymlink();
-			return Files.createTempFile(path.getParent(), ".jankson-", ".tmp");
+		if (expected != null) checkRevision(expected);
+		StagedTemporary staged = at(ConfigStage.WRITE_TEMPORARY, () -> {
+			// Revision-checked writes classify observed target changes in checkRevision instead.
+			if (expected == null) {
+				try { requireRegularTarget(); }
+				catch (NoSuchFileException missing) { /* A new target is allowed. */ }
+			}
+			return stage(bytes);
 		});
+		Path temporary = staged.path();
 		ConfigFileException failure = null;
 		try {
-			at(ConfigStage.WRITE_TEMPORARY, () -> { Files.write(temporary, bytes); return null; });
-			if (expected != null) {
-				FileRevision actual;
-				try { actual = at(ConfigStage.CHECK_CONFLICT, () -> FileRevision.of(path, readBytes())); }
-				catch (ConfigFileException ex) {
-					if (ex.getCause() instanceof NoSuchFileException || ex.getCause() instanceof ChangedStateException) {
-						throw new ConfigConflictException(path, format);
-					}
-					throw ex;
-				}
-				if (!expected.equals(actual)) throw new ConfigConflictException(path, format);
-			}
+			at(ConfigStage.WRITE_TEMPORARY, () -> {
+				beforePublication.run(temporary);
+				validateStaged(staged, bytes);
+				return null;
+			});
+			if (expected != null) checkRevision(expected);
 			if (create) {
 				at(ConfigStage.CREATE, () -> { publisher.publish(temporary, path, creationPolicy); return null; });
 			} else {
@@ -243,7 +274,61 @@ public final class ConfigFile<T> {
 		}
 	}
 
+	private StagedTemporary stage(byte[] bytes) throws IOException {
+		FileAttribute<?>[] attributesAtCreation = Files.getFileStore(path.getParent())
+				.supportsFileAttributeView(PosixFileAttributeView.class)
+				? new FileAttribute<?>[] { PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")) }
+				: new FileAttribute<?>[0];
+		while (true) {
+			Path candidate = path.getParent().resolve(".jankson-" + UUID.randomUUID() + ".tmp");
+			SeekableByteChannel channel;
+			try {
+				channel = Files.newByteChannel(candidate,
+						Set.of(StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE, LinkOption.NOFOLLOW_LINKS),
+						attributesAtCreation);
+			} catch (FileAlreadyExistsException ex) {
+				// UUID collisions and pre-existing names are harmless; choose another exclusive name.
+				continue;
+			}
+			try (channel) {
+				ByteBuffer buffer = ByteBuffer.wrap(bytes);
+				while (buffer.hasRemaining()) channel.write(buffer);
+				BasicFileAttributes attributes = Files.readAttributes(candidate, BasicFileAttributes.class,
+						LinkOption.NOFOLLOW_LINKS);
+				if (!attributes.isRegularFile() || attributes.isSymbolicLink()) {
+					throw new ChangedStateException("Staged configuration is not a regular file: " + candidate);
+				}
+				return new StagedTemporary(candidate, attributes.fileKey());
+			} catch (IOException | RuntimeException ex) {
+				try { Files.deleteIfExists(candidate); }
+				catch (IOException | RuntimeException cleanupFailure) { ex.addSuppressed(cleanupFailure); }
+				throw ex;
+			}
+		}
+	}
+
+	private void validateStaged(StagedTemporary staged, byte[] expectedBytes) throws IOException {
+		BasicFileAttributes attributes = Files.readAttributes(staged.path(), BasicFileAttributes.class,
+				LinkOption.NOFOLLOW_LINKS);
+		if (!attributes.isRegularFile() || attributes.isSymbolicLink()) {
+			throw new ChangedStateException("Staged configuration is not a regular file: " + staged.path());
+		}
+		if (staged.fileKey() != null && !Objects.equals(staged.fileKey(), attributes.fileKey())) {
+			throw new ChangedStateException("Staged configuration was replaced before publication: " + staged.path());
+		}
+		if (attributes.size() != expectedBytes.length) {
+			throw new ChangedStateException("Staged configuration content changed before publication: " + staged.path());
+		}
+		try (InputStream input = Files.newInputStream(staged.path(), LinkOption.NOFOLLOW_LINKS)) {
+			// Bound the read even if the same inode grows after the metadata check.
+			if (!Arrays.equals(expectedBytes, input.readNBytes(expectedBytes.length)) || input.read() != -1) {
+				throw new ChangedStateException("Staged configuration content changed before publication: " + staged.path());
+			}
+		}
+	}
+
 	private record Prepared(byte[] bytes) {}
+	private record StagedTemporary(Path path, Object fileKey) {}
 	private static final class ChangedStateException extends IOException {
 		private static final long serialVersionUID = 1L;
 		private ChangedStateException(String message) { super(message); }
@@ -295,6 +380,7 @@ public final class ConfigFile<T> {
 		void publish(Path source, Path target, ConfigCreationPolicy policy) throws IOException;
 	}
 	@FunctionalInterface interface CleanupOperation { void cleanup(Path temporary) throws IOException; }
+	@FunctionalInterface interface BeforePublicationOperation { void run(Path temporary) throws IOException; }
 
 	public static final class Builder<T> {
 		private final Path path;
@@ -317,6 +403,7 @@ public final class ConfigFile<T> {
 		};
 		private CleanupOperation cleaner = Files::deleteIfExists;
 		private Consumer<Path> exitCleaner = temporary -> temporary.toFile().deleteOnExit();
+		private BeforePublicationOperation beforePublication = temporary -> {};
 
 		private Builder(Path path, ConfigCodec<T> codec) {
 			this.path = Objects.requireNonNull(path);
@@ -342,6 +429,9 @@ public final class ConfigFile<T> {
 		Builder<T> publicationOperation(PublicationOperation value) { publisher = Objects.requireNonNull(value); return this; }
 		Builder<T> cleanupOperation(CleanupOperation value) { cleaner = Objects.requireNonNull(value); return this; }
 		Builder<T> exitCleanupOperation(Consumer<Path> value) { exitCleaner = Objects.requireNonNull(value); return this; }
+		Builder<T> beforePublicationOperation(BeforePublicationOperation value) {
+			beforePublication = Objects.requireNonNull(value); return this;
+		}
 		public ConfigFile<T> build() { return new ConfigFile<>(this); }
 	}
 }

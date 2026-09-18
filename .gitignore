@@ -37,3 +37,5 @@ bin/
 
 # gradle
 !gradle-wrapper.jar
+/integration-tests/consumer/build.gradle
+/integration-tests/consumer/settings.gradle

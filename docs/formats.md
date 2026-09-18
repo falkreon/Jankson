@@ -47,6 +47,8 @@ Files use UTF-8. Readers opened by `read(Path)` are closed automatically. File
 writes serialize before opening the destination, so a serialization failure does
 not truncate an existing file. The write itself is not an atomic filesystem
 replacement; I/O failures can still leave a partial file.
+Use [ConfigFile or ConfigManager](config_files.md) for staged replacement, validation
+and revision-checked saves.
 
 ## Source text and caller-owned streams
 
@@ -58,10 +60,27 @@ ValueElement config = Jankson.read("{port: 25565,}", JsonFormat.JSON5);
 overloads also accept `JsonFormat`; caller-owned streams are not closed.
 Explicit-format `InputStream` reads use UTF-8 and reject malformed input bytes.
 
-Syntax errors from `JsonReader` are reported as `IOException` with a `SyntaxError`
-cause, consistent with the existing reader. The cause provides line/column details.
-An I/O or UTF-8 decoding error is an `IOException` without necessarily having a
-`SyntaxError` cause. A reader cannot be reused after a parse failure.
+The high-level `Jankson.read(...)` methods declare both `IOException` and
+`SyntaxError`. Syntax failures originating in `JsonReader` are wrapped in an
+`IOException` whose cause is `SyntaxError`; mapping or structural validation can
+throw `SyntaxError` directly. Preserve the line/column details by handling both:
+
+```java
+try {
+    ValueElement value = Jankson.read(Path.of("config.json5"));
+} catch (SyntaxError error) {
+    reportSyntaxError(error);
+} catch (IOException error) {
+    if (error.getCause() instanceof SyntaxError syntax) {
+        reportSyntaxError(syntax);
+    } else {
+        throw error;
+    }
+}
+```
+
+An I/O or UTF-8 decoding error need not have a `SyntaxError` cause. A reader cannot
+be reused after a parse failure.
 
 ## Options and typed objects
 
@@ -126,6 +145,12 @@ on the next line. Multiline strings normalize line endings to LF, remove indenta
 up to the opening delimiter's column, and omit the final newline before the closing
 delimiter. Backslashes inside them are literal.
 
+Quoteless values accept TAB while CR/LF end the value. Multiline strings accept
+TAB and LF, and ignore CR whether standalone or part of CRLF. Both forms reject every other raw C0 control
+(`U+0000` through `U+001F`) but preserve DEL and C1 characters (`U+007F` through
+`U+009F`). Quoted HJSON strings follow JSON's raw-control rule and can represent
+C0 characters with escapes.
+
 ## Output and preservation
 
 The HJSON writer chooses an interoperable representation: quoted string values,
@@ -138,6 +163,11 @@ JSON output removes comments. Explicit JSONC/JSON5/HJSON profiles normalize reta
 comments to `//` lines, including embedded line terminators or `*/` text. Ordering
 and comment content are retained where supported by the document model; exact
 whitespace, original quote style, numeric spelling and comment delimiters are not.
+
+These guarantees apply to document operations, including `ValueElementReader`
+event transfers and tree-producing registered serializers. Ordinary typed mapping
+regenerates fields and `@Comment` annotations instead of retaining the source tree;
+see [Comments and document preservation](object_mapping.md#comments-and-document-preservation).
 
 The JSONC writer never intentionally emits trailing commas, even when its output
 will be read with tolerant options. A separator is emitted before the next entry or
@@ -159,12 +189,32 @@ decisions about such values.
 - JSON, JSONC, JSON5, and braced HJSON objects/arrays use the same streaming context
   pipeline as the legacy reader, with format-specific grammar rules. Individual
   strings and comments are materialized as complete values, not streamed in chunks.
-- Ambiguous unbraced HJSON roots still buffer input and speculative events. Both
-  the object attempt and scalar fallback use that same context pipeline. This
+- Ambiguous unbraced HJSON roots eagerly read to EOF before emitting a non-trivia event and
+  buffer input and speculative events. Both the object attempt and scalar fallback
+  use that same context pipeline. This
   preserves reference behavior, including `a: [` being a scalar string after the
-  object attempt fails. No fallback to a different format occurs. Bound this
-  speculation with `JsonReaderOptions.Builder.setMaxBufferedCharacters(...)` and
-  `setMaxBufferedEvents(...)`; both limits reject non-positive values.
+  object attempt fails. No fallback to a different format occurs. The operational
+  defaults are `JsonReaderOptions.DEFAULT_MAX_BUFFERED_CHARACTERS` (16,777,216
+  Unicode code points) and `DEFAULT_MAX_BUFFERED_EVENTS` (1,000,000 non-EOF events).
+  Override them with `JsonReaderOptions.Builder.setMaxBufferedCharacters(...)` and
+  `setMaxBufferedEvents(...)`; the exact limit is accepted and both setters reject
+  non-positive values. Braced HJSON roots stream and do not use these two limits.
+  Resource-limit failures (including container depth) are always propagated and never
+  trigger scalar fallback, even if the same text could be interpreted as a string.
+- JSONC output buffers comments and subsequent whitespace/newline events after a value
+  until the next structural event determines separator placement. Each pending run is
+  limited to `JsonWriterOptions.DEFAULT_MAX_DEFERRED_TRIVIA_EVENTS` (4,096 events) and
+  `DEFAULT_MAX_DEFERRED_TRIVIA_CHARACTERS` (1,048,576 UTF-16 code units of comment and
+  whitespace text, excluding generated delimiters/indentation). Newline events consume
+  one event but no text budget. Configure these with `setMaxDeferredTriviaEvents(...)`
+  and `setMaxDeferredTriviaCharacters(...)` on the writer builder; both require positive
+  values and are preserved by `asBuilder()` and `setFormat(...)`. Exact limits are
+  accepted; overflow throws `IOException` before retaining the offending event, including
+  an oversized single comment. Budgets reset when the pending run is written.
+  `CommentStyle.NONE` discards comments before deferral, so disabled comments do not
+  consume either budget. These limits bound pending trivia, not total document size or
+  individual values outside that buffer; streaming output may already contain a prefix
+  when a limit fails.
 - A direct `JsonReader` consumer may receive valid prefix events before a later
   syntax error. `Jankson.read(...)` consumes and validates the whole document before
   returning its tree; it still needs memory proportional to the resulting tree.
@@ -178,7 +228,10 @@ decisions about such values.
   may be rounded as doubles. JSON/JSONC numbers overflowing finite double range are rejected;
   JSON5 permits infinity; HJSON treats such numeric text as a quoteless string.
 - Duplicate object keys are not rejected by the parser; the existing document model
-  and Java-object mapping determine their handling. Prefer unique keys.
+  and Java-object mapping determine their handling. The configuration pipeline rejects
+  duplicate document keys before decoding. Java map decoding also rejects collisions
+  after key conversion according to the target map's supported equivalence rules.
+  See [Map keys and enums](object_mapping.md#map-keys-and-enums).
 - `CommentStyle.NONE` now works even for legacy writers. A former TOML-to-STRICT test
   incorrectly expected a hash comment in JSON and has been corrected.
 
@@ -187,8 +240,10 @@ decisions about such values.
 `JsonReaderOptions` and `JsonWriterOptions` are immutable final classes. Their
 independent `Builder` classes return options directly from `build()`; the nested
 `Access` types and the class/interface inheritance hierarchy have been removed.
-This is an intentional source and binary API change: update explicit `Access`
-types and recompile consumers. Existing legacy presets remain available.
+Because 2.x is still prerelease, this is an intentional source and binary incompatible
+change between development versions: update explicit `Access` types and recompile
+consumers. Existing legacy presets remain available. For release-version guidance,
+see [Getting started](getting_started.md#using-the-2x-development-build).
 
 Use `JsonFormat.JSON.readerOptions()` and corresponding factories instead of
 format constants on the options classes. Factories return fresh immutable options;
@@ -196,6 +251,9 @@ the format enum does not initialize options during its own static initialization
 Object-key syntax cannot be selected independently of the document format.
 
 ## Validation
+
+Current build commands, cross-platform regression coverage and artifact-consumer
+checks are described in [Release verification](testing.md).
 
 Repository tests exercise positive and negative grammar cases, JSONC comment placement
 and trailing-comma modes, comments, HJSON strings,

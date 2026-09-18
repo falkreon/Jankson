@@ -25,6 +25,7 @@
 package blue.endless.jankson.impl.io.objectwriter.factory;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 
 public class ConstructorInstanceFactory<T> implements InstanceFactory<T> {
@@ -37,16 +38,23 @@ public class ConstructorInstanceFactory<T> implements InstanceFactory<T> {
 	@Override
 	public T newInstance(Map<String, Object> arguments) throws InstantiationException {
 		Object[] arrangedArguments = InstanceFactory.arrangeArguments(constructor, arguments);
-		
+		boolean access = constructor.canAccess(null);
 		try {
-			boolean access = constructor.canAccess(null);
 			if (!access) constructor.setAccessible(true);
-			T result = constructor.newInstance(arrangedArguments);
+			return constructor.newInstance(arrangedArguments);
+		} catch (InvocationTargetException e) {
+			throw failure(e.getCause() == null ? e : e.getCause());
+		} catch (ReflectiveOperationException | RuntimeException e) {
+			throw failure(e);
+		} finally {
 			if (!access) constructor.setAccessible(false);
-			return result;
-		} catch (Throwable t) {
-			String typeName = constructor.getAnnotatedReturnType().getType().getTypeName();
-			throw new InstantiationException("Could not create an instance of class \""+typeName+"\"");
 		}
+	}
+
+	private InstantiationException failure(Throwable cause) {
+		String typeName = constructor.getAnnotatedReturnType().getType().getTypeName();
+		InstantiationException result = new InstantiationException("Could not create an instance of class \""+typeName+"\"");
+		result.initCause(cause);
+		return result;
 	}
 }

@@ -1,0 +1,54 @@
+name: Check
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build, test, and verify published artifacts (Linux)
+        if: runner.os == 'Linux'
+        run: bash ./gradlew --no-daemon --max-workers=1 clean build artifactSmokeTest
+      - name: Build, test, and verify published artifacts (Windows)
+        if: runner.os == 'Windows'
+        run: .\gradlew.bat --no-daemon --max-workers=1 clean build artifactSmokeTest
+      - name: Require Linux filesystem safety coverage without skipped assumptions
+        if: runner.os == 'Linux' && !cancelled()
+        shell: python
+        run: |
+          import pathlib
+          import xml.etree.ElementTree as ET
+          report = pathlib.Path('build/test-results/test/TEST-blue.endless.jankson.api.config.ConfigFilesystemSafetyTests.xml')
+          suite = ET.parse(report).getroot()
+          cases = suite.findall('testcase')
+          assert cases, 'Filesystem safety tests did not run'
+          for prefix in ('posixStaging', 'fifoIsRejected', 'revisionSaveClassifiesDanglingAndExistingLinks',
+                         'sameContentStagingReplacementIsRejectedByIdentity'):
+              assert any(case.attrib['name'].startswith(prefix) for case in cases), prefix
+          for case in cases:
+              assert case.find('skipped') is None, f"Skipped: {case.attrib['name']}"
+              assert case.find('failure') is None and case.find('error') is None, case.attrib['name']
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: verification-${{ matrix.os }}
+          path: |
+            build/reports/tests/
+            build/test-results/
+            build/artifact-smoke/repository/

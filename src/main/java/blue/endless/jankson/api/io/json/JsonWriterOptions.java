@@ -31,6 +31,11 @@ import blue.endless.jankson.api.io.style.WhitespaceStyle;
 
 /** Immutable writer configuration with an independent builder. */
 public final class JsonWriterOptions {
+	/** Maximum pending JSONC trivia events between structural tokens by default. */
+	public static final int DEFAULT_MAX_DEFERRED_TRIVIA_EVENTS = 4096;
+	/** Maximum pending JSONC trivia text, in UTF-16 code units, by default. */
+	public static final int DEFAULT_MAX_DEFERRED_TRIVIA_CHARACTERS = 1024 * 1024;
+
 	public static final JsonWriterOptions DEFAULTS = JsonWriterOptions.builder()
 			.setUnquotedKeys(true)
 			.setWhitespace(WhitespaceStyle.PRETTY)
@@ -73,6 +78,8 @@ public final class JsonWriterOptions {
 		private WhitespaceStyle whitespace = WhitespaceStyle.PRETTY;
 		private char keyValueSeparator = ':';
 		private String indentValue = "\t";
+		private int maxDeferredTriviaEvents = DEFAULT_MAX_DEFERRED_TRIVIA_EVENTS;
+		private int maxDeferredTriviaCharacters = DEFAULT_MAX_DEFERRED_TRIVIA_CHARACTERS;
 
 		public Builder() {}
 		
@@ -85,6 +92,8 @@ public final class JsonWriterOptions {
 			this.whitespace = opts.whitespace();
 			this.keyValueSeparator = opts.getKeyValueSeparator();
 			this.indentValue = opts.getIndentValue();
+			this.maxDeferredTriviaEvents = opts.getMaxDeferredTriviaEvents();
+			this.maxDeferredTriviaCharacters = opts.getMaxDeferredTriviaCharacters();
 		}
 
 		
@@ -143,6 +152,20 @@ public final class JsonWriterOptions {
 			return this;
 		}
 		
+		/** Limits pending JSONC comment/whitespace/newline events; must be positive. */
+		public Builder setMaxDeferredTriviaEvents(int value) {
+			if (value <= 0) throw new IllegalArgumentException("maxDeferredTriviaEvents must be positive");
+			maxDeferredTriviaEvents = value;
+			return this;
+		}
+
+		/** Limits pending JSONC comment/whitespace text in UTF-16 code units; must be positive. */
+		public Builder setMaxDeferredTriviaCharacters(int value) {
+			if (value <= 0) throw new IllegalArgumentException("maxDeferredTriviaCharacters must be positive");
+			maxDeferredTriviaCharacters = value;
+			return this;
+		}
+
 		public JsonWriterOptions build() {
 			return new JsonWriterOptions(this);
 		}
@@ -156,6 +179,8 @@ public final class JsonWriterOptions {
 	private final WhitespaceStyle whitespace;
 	private final char keyValueSeparator;
 	private final String indentValue;
+	private final int maxDeferredTriviaEvents;
+	private final int maxDeferredTriviaCharacters;
 
 	private JsonWriterOptions(Builder opts) {
 		this.bareRootObject = opts.bareRootObject;
@@ -166,6 +191,8 @@ public final class JsonWriterOptions {
 		this.whitespace = Objects.requireNonNull(opts.whitespace);
 		this.keyValueSeparator = opts.keyValueSeparator;
 		this.indentValue = Objects.requireNonNull(opts.indentValue);
+		this.maxDeferredTriviaEvents = opts.maxDeferredTriviaEvents;
+		this.maxDeferredTriviaCharacters = opts.maxDeferredTriviaCharacters;
 		if (format != null && (keyValueSeparator != ':'
 				|| bareRootObject && format != JsonFormat.HJSON
 				|| ommitCommas && (format != JsonFormat.HJSON || !whitespace.newlines())
@@ -189,6 +216,8 @@ public final class JsonWriterOptions {
 	public WhitespaceStyle whitespace() { return whitespace; }
 	public char getKeyValueSeparator() { return keyValueSeparator; }
 	public String getIndentValue() { return indentValue; }
+	public int getMaxDeferredTriviaEvents() { return maxDeferredTriviaEvents; }
+	public int getMaxDeferredTriviaCharacters() { return maxDeferredTriviaCharacters; }
 
 	public Builder asBuilder() {
 		return new Builder(this);

@@ -26,6 +26,7 @@ package blue.endless.jankson.impl.io.objectreader;
 
 import java.io.IOException;
 import java.util.ArrayDeque;
+import java.util.IdentityHashMap;
 
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.StructuredData;
@@ -33,6 +34,7 @@ import blue.endless.jankson.api.io.StructuredDataBuffer;
 import blue.endless.jankson.api.io.StructuredDataReader;
 
 public abstract class DelegatingStructuredDataReader implements StructuredDataReader {
+	private static final Object DEFAULT_STRATEGY = new Object();
 	// Only bypass the public protocol when both methods still use our implementation.
 	// ClassValue avoids repeated reflection per event and does not retain plugin class loaders.
 	private static final ClassValue<Boolean> USE_BASE_PROTOCOL = new ClassValue<>() {
@@ -54,40 +56,85 @@ public abstract class DelegatingStructuredDataReader implements StructuredDataRe
 	 * an override calling super.next() can still perform recursive lookahead before returning data.
 	 */
 	public static StructuredDataReader iterative(StructuredDataReader root) {
-		return new StructuredDataReader() {
-			private final ArrayDeque<StructuredDataReader> stack = new ArrayDeque<>();
-			{ stack.push(root); }
+		return new IterativeReader(root, null, DEFAULT_STRATEGY);
+	}
 
-			@Override public boolean hasNext() { return !stack.isEmpty(); }
+	/** Creates an iterative reader with identity-based cycle detection scoped to one serialization strategy. */
+	public static StructuredDataReader iterative(StructuredDataReader root, Object source, Object strategy) {
+		return new IterativeReader(root, source, strategy);
+	}
 
-			@Override public StructuredData next() throws IOException, SyntaxError {
-				while (!stack.isEmpty()) {
-					StructuredDataReader current = stack.peek();
-					StructuredData data;
-					if (current instanceof DelegatingStructuredDataReader reader && USE_BASE_PROTOCOL.get(current.getClass())) {
-						if (reader.buffer.isEmpty()) {
-							if (reader.delegate != null) {
-								stack.push(reader.delegate);
-								reader.delegate = null;
-								continue;
-							}
-							reader.onDelegateEmpty();
-							if (reader.buffer.isEmpty()) {
-								if (reader.delegate == null) throw new IOException("Reader produced no data");
-								continue;
-							}
-						}
-						data = reader.buffer.pop();
-					} else {
-						if (!current.hasNext()) { stack.pop(); continue; }
-						data = current.next();
-					}
-					if (data.type() == StructuredData.Type.EOF) { stack.pop(); continue; }
-					return data;
-				}
-				return StructuredData.EOF;
+	private record Frame(StructuredDataReader reader, Object source, Object strategy) {}
+
+	private static final class IterativeReader implements StructuredDataReader {
+		private final ArrayDeque<Frame> stack = new ArrayDeque<>();
+		private final IdentityHashMap<Object, IdentityHashMap<Object, Boolean>> active = new IdentityHashMap<>();
+
+		private IterativeReader(StructuredDataReader root, Object source, Object strategy) {
+			stack.push(new Frame(root, source, strategy));
+			if (source != null) activate(source, strategy);
+		}
+
+		@Override public boolean hasNext() { return !stack.isEmpty(); }
+
+		private void push(StructuredDataReader reader) throws IOException {
+			Object source = null;
+			Object strategy = DEFAULT_STRATEGY;
+			while (reader instanceof IterativeReader iterative) {
+				if (iterative.stack.size() != 1) break;
+				Frame root = iterative.stack.peek();
+				reader = root.reader();
+				source = root.source();
+				strategy = root.strategy();
 			}
-		};
+			if (source != null && !activate(source, strategy)) {
+				throw new IOException("Cyclic object reference while serializing "+source.getClass().getTypeName());
+			}
+			stack.push(new Frame(reader, source, strategy));
+		}
+
+		private boolean activate(Object source, Object strategy) {
+			IdentityHashMap<Object, Boolean> strategies = active.computeIfAbsent(source, ignored -> new IdentityHashMap<>());
+			return strategies.put(strategy, Boolean.TRUE) == null;
+		}
+
+		private void pop() {
+			Frame frame = stack.pop();
+			if (frame.source() == null) return;
+			IdentityHashMap<Object, Boolean> strategies = active.get(frame.source());
+			if (strategies == null) return;
+			strategies.remove(frame.strategy());
+			if (strategies.isEmpty()) active.remove(frame.source());
+		}
+
+		@Override public StructuredData next() throws IOException, SyntaxError {
+			while (!stack.isEmpty()) {
+				StructuredDataReader current = stack.peek().reader();
+				StructuredData data;
+				if (current instanceof DelegatingStructuredDataReader reader && USE_BASE_PROTOCOL.get(current.getClass())) {
+					if (reader.buffer.isEmpty()) {
+						if (reader.delegate != null) {
+							StructuredDataReader delegate = reader.delegate;
+							reader.delegate = null;
+							push(delegate);
+							continue;
+						}
+						reader.onDelegateEmpty();
+						if (reader.buffer.isEmpty()) {
+							if (reader.delegate == null) throw new IOException("Reader produced no data");
+							continue;
+						}
+					}
+					data = reader.buffer.pop();
+				} else {
+					if (!current.hasNext()) { pop(); continue; }
+					data = current.next();
+				}
+				if (data.type() == StructuredData.Type.EOF) { pop(); continue; }
+				return data;
+			}
+			return StructuredData.EOF;
+		}
 	}
 
 	private StructuredDataReader delegate = null;

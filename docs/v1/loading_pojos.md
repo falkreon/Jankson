@@ -1,5 +1,8 @@
 # Loading and Saving Plain Old Java Objects (POJOs)
 
+This guide targets **Jankson 1.x**. For the current branch, use
+[2.x object mapping](../object_mapping.md) and [configuration management](../config_files.md).
+
 A POJO is a straightforward type with no references to any particular frameworks.
 No special functions or inheritances are required.
 

@@ -34,16 +34,25 @@ import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Deque;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
+import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import javax.annotation.Nullable;
 
@@ -138,21 +147,13 @@ public class ObjectWriter<T> implements StructuredDataWriter {
 			}
 			
 			if (targetClass.isInterface()) {
-				// Pick a "typical" implementation of popular interfaces
-				Collection<?> coll = null;
-				if (Set.class.isAssignableFrom(targetClass)) {
-					coll = new HashSet<>();
-				} else if (List.class.isAssignableFrom(targetClass)) {
-					coll = new ArrayList<>();
-				} else if (Queue.class.isAssignableFrom(targetClass)) { // Includes Deque
-					coll = new ArrayDeque<>();
-				} else if (targetClass.equals(Collection.class)) {
-					// Defined too broadly but we can deal with it
-					coll = new ArrayList<>();
-				} else {
-					// We can't create an instance of this interface, and we can't make it 
-					throw new IllegalArgumentException("Can't get an implementation for unknown collection interface \""+targetClass.getCanonicalName()+"\"");
-				}
+				Collection<?> coll;
+				if (targetClass == Collection.class || targetClass == List.class) coll = new ArrayList<>();
+				else if (targetClass == Set.class) coll = new LinkedHashSet<>();
+				else if (targetClass == SortedSet.class || targetClass == NavigableSet.class) coll = new TreeSet<>();
+				else if (targetClass == Queue.class || targetClass == Deque.class) coll = new LinkedList<>();
+				else throw new IllegalArgumentException("Can't get an implementation for unsupported collection interface \""
+						+targetClass.getCanonicalName()+"\"");
 				
 				return new CollectionDeserializer<>(coll, elementType);
 			} else {
@@ -181,7 +182,13 @@ public class ObjectWriter<T> implements StructuredDataWriter {
 			}
 			
 			if (targetClass.isInterface()) {
-				return new MapDeserializer<Object, Object>(type);
+				Map<Object, Object> map;
+				if (targetClass == Map.class) map = new HashMap<>();
+				else if (targetClass == SortedMap.class || targetClass == NavigableMap.class) map = new TreeMap<>();
+				else if (targetClass == ConcurrentMap.class) map = new ConcurrentHashMap<>();
+				else throw new IllegalArgumentException("Can't get an implementation for unsupported map interface \""
+						+targetClass.getCanonicalName()+"\"");
+				return new MapDeserializer<Object, Object>(type, map);
 			} else {
 				// Attempt to create an instance using the target type's no-arg constructor - as
 				// with Collection, just about every Map type has one. If not, give a clear
@@ -219,7 +226,7 @@ public class ObjectWriter<T> implements StructuredDataWriter {
 					primitive -> primitive.getValue().orElse(null));
 		}
 		
-		return new ObjectDeserializer<Object>(type);
+		return new ObjectDeserializer<Object>(type, subject);
 	}
 
 	private static Type writableType(Type type) {
@@ -227,7 +234,10 @@ public class ObjectWriter<T> implements StructuredDataWriter {
 			Type[] upper = wildcard.getUpperBounds();
 			return upper.length == 0 ? Object.class : upper[0];
 		}
-		if (type instanceof TypeVariable<?>) return ClassHierarchy.getErasedClass(type);
+		if (type instanceof TypeVariable<?> variable) {
+			Type[] upper = variable.getBounds();
+			return upper.length == 0 || upper[0] == variable ? Object.class : upper[0];
+		}
 		return type;
 	}
 	
@@ -282,11 +292,9 @@ public class ObjectWriter<T> implements StructuredDataWriter {
 	}*/
 	
 	public void commitResult() throws IOException {
-		if (subject != null || delegate == null || !delegate.isComplete()) return;
+		if (delegate == null || !delegate.isComplete()) return;
 		
-		if (subject == null) {
-			subject = (T) delegate.getResult();
-		}
+		subject = (T) delegate.getResult();
 		delegate = null;
 		complete = true;
 	}
@@ -315,6 +323,7 @@ public class ObjectWriter<T> implements StructuredDataWriter {
 					if (function != null) {
 						delegate = (Deserializer<Object>) function;
 						delegate.write(data);
+						commitResult();
 					}
 				}
 			}
@@ -367,10 +376,14 @@ public class ObjectWriter<T> implements StructuredDataWriter {
 			Optional<Object> value = prim.getValue();
 			if (value.isEmpty()) return null;
 			if (value.get() instanceof String s) {
-				if (s.length() != 1) return null;
+				if (s.length() != 1) throw new SyntaxError("Required a single-character String for Character");
 				return Character.valueOf(s.charAt(0));
 			} else {
-				return prim.mapAsInt((it) -> (char) it).orElseThrow(()->new SyntaxError("Required: Character"));
+				int codePoint = prim.asInt().orElseThrow(()->new SyntaxError("Required: Character"));
+				if (codePoint < Character.MIN_VALUE || codePoint > Character.MAX_VALUE) {
+					throw new SyntaxError("Character out of range: " + codePoint);
+				}
+				return Character.valueOf((char) codePoint);
 			}
 		});
 		primitiveMappers.put(Character.TYPE, primitiveMappers.get(Character.class));

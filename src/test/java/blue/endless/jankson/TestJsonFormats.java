@@ -296,6 +296,38 @@ public class TestJsonFormats {
 	}
 
 	@Test
+	public void hjsonRejectsRawControlsInQuotelessAndMultilineStrings() throws Exception {
+		for (char control = 0; control <= 0x1F; control++) {
+			if (control == '\t' || control == '\n' || control == '\r') continue;
+			rejects("{value: before" + control + "after}", JsonFormat.HJSON);
+			rejects("{value: '''before" + control + "after'''}", JsonFormat.HJSON);
+		}
+
+		for (char control = 0x7F; control <= 0x9F; control++) {
+			String expected = "before" + control + "after";
+			Assertions.assertEquals(expected, object("{value: " + expected + "\n}", JsonFormat.HJSON)
+					.getPrimitive("value").asString().orElseThrow());
+			Assertions.assertEquals(expected, object("{value: '''" + expected + "'''}", JsonFormat.HJSON)
+					.getPrimitive("value").asString().orElseThrow());
+		}
+
+		ObjectElement obj = object("{plain: before\tafter\nmultiline: '''before\tmiddle\r\nafter'''}", JsonFormat.HJSON);
+		Assertions.assertEquals("before\tafter", obj.getPrimitive("plain").asString().orElseThrow());
+		Assertions.assertEquals("before\tmiddle\nafter", obj.getPrimitive("multiline").asString().orElseThrow());
+		Assertions.assertEquals("beforeafter", object("{value: '''before\rafter'''}", JsonFormat.HJSON)
+				.getPrimitive("value").asString().orElseThrow());
+		Assertions.assertEquals("\0\b\f\n\r\t", object("{value: \"\\u0000\\b\\f\\n\\r\\t\"}", JsonFormat.HJSON)
+				.getPrimitive("value").asString().orElseThrow());
+	}
+
+	@Test
+	public void hjsonRejectsLeadingBomWithoutChangingOtherFormats() throws Exception {
+		rejects("\ufeff{value: 1}", JsonFormat.HJSON);
+		Assertions.assertEquals(1, object("\ufeff{value: 1}", JsonFormat.JSON5)
+				.getPrimitive("value").asInt().orElseThrow());
+	}
+
+	@Test
 	public void hjsonMultilineDedentsAndKeepsBackslashesLiteral() throws Exception {
 		String source = "text:\n  '''\n  first\\n\n    second\n  '''\nfirstli\\ne: 1\nfirstli\\u006Ee: 2\n";
 		ObjectElement obj = object(source, JsonFormat.HJSON);

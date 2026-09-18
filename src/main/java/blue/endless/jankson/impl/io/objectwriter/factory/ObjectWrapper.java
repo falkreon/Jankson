@@ -29,11 +29,15 @@ import java.lang.reflect.AccessFlag;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -255,8 +259,10 @@ public interface ObjectWrapper<T> {
 					if (!access) m.setAccessible(true);
 					m.invoke(result, value);
 					return;
-				} catch (Throwable t) {
-					throw new ReflectiveOperationException(t);
+				} catch (InvocationTargetException e) {
+					throw new ReflectiveOperationException(e.getCause() == null ? e : e.getCause());
+				} catch (ReflectiveOperationException | RuntimeException e) {
+					throw new ReflectiveOperationException(e);
 				} finally {
 					if (!access) m.setAccessible(false);
 				}
@@ -267,8 +273,8 @@ public interface ObjectWrapper<T> {
 			if (!access) f.setAccessible(true);
 			try {
 				f.set(result, value);
-			} catch (Throwable t) {
-				throw new IllegalStateException("Cannot set field \""+serializedName+"\".", t);
+			} catch (IllegalAccessException | IllegalArgumentException e) {
+				throw new IllegalStateException("Cannot set field \""+serializedName+"\".", e);
 			} finally {
 				if (!access) f.setAccessible(false);
 			}
@@ -326,18 +332,58 @@ public interface ObjectWrapper<T> {
 			Set<String> names = getParameters(executable);
 			// Each property must occur exactly once, not just once after deduplication.
 			if (executable.getParameterCount() != names.size() || !names.equals(fieldNames.keySet())) return false;
+			Map<TypeVariable<?>, Type> bindings = factoryBindings(executable);
+			if (bindings == null) return false;
 			for (Parameter parameter : executable.getParameters()) {
 				SerializedName annotation = parameter.getAnnotation(SerializedName.class);
 				String name = annotation == null ? parameter.getName() : annotation.value();
-				Class<?> propertyType = ClassHierarchy.getErasedClass(fieldNames.get(name).type());
-				if (!acceptsParameter(parameter.getType(), propertyType)) return false;
+				Type parameterType = ClassHierarchy.substitute(parameter.getParameterizedType(), bindings);
+				if (!acceptsParameter(parameterType, fieldNames.get(name).type())) return false;
 			}
 			return true;
 		}
 
-		private static boolean acceptsParameter(Class<?> parameter, Class<?> property) {
+		private Map<TypeVariable<?>, Type> factoryBindings(Executable executable) {
+			Map<TypeVariable<?>, Type> bindings = ClassHierarchy.getTypeBindings(tType, executable.getDeclaringClass());
+			if (executable instanceof Method method && tType instanceof ParameterizedType
+					&& method.getGenericReturnType() instanceof ParameterizedType) {
+				Set<TypeVariable<?>> variables = new HashSet<>(Arrays.asList(method.getTypeParameters()));
+				if (!ClassHierarchy.inferTypeArguments(method.getGenericReturnType(), tType, variables, bindings)) return null;
+				for (TypeVariable<?> variable : method.getTypeParameters()) {
+					Type inferred = bindings.get(variable);
+					if (inferred == null) continue;
+					for (Type bound : variable.getBounds()) {
+						if (!acceptsParameter(ClassHierarchy.substitute(bound, bindings), inferred)) return null;
+					}
+				}
+			}
+			return bindings;
+		}
+
+		private static boolean acceptsParameter(Type parameterType, Type propertyType) {
+			Class<?> parameter = ClassHierarchy.getErasedClass(parameterType);
+			Class<?> property = ClassHierarchy.getErasedClass(propertyType);
 			Class<?> boxedProperty = MethodType.methodType(property).wrap().returnType();
-			if (!parameter.isPrimitive()) return parameter.isAssignableFrom(boxedProperty);
+			if (!parameter.isPrimitive()) {
+				if (!parameter.isAssignableFrom(boxedProperty)) return false;
+				Type referencePropertyType = property.isPrimitive() ? boxedProperty : propertyType;
+				if (parameterType instanceof GenericArrayType parameterArray) {
+					Type propertyComponent = referencePropertyType instanceof GenericArrayType propertyArray
+							? propertyArray.getGenericComponentType() : property.getComponentType();
+					return propertyComponent != null
+							&& acceptsParameter(parameterArray.getGenericComponentType(), propertyComponent);
+				}
+				if (!(parameterType instanceof ParameterizedType)) return true;
+
+				Map<TypeVariable<?>, Type> parameterBindings = ClassHierarchy.getTypeBindings(parameterType, parameter);
+				Map<TypeVariable<?>, Type> propertyBindings = ClassHierarchy.getTypeBindings(referencePropertyType, parameter);
+				for (TypeVariable<?> variable : parameter.getTypeParameters()) {
+					Type required = ClassHierarchy.substitute(variable, parameterBindings);
+					Type supplied = ClassHierarchy.substitute(variable, propertyBindings);
+					if (!acceptsTypeArgument(required, supplied)) return false;
+				}
+				return true;
+			}
 			Class<?> unboxedProperty = MethodType.methodType(boxedProperty).unwrap().returnType();
 			if (parameter == unboxedProperty) return true;
 			// Reflection permits unboxing followed by primitive widening, but never narrowing.
@@ -353,26 +399,56 @@ public interface ObjectWrapper<T> {
 			};
 		}
 
-		private static Map<String, Class<?>> parameterTypes(Executable executable) {
-			Map<String, Class<?>> result = new HashMap<>();
+		private static boolean acceptsTypeArgument(Type required, Type supplied) {
+			if (required.equals(supplied)) return true;
+			if (!(required instanceof WildcardType wildcard)) return false;
+			// Containment compares the entire range, not the erasure of a wildcard.
+			if (supplied instanceof WildcardType suppliedWildcard) {
+				for (Type upper : wildcard.getUpperBounds()) {
+					boolean contained = false;
+					for (Type suppliedUpper : suppliedWildcard.getUpperBounds()) {
+						contained |= acceptsParameter(upper, suppliedUpper);
+					}
+					if (!contained) return false;
+				}
+				for (Type lower : wildcard.getLowerBounds()) {
+					boolean contained = false;
+					for (Type suppliedLower : suppliedWildcard.getLowerBounds()) {
+						contained |= acceptsParameter(suppliedLower, lower);
+					}
+					if (!contained) return false;
+				}
+				return true;
+			}
+			for (Type upper : wildcard.getUpperBounds()) {
+				if (!acceptsParameter(upper, supplied)) return false;
+			}
+			for (Type lower : wildcard.getLowerBounds()) {
+				if (!acceptsParameter(supplied, lower)) return false;
+			}
+			return true;
+		}
+
+		private Map<String, Type> parameterTypes(Executable executable) {
+			Map<String, Type> result = new HashMap<>();
+			Map<TypeVariable<?>, Type> bindings = factoryBindings(executable);
 			for (Parameter parameter : executable.getParameters()) {
 				SerializedName annotation = parameter.getAnnotation(SerializedName.class);
-				result.put(annotation == null ? parameter.getName() : annotation.value(), parameter.getType());
+				result.put(annotation == null ? parameter.getName() : annotation.value(),
+						ClassHierarchy.substitute(parameter.getParameterizedType(), bindings));
 			}
 			return result;
 		}
 
-		private static boolean moreSpecific(Executable candidate, Executable other) {
-			Map<String, Class<?>> candidateTypes = parameterTypes(candidate);
-			Map<String, Class<?>> otherTypes = parameterTypes(other);
+		private boolean moreSpecific(Executable candidate, Executable other) {
+			Map<String, Type> candidateTypes = parameterTypes(candidate);
+			Map<String, Type> otherTypes = parameterTypes(other);
 			boolean strict = false;
-			for (Map.Entry<String, Class<?>> entry : candidateTypes.entrySet()) {
-				Class<?> candidateType = entry.getValue();
-				Class<?> otherType = otherTypes.get(entry.getKey());
+			for (Map.Entry<String, Type> entry : candidateTypes.entrySet()) {
+				Type candidateType = entry.getValue();
+				Type otherType = otherTypes.get(entry.getKey());
 				if (otherType == null || !acceptsParameter(otherType, candidateType)) return false;
-				Class<?> boxedCandidate = MethodType.methodType(candidateType).wrap().returnType();
-				Class<?> boxedOther = MethodType.methodType(otherType).wrap().returnType();
-				strict |= boxedCandidate != boxedOther;
+				strict |= !acceptsParameter(candidateType, otherType);
 			}
 			return strict;
 		}
@@ -382,7 +458,7 @@ public interface ObjectWrapper<T> {
 			boolean annotationFound = false;
 			List<Executable> markedFactories = new ArrayList<>();
 			List<Executable> otherFactories = new ArrayList<>();
-			for(Constructor<?> cons : erasedType.getConstructors()) {
+			for(Constructor<?> cons : erasedType.getDeclaredConstructors()) {
 				if (!matchesFields(cons)) continue;
 				otherFactories.add(cons);
 			}
