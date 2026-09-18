@@ -52,7 +52,14 @@ final class HjsonRootContext implements ParserContext {
 		if (result == null) {
 			int line = r.getLine(), column = r.getCharacter();
 			StringBuilder source = new StringBuilder();
-			while (r.peek() != -1) source.appendCodePoint(r.read());
+			int bufferedCharacters = 0;
+			while (r.peek() != -1) {
+				if (bufferedCharacters == options.getMaxBufferedCharacters()) {
+					throw new IOException("HJSON root exceeds " + options.getMaxBufferedCharacters() + " buffered characters");
+				}
+				source.appendCodePoint(r.read());
+				bufferedCharacters++;
+			}
 			String text = source.toString();
 			List<StructuredData> events = new ArrayList<>();
 			try {
@@ -70,10 +77,22 @@ final class HjsonRootContext implements ParserContext {
 		LookaheadCodePointReader r = new LookaheadCodePointReader(new StringReader(text), JsonFormat.HJSON, line, column);
 		Deque<ParserContext> stack = new ArrayDeque<>();
 		stack.push(new RootParserContext(options, false));
-		while (!stack.isEmpty()) {
-			ParserContext context = stack.peek();
-			if (context.isComplete(r)) stack.pop();
-			else context.parse(r, event -> { if (event != StructuredData.EOF) events.add(event); }, stack::push);
+		try {
+			while (!stack.isEmpty()) {
+				ParserContext context = stack.peek();
+				if (context.isComplete(r)) stack.pop();
+				else context.parse(r, event -> {
+					if (event == StructuredData.EOF) return;
+					if (events.size() >= options.getMaxBufferedEvents()) throw new EventLimitException();
+					events.add(event);
+				}, stack::push);
+			}
+		} catch (EventLimitException ex) {
+			throw new IOException("Parser events exceed " + options.getMaxBufferedEvents());
 		}
+	}
+
+	private static final class EventLimitException extends RuntimeException {
+		private static final long serialVersionUID = 1L;
 	}
 }

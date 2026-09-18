@@ -27,6 +27,8 @@ package blue.endless.jankson.api.io;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
@@ -98,6 +100,7 @@ public class ObjectWriter<T> implements StructuredDataWriter {
 		// TODO: See if the destination is nullable instead?
 		if (!data.type().isSemantic()) throw new IllegalArgumentException("Can't get objectWriter for non-semantic data: "+data);
 		
+		type = writableType(type);
 		Class<?> targetClass = ClassHierarchy.getErasedClass(type);
 		if (data.type() == StructuredData.Type.PRIMITIVE && data.value() == null) {
 			return new Deserializer.Mapper<>(new PrimitiveDeserializer(), primitive -> {
@@ -106,6 +109,16 @@ public class ObjectWriter<T> implements StructuredDataWriter {
 				}
 				return null;
 			});
+		}
+
+		if (targetClass == Object.class) {
+			return switch (data.type()) {
+				case PRIMITIVE -> new Deserializer.Mapper<>(new PrimitiveDeserializer(),
+						primitive -> primitive.getValue().orElse(null));
+				case ARRAY_START -> new CollectionDeserializer<>(new ArrayList<>(), Object.class);
+				case OBJECT_START -> new MapDeserializer<>(String.class, Object.class);
+				default -> throw new IllegalArgumentException("Cannot dynamically deserialize value starting with "+data.type());
+			};
 		}
 
 		if (targetClass.isEnum()) {
@@ -201,8 +214,21 @@ public class ObjectWriter<T> implements StructuredDataWriter {
 		if (selectedMapper != null) {
 			return new Deserializer.Mapper<>(new PrimitiveDeserializer(), selectedMapper);
 		}
+		if (data.type() == StructuredData.Type.PRIMITIVE && targetClass.isInstance(data.value())) {
+			return new Deserializer.Mapper<>(new PrimitiveDeserializer(),
+					primitive -> primitive.getValue().orElse(null));
+		}
 		
 		return new ObjectDeserializer<Object>(type);
+	}
+
+	private static Type writableType(Type type) {
+		if (type instanceof WildcardType wildcard) {
+			Type[] upper = wildcard.getUpperBounds();
+			return upper.length == 0 ? Object.class : upper[0];
+		}
+		if (type instanceof TypeVariable<?>) return ClassHierarchy.getErasedClass(type);
+		return type;
 	}
 	
 	/*

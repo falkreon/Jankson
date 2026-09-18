@@ -40,7 +40,7 @@ public final class StringEscapeParser {
 
 	public static boolean invalidLiteral(int ch, JsonFormat syntax) {
 		return ch == -1 || ch == '\n' || ch == '\r'
-				|| (syntax == JsonFormat.JSON || syntax == JsonFormat.JSONC) && ch < 0x20;
+				|| (syntax == JsonFormat.JSON || syntax == JsonFormat.JSONC || syntax == JsonFormat.HJSON) && ch < 0x20;
 	}
 
 	/** Reads after a backslash; -1 denotes a JSON5 line continuation, not a character. */

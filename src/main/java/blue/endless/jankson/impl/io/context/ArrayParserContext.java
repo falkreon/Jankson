@@ -38,6 +38,7 @@ public class ArrayParserContext implements ParserContext {
 	private boolean foundStart = false;
 	private boolean foundEnd = false;
 	private final int depth;
+	private boolean lineTerminatorAfterValue;
 	private enum State { START, VALUE_OR_END, VALUE_AFTER_COMMA, COMMA_OR_END, COMPLETE }
 	private State state = State.START;
 	
@@ -90,12 +91,12 @@ public class ArrayParserContext implements ParserContext {
 	}
 	private void parseFormatted(LookaheadCodePointReader r, Consumer<StructuredData> out, Consumer<ParserContext> push) throws IOException, SyntaxError {
 		JsonFormat format = options.getFormat();
-		if (JsonGrammar.trivia(r, format, out)) return;
+		if (JsonGrammar.trivia(r, format, out, () -> lineTerminatorAfterValue = true)) return;
 		int ch = r.peek();
 		switch (state) {
 			case START -> {
 				if (r.read() != '[') throw JsonGrammar.error(r, "Expected '['.");
-				out.accept(StructuredData.ARRAY_START); state = State.VALUE_OR_END;
+				out.accept(StructuredData.ARRAY_START); state = State.VALUE_OR_END; lineTerminatorAfterValue = false;
 			}
 			case VALUE_OR_END, VALUE_AFTER_COMMA -> {
 				if (ch == ']') {
@@ -103,12 +104,12 @@ public class ArrayParserContext implements ParserContext {
 						throw JsonGrammar.error(r, "Trailing commas are not allowed in " + format + ".");
 					}
 					finish(r, out);
-				} else { JsonGrammar.value(r, options, depth, out, push); state = State.COMMA_OR_END; }
+				} else { JsonGrammar.value(r, options, depth, out, push); state = State.COMMA_OR_END; lineTerminatorAfterValue = false; }
 			}
 			case COMMA_OR_END -> {
 				if (ch == ']') finish(r, out);
-				else if (ch == ',') { r.read(); state = State.VALUE_AFTER_COMMA; }
-				else if (format == JsonFormat.HJSON) state = State.VALUE_OR_END;
+				else if (ch == ',') { r.read(); state = State.VALUE_AFTER_COMMA; lineTerminatorAfterValue = false; }
+				else if (format == JsonFormat.HJSON && lineTerminatorAfterValue) state = State.VALUE_OR_END;
 				else throw JsonGrammar.error(r, "Expected ',' between array elements.");
 			}
 			case COMPLETE -> { }

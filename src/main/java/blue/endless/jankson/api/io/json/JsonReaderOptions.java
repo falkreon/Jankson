@@ -41,6 +41,8 @@ public final class JsonReaderOptions {
 	private final JsonFormat format;
 	private final char keyValueSeparator;
 	private final int maxContainerDepth;
+	private final long maxBufferedEvents;
+	private final int maxBufferedCharacters;
 	public boolean isBareRootObject() { return bareRootObject; }
 	public boolean isUnquotedKeys() { return unquotedKeys; }
 	/** Whether an explicit format accepts a comma immediately before a closing brace or bracket. */
@@ -54,6 +56,10 @@ public final class JsonReaderOptions {
 	 * This is distinct from the configuration pipeline's root-zero value-depth limit.
 	 */
 	public int getMaxContainerDepth() { return maxContainerDepth; }
+	/** Maximum events buffered for ambiguous HJSON root parsing. */
+	public long getMaxBufferedEvents() { return maxBufferedEvents; }
+	/** Maximum characters buffered for ambiguous HJSON root parsing. */
+	public int getMaxBufferedCharacters() { return maxBufferedCharacters; }
 	private JsonReaderOptions(Builder opts) {
 		bareRootObject = opts.bareRootObject;
 		unquotedKeys = opts.unquotedKeys;
@@ -61,6 +67,8 @@ public final class JsonReaderOptions {
 		format = opts.format;
 		keyValueSeparator = opts.keyValueSeparator;
 		maxContainerDepth = opts.maxContainerDepth;
+		maxBufferedEvents = opts.maxBufferedEvents;
+		maxBufferedCharacters = opts.maxBufferedCharacters;
 		if (format == null && opts.allowTrailingCommas != null) {
 			throw new IllegalArgumentException("Trailing-comma options require an explicit JsonFormat");
 		}
@@ -84,6 +92,8 @@ public final class JsonReaderOptions {
 		private JsonFormat format = null;
 		private char keyValueSeparator = ':';
 		private int maxContainerDepth = 256;
+		private long maxBufferedEvents = Long.MAX_VALUE;
+		private int maxBufferedCharacters = Integer.MAX_VALUE;
 		
 		public Builder() {}
 		
@@ -94,6 +104,8 @@ public final class JsonReaderOptions {
 			this.format = opts.getFormat();
 			this.keyValueSeparator = opts.getKeyValueSeparator();
 			this.maxContainerDepth = opts.getMaxContainerDepth();
+			this.maxBufferedEvents = opts.getMaxBufferedEvents();
+			this.maxBufferedCharacters = opts.getMaxBufferedCharacters();
 		}
 
 		
@@ -109,6 +121,18 @@ public final class JsonReaderOptions {
 		public Builder setMaxContainerDepth(int value) {
 			if (value < 1) throw new IllegalArgumentException("Container depth must be positive");
 			maxContainerDepth = value;
+			return this;
+		}
+		/** Sets a positive event limit for ambiguous HJSON root buffering. */
+		public Builder setMaxBufferedEvents(long value) {
+			if (value < 1) throw new IllegalArgumentException("Event limit must be positive");
+			maxBufferedEvents = value;
+			return this;
+		}
+		/** Sets a positive character limit for ambiguous HJSON root buffering. */
+		public Builder setMaxBufferedCharacters(int value) {
+			if (value < 1) throw new IllegalArgumentException("Buffered character limit must be positive");
+			maxBufferedCharacters = value;
 			return this;
 		}
 		/** Selects an entire grammar and resets grammar-related switches to its defaults. */

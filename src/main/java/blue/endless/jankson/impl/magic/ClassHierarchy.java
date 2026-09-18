@@ -74,6 +74,12 @@ public class ClassHierarchy {
 			Class<?> erasedMemberType = getErasedClass(memberType);
 			if (erasedMemberType == null) return null;
 			return Array.newInstance(erasedMemberType, 0).getClass();
+		} else if (type instanceof WildcardType wildcard) {
+			Type[] upper = wildcard.getUpperBounds();
+			return upper.length == 0 ? Object.class : getErasedClass(upper[0]);
+		} else if (type instanceof TypeVariable<?> variable) {
+			Type[] bounds = variable.getBounds();
+			return bounds.length == 0 || bounds[0] == variable ? Object.class : getErasedClass(bounds[0]);
 		} else {
 			return Object.class;
 			//return null;
@@ -164,8 +170,8 @@ public class ClassHierarchy {
 
 	/**
 	 * Resolves variables by their declaring identity, never by their name. Unbound
-	 * variables and cyclic references fall back to Object, rather than expanding
-	 * bounds (which may themselves be recursive). Known surrounding types survive.
+	 * variables and cyclic references fall back to their Java erasure. Known
+	 * surrounding types survive without recursively expanding bounds.
 	 */
 	public static Type substitute(Type candidate, Map<TypeVariable<?>, Type> arguments) {
 		return substitute(candidate, arguments, new HashSet<>(), true);
@@ -175,10 +181,10 @@ public class ClassHierarchy {
 			Set<TypeVariable<?>> visiting, boolean finalSubstitution) {
 		if (candidate instanceof AnnotatedType annotated) candidate = annotated.getType();
 		if (candidate instanceof TypeVariable<?> variable) {
-			if (!visiting.add(variable)) return finalSubstitution ? Object.class : variable;
+			if (!visiting.add(variable)) return finalSubstitution ? getErasedClass(variable) : variable;
 			try {
 				Type resolved = arguments.get(variable);
-				return resolved == null ? (finalSubstitution ? Object.class : variable)
+				return resolved == null ? (finalSubstitution ? getErasedClass(variable) : variable)
 						: substitute(resolved, arguments, visiting, finalSubstitution);
 			} finally {
 				visiting.remove(variable);

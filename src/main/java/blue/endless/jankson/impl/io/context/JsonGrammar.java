@@ -57,11 +57,16 @@ final class JsonGrammar {
 	}
 	/** Emits at most one event per call, keeping the output queue bounded. */
 	static boolean trivia(LookaheadCodePointReader r, JsonFormat format, Consumer<StructuredData> out) throws IOException, SyntaxError {
+		return trivia(r, format, out, () -> {});
+	}
+	/** Reports line terminators even when they occur inside an emitted block comment. */
+	static boolean trivia(LookaheadCodePointReader r, JsonFormat format, Consumer<StructuredData> out,
+			Runnable lineTerminator) throws IOException, SyntaxError {
 		while (whitespace(r.peek(), format)) {
 			int ch = r.read();
-			if (ch == '\r') { if (r.peek() == '\n') r.read(); out.accept(StructuredData.NEWLINE); return true; }
+			if (ch == '\r') { if (r.peek() == '\n') r.read(); lineTerminator.run(); out.accept(StructuredData.NEWLINE); return true; }
 			if (ch == '\n' || format == JsonFormat.JSON5 && (ch == 0x2028 || ch == 0x2029)) {
-				out.accept(StructuredData.NEWLINE); return true;
+				lineTerminator.run(); out.accept(StructuredData.NEWLINE); return true;
 			}
 		}
 		if (!comment(r)) return false;
@@ -72,7 +77,11 @@ final class JsonGrammar {
 		if (block) {
 			while (!starts(r, "*/")) {
 				if (r.peek() == -1) throw error(r, "Unclosed block comment.");
-				text.appendCodePoint(r.read());
+				int ch = r.read();
+				if (ch == '\r' || ch == '\n' || format == JsonFormat.JSON5 && (ch == 0x2028 || ch == 0x2029)) {
+					lineTerminator.run();
+				}
+				text.appendCodePoint(ch);
 			}
 			r.read(); r.read();
 		} else {

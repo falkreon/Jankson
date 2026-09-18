@@ -39,6 +39,7 @@ public class ObjectParserContext implements ParserContext {
 	private boolean foundEnd = false;
 	private final boolean braced;
 	private final int depth;
+	private boolean lineTerminatorAfterValue;
 	private enum State { START, KEY_OR_END, KEY_AFTER_COMMA, COLON, VALUE, COMMA_OR_END, COMPLETE }
 	private State state = State.START;
 	
@@ -121,13 +122,13 @@ public class ObjectParserContext implements ParserContext {
 	}
 	private void parseFormatted(LookaheadCodePointReader r, Consumer<StructuredData> out, Consumer<ParserContext> push) throws IOException, SyntaxError {
 		JsonFormat format = options.getFormat();
-		if (JsonGrammar.trivia(r, format, out)) return;
+		if (JsonGrammar.trivia(r, format, out, () -> lineTerminatorAfterValue = true)) return;
 		int ch = r.peek();
 		boolean end = braced ? ch == '}' : ch == -1;
 		switch (state) {
 			case START -> {
 				if (braced && r.read() != '{') throw JsonGrammar.error(r, "Expected '{'.");
-				out.accept(StructuredData.OBJECT_START); state = State.KEY_OR_END;
+				out.accept(StructuredData.OBJECT_START); state = State.KEY_OR_END; lineTerminatorAfterValue = false;
 			}
 			case KEY_OR_END, KEY_AFTER_COMMA -> {
 				if (end) {
@@ -140,11 +141,11 @@ public class ObjectParserContext implements ParserContext {
 				}
 			}
 			case COLON -> { if (r.read() != ':') throw JsonGrammar.error(r, "Expected ':'."); state = State.VALUE; }
-			case VALUE -> { JsonGrammar.value(r, options, depth, out, push); state = State.COMMA_OR_END; }
+			case VALUE -> { JsonGrammar.value(r, options, depth, out, push); state = State.COMMA_OR_END; lineTerminatorAfterValue = false; }
 			case COMMA_OR_END -> {
 				if (end) finish(r, out);
-				else if (ch == ',') { r.read(); state = State.KEY_AFTER_COMMA; }
-				else if (format == JsonFormat.HJSON) state = State.KEY_OR_END;
+				else if (ch == ',') { r.read(); state = State.KEY_AFTER_COMMA; lineTerminatorAfterValue = false; }
+				else if (format == JsonFormat.HJSON && lineTerminatorAfterValue) state = State.KEY_OR_END;
 				else throw JsonGrammar.error(r, "Expected ',' between object members.");
 			}
 			case COMPLETE -> { }

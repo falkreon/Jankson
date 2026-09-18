@@ -26,13 +26,15 @@ package blue.endless.jankson.api.io;
 
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
 import blue.endless.jankson.api.document.ValueElement;
-import blue.endless.jankson.impl.TypeMagic;
 import blue.endless.jankson.impl.io.objectreader.ObjectStructuredDataReader;
+import blue.endless.jankson.impl.magic.ClassHierarchy;
 
 /**
  * This class manages reading arbitrary Java objects as StructuredData. Because not all classes can
@@ -128,17 +130,28 @@ public class ObjectReaderFactory {
 		
 		Function<Object, StructuredDataReader> function = functionMap.get(type);
 		if (function != null) return function.apply(objectOfType);
-		if (objectOfType != null) {
+		if (!precise && objectOfType != null) {
 			function = functionMap.get(objectOfType.getClass());
 			if (function != null) return function.apply(objectOfType);
 		}
 		
 		if (!precise) {
-			Class<?> targetClass = objectOfType == null ? TypeMagic.getErasedClass(type) : objectOfType.getClass();
+			Class<?> targetClass = objectOfType == null ? ClassHierarchy.getErasedClass(type) : objectOfType.getClass();
+			List<Map.Entry<Type, Function<Object, StructuredDataReader>>> matches = new ArrayList<>();
 			for(Map.Entry<Type, Function<Object, StructuredDataReader>> entry : functionMap.entrySet()) {
-				Class<?> curClass = TypeMagic.getErasedClass(entry.getKey());
-				if (curClass.isAssignableFrom(targetClass)) return entry.getValue().apply(objectOfType);
-				entry.getKey().getClass().isAssignableFrom(type.getClass());
+				Class<?> curClass = ClassHierarchy.getErasedClass(entry.getKey());
+				if (curClass != null && targetClass != null && curClass.isAssignableFrom(targetClass)) matches.add(entry);
+			}
+			List<Map.Entry<Type, Function<Object, StructuredDataReader>>> mostSpecific = matches.stream()
+					.filter(candidate -> matches.stream().noneMatch(other -> candidate != other
+							&& ClassHierarchy.getErasedClass(candidate.getKey()).isAssignableFrom(ClassHierarchy.getErasedClass(other.getKey()))
+							&& !ClassHierarchy.getErasedClass(candidate.getKey()).equals(ClassHierarchy.getErasedClass(other.getKey()))))
+					.toList();
+			if (mostSpecific.size() == 1) return mostSpecific.getFirst().getValue().apply(objectOfType);
+			if (mostSpecific.size() > 1) {
+				List<String> names = mostSpecific.stream().map(entry -> entry.getKey().getTypeName()).sorted().toList();
+				throw new IllegalArgumentException("Ambiguous reader registrations for "+targetClass.getTypeName()+": "
+						+String.join(", ", names));
 			}
 		}
 		

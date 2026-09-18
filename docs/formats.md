@@ -162,7 +162,9 @@ decisions about such values.
 - Ambiguous unbraced HJSON roots still buffer input and speculative events. Both
   the object attempt and scalar fallback use that same context pipeline. This
   preserves reference behavior, including `a: [` being a scalar string after the
-  object attempt fails. No fallback to a different format occurs.
+  object attempt fails. No fallback to a different format occurs. Bound this
+  speculation with `JsonReaderOptions.Builder.setMaxBufferedCharacters(...)` and
+  `setMaxBufferedEvents(...)`; both limits reject non-positive values.
 - A direct `JsonReader` consumer may receive valid prefix events before a later
   syntax error. `Jankson.read(...)` consumes and validates the whole document before
   returning its tree; it still needs memory proportional to the resulting tree.

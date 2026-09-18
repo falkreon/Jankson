@@ -89,7 +89,7 @@ public class MapDeserializer<K, V> extends AbstractDeserializer<Map<K, V>> {
 	
 	@SuppressWarnings("unchecked")
 	private static <K> KeyParser<K> getKeyFunction(Type keyType) throws IllegalArgumentException {
-		if (keyType.equals(String.class)) return (it) -> (K) it;
+		if (keyType.equals(String.class) || ClassHierarchy.getErasedClass(keyType).equals(Object.class)) return (it) -> (K) it;
 		
 		Class<K> keyClass = (Class<K>) ClassHierarchy.getErasedClass(keyType);
 		if (keyClass.isEnum()) {
@@ -105,8 +105,10 @@ public class MapDeserializer<K, V> extends AbstractDeserializer<Map<K, V>> {
 			return (it) -> {
 				try {
 					return cons.newInstance(it);
-				} catch (Throwable t) {
-					throw new RuntimeException(t);
+				} catch (ReflectiveOperationException t) {
+					Throwable cause = t instanceof java.lang.reflect.InvocationTargetException invocation
+							&& invocation.getCause() != null ? invocation.getCause() : t;
+					throw new SyntaxError("Could not construct map key '"+it+"' as "+keyType.getTypeName(), cause);
 				}
 			};
 		} catch (Throwable t) {
@@ -161,6 +163,7 @@ public class MapDeserializer<K, V> extends AbstractDeserializer<Map<K, V>> {
 					}
 				}
 			} else {
+				if (!data.type().isSemantic()) return;
 				switch(data.type()) {
 					case EOF -> {
 						throw new SyntaxError("Expected a value for key \"" + bufferedKey + "\". Found EOF instead!");

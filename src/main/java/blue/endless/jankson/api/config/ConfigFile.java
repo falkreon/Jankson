@@ -62,6 +62,8 @@ import blue.endless.jankson.impl.config.ConfigDepthGuard;
  * respectively. Custom codecs are responsible for recursion inside their own encode/decode calls.
  */
 public final class ConfigFile<T> {
+	/** Maximum non-EOF parse events per document by default. */
+	public static final long DEFAULT_MAX_PARSE_EVENTS = 1_000_000L;
 	// Bounded striped locks coordinate handles without an ever-growing path registry.
 	private static final Object[] LOCKS = new Object[64];
 	static { for (int i = 0; i < LOCKS.length; i++) LOCKS[i] = new Object(); }
@@ -74,6 +76,7 @@ public final class ConfigFile<T> {
 	private final AtomicWritePolicy atomicWrites;
 	private final ConfigCreationPolicy creationPolicy;
 	private final int maxBytes;
+	private final long maxParseEvents;
 	private final Object lock;
 	private final MoveOperation mover;
 	private final PublicationOperation publisher;
@@ -87,7 +90,9 @@ public final class ConfigFile<T> {
 		// An empty container at value depth 256 therefore requires 257 open parser containers.
 		// Allow one further start token so the guard reports depth 257 before tree construction.
 		reading = (builder.reading == null ? format.readerOptions() : builder.reading).asBuilder()
-				.setMaxContainerDepth(ConfigDepthGuard.MAX_DEPTH + 2).build();
+				.setMaxContainerDepth(ConfigDepthGuard.MAX_DEPTH + 2)
+				.setMaxBufferedEvents(builder.maxParseEvents)
+				.setMaxBufferedCharacters(builder.maxBytes).build();
 		writing = builder.writing == null ? format.writerOptions() : builder.writing;
 		if (reading.getFormat() != format || writing.getFormat() != format) {
 			throw new IllegalArgumentException("Reader and writer options must both use " + format);
@@ -97,6 +102,7 @@ public final class ConfigFile<T> {
 		atomicWrites = builder.atomicWrites;
 		creationPolicy = builder.creationPolicy;
 		maxBytes = builder.maxBytes;
+		maxParseEvents = builder.maxParseEvents;
 		mover = builder.mover;
 		publisher = builder.publisher;
 		cleaner = builder.cleaner;
@@ -161,19 +167,19 @@ public final class ConfigFile<T> {
 		rejectSymlink();
 		try (InputStream input = Files.newInputStream(path, LinkOption.NOFOLLOW_LINKS)) {
 			byte[] result = input.readNBytes(maxBytes + 1);
-			if (result.length > maxBytes) throw new IOException("Configuration exceeds " + maxBytes + " bytes");
+			if (result.length > maxBytes) throw new ChangedStateException("Configuration exceeds " + maxBytes + " bytes");
 			return result;
 		}
 	}
 
 	private void rejectSymlink() throws IOException {
-		if (Files.isSymbolicLink(path)) throw new IOException("Symbolic link targets are not supported: " + path);
+		if (Files.isSymbolicLink(path)) throw new ChangedStateException("Symbolic link targets are not supported: " + path);
 	}
 
 	private ValueElement parse(byte[] bytes) throws IOException, SyntaxError {
 		JsonReader reader = new JsonReader(new ByteArrayInputStream(bytes), reading);
 		ValueElementWriter writer = new ValueElementWriter();
-		ConfigDepthGuard.transfer(reader, writer);
+		ConfigDepthGuard.transfer(reader, writer, maxParseEvents);
 		return writer.getResult();
 	}
 
@@ -205,10 +211,14 @@ public final class ConfigFile<T> {
 		try {
 			at(ConfigStage.WRITE_TEMPORARY, () -> { Files.write(temporary, bytes); return null; });
 			if (expected != null) {
-				FileRevision actual = at(ConfigStage.CHECK_CONFLICT, () -> {
-					try { return FileRevision.of(path, readBytes()); }
-					catch (NoSuchFileException ex) { return null; }
-				});
+				FileRevision actual;
+				try { actual = at(ConfigStage.CHECK_CONFLICT, () -> FileRevision.of(path, readBytes())); }
+				catch (ConfigFileException ex) {
+					if (ex.getCause() instanceof NoSuchFileException || ex.getCause() instanceof ChangedStateException) {
+						throw new ConfigConflictException(path, format);
+					}
+					throw ex;
+				}
 				if (!expected.equals(actual)) throw new ConfigConflictException(path, format);
 			}
 			if (create) {
@@ -234,6 +244,10 @@ public final class ConfigFile<T> {
 	}
 
 	private record Prepared(byte[] bytes) {}
+	private static final class ChangedStateException extends IOException {
+		private static final long serialVersionUID = 1L;
+		private ChangedStateException(String message) { super(message); }
+	}
 
 	private static final class LimitedOutputStream extends OutputStream {
 		private final int limit;
@@ -292,6 +306,7 @@ public final class ConfigFile<T> {
 		private AtomicWritePolicy atomicWrites = AtomicWritePolicy.REQUIRE_ATOMIC;
 		private ConfigCreationPolicy creationPolicy = ConfigCreationPolicy.PORTABLE_BEST_EFFORT;
 		private int maxBytes = 16 * 1024 * 1024;
+		private long maxParseEvents = DEFAULT_MAX_PARSE_EVENTS;
 		private MoveOperation mover = (source, target, atomic) -> {
 			if (atomic) Files.move(source, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
 			else Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
@@ -308,7 +323,7 @@ public final class ConfigFile<T> {
 			this.codec = Objects.requireNonNull(codec);
 		}
 		public Builder<T> format(JsonFormat value) { format = Objects.requireNonNull(value); return this; }
-		/** Uses the supplied grammar options; the configuration's fixed value-depth policy overrides the parser container limit. */
+		/** Uses the supplied grammar options; configuration depth, event, and HJSON buffer limits override resource limits. */
 		public Builder<T> readerOptions(JsonReaderOptions value) { reading = Objects.requireNonNull(value); return this; }
 		public Builder<T> writerOptions(JsonWriterOptions value) { writing = Objects.requireNonNull(value); return this; }
 		public Builder<T> validator(ConfigValidator<T> value) { validator = Objects.requireNonNull(value); return this; }
@@ -317,6 +332,11 @@ public final class ConfigFile<T> {
 		public Builder<T> maxBytes(int value) {
 			if (value < 1 || value == Integer.MAX_VALUE) throw new IllegalArgumentException("Invalid byte limit");
 			maxBytes = value; return this;
+		}
+		/** Limits non-EOF parser events, including comments, keys, formatting, and container boundaries. */
+		public Builder<T> maxParseEvents(long value) {
+			if (value < 1) throw new IllegalArgumentException("Parse event limit must be positive");
+			maxParseEvents = value; return this;
 		}
 		Builder<T> moveOperation(MoveOperation value) { mover = Objects.requireNonNull(value); return this; }
 		Builder<T> publicationOperation(PublicationOperation value) { publisher = Objects.requireNonNull(value); return this; }

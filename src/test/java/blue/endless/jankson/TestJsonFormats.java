@@ -192,6 +192,29 @@ public class TestJsonFormats {
 		Assertions.assertEquals(3, obj.getObject("nested").getPrimitive("value").asInt().orElseThrow());
 	}
 
+	@Test
+	public void hjsonOmittedCommasRequireLineTerminators() throws Exception {
+		for (String source : List.of(
+				"[\"a\"\n\"b\"]", "[\"a\" // comment\n \"b\"]", "[\"a\" /* comment\n */ \"b\"]",
+				"{a:\"x\"\nb:\"y\"}", "{a:{} # comment\nb:[]}", "{a:{} /* comment\n */ b:[]}")) {
+			Jankson.read(source, JsonFormat.HJSON);
+		}
+		for (String source : List.of(
+				"[\"a\" \"b\"]", "[{} []]", "[\"a\" /* comment */ \"b\"]",
+				"{a:\"x\" b:\"y\"}", "{a:{} b:[]}", "{a:{} /* comment */ b:[]}")) {
+			rejects(source, JsonFormat.HJSON);
+		}
+
+		Assertions.assertEquals(2, ((ArrayElement) Jankson.read("[\"a\",\"b\",]", JsonFormat.HJSON)).size());
+		Assertions.assertEquals(2, object("{a:\"x\",b:\"y\",}", JsonFormat.HJSON).size());
+
+		JsonReader stream = new JsonReader(new StringReader("[\"a\" // separator\n \"b\"]"), JsonFormat.HJSON.readerOptions());
+		var events = new java.util.ArrayList<StructuredData>();
+		while (stream.hasNext()) events.add(stream.next());
+		Assertions.assertTrue(events.stream().anyMatch(StructuredData::isComment));
+		Assertions.assertTrue(events.contains(StructuredData.NEWLINE));
+	}
+
 	@ParameterizedTest
 	@ValueSource(strings = {"\n", "\r\n", ""})
 	public void hjsonTextBoundariesPreserveTheWholeLine(String ending) throws Exception {
@@ -250,13 +273,25 @@ public class TestJsonFormats {
 		for (char ch : new char[]{0, '\t', '\013'}) {
 			String key = "a" + ch + "b";
 			String source = "{\"" + key + "\":1}";
-			if (format == JsonFormat.JSON || format == JsonFormat.JSONC) {
+			if (format != JsonFormat.JSON5) {
 				Assertions.assertThrows(IOException.class, () -> Jankson.readJsonObject(source, keyOptions));
 				rejects(source, format);
 			} else {
 				Assertions.assertTrue(Jankson.readJsonObject(source, keyOptions).containsKey(key));
 				Assertions.assertTrue(object(source, format).containsKey(key));
 			}
+		}
+	}
+
+	@Test
+	public void hjsonRejectsRawControlsInQuotedKeysAndValues() throws Exception {
+		for (char control : new char[]{0, '\t', '\013', '\037'}) {
+			rejects("{\"a" + control + "b\":1}", JsonFormat.HJSON);
+			rejects("{key:\"a" + control + "b\"}", JsonFormat.HJSON);
+
+			String json5 = "{\"a" + control + "b\":\"v" + control + "x\"}";
+			Assertions.assertEquals("v" + control + "x", object(json5, JsonFormat.JSON5)
+					.getPrimitive("a" + control + "b").asString().orElseThrow());
 		}
 	}
 

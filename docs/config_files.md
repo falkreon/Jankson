@@ -153,6 +153,12 @@ format and must support concurrent calls. Custom manager codecs need
 `creationDefaults(...)` before `loadOrCreate()` can create a missing file. A manager
 rejects a null root, including a custom codec that decodes generated output to null.
 
+`ConfigCodecs.reflective(type, objectReaderFactory)` customizes encoding only. Registered
+serializers must produce the ordinary reflective wire shape for `type`; decoding still
+uses the built-in reflective mapper. This supports presentation-compatible serializers,
+such as custom property ordering, but not arbitrary shape-changing serializers. Use a
+custom `ConfigCodec<T>` when encoding and decoding both need custom behavior.
+
 Custom callbacks must bound recursion and allocation inside their own `encode`, `decode`
 and streaming callbacks. Documents and event streams returned to the configuration
 pipeline are still checked by its limits.
@@ -238,7 +244,12 @@ with a `ConfigFile` save.
 
 The default input/output limit is 16 MiB of encoded UTF-8 bytes. `maxBytes(...)` accepts
 a positive value smaller than `Integer.MAX_VALUE` and applies to both loaded input and
-generated output.
+generated output. Before allocating a `ValueElement` tree, parsing is also limited to
+`ConfigFile.DEFAULT_MAX_PARSE_EVENTS`, or 1,000,000 non-EOF events. Keys, comments,
+formatting, primitives, and container boundaries all count. Use `maxParseEvents(...)`
+to select another positive budget. HJSON's ambiguous-root speculation uses the same
+budget while buffering events; its source buffer remains bounded by `maxBytes(...)` in
+the configuration pipeline.
 
 Configuration values are limited to a depth of 256 with the root at depth 0; this fixed
 policy overrides `JsonReaderOptions.maxContainerDepth`. Empty containers at depth 256

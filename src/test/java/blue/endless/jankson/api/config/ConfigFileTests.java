@@ -45,9 +45,12 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import blue.endless.jankson.api.Jankson;
+import blue.endless.jankson.api.document.ObjectElement;
 import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.api.document.ValueElement;
+import blue.endless.jankson.api.io.ObjectReaderFactory;
 import blue.endless.jankson.api.io.json.JsonFormat;
+import blue.endless.jankson.api.io.json.JsonWriterOptions;
 
 class ConfigFileTests {
 	@TempDir Path directory;
@@ -155,6 +158,30 @@ class ConfigFileTests {
 		assertFalse(Files.exists(file.path()));
 		assertThrows(IllegalArgumentException.class, () -> document("other.json").save(first.value(), first.revision()));
 		assertNoTemporaryFiles();
+	}
+
+	@Test void oversizedAndSymlinkRevisionReplacementsConflictButOtherIoErrorsRemainContextual() throws Exception {
+		Path path = directory.resolve("revision.json");
+		var file = ConfigFile.builder(path, ConfigCodecs.document()).maxBytes(8).build();
+		var loaded = file.overwrite(PrimitiveElement.of(1L));
+		Files.writeString(path, "123456789");
+		assertThrows(ConfigConflictException.class, () -> file.save(loaded.value(), loaded.revision()));
+
+		Path target = directory.resolve("replacement.json");
+		Files.writeString(target, "2");
+		Files.delete(path);
+		try {
+			Files.createSymbolicLink(path, target.getFileName());
+		} catch (IOException | UnsupportedOperationException | SecurityException ex) {
+			Assumptions.assumeTrue(false, "Symbolic links are unavailable: " + ex);
+		}
+		assertThrows(ConfigConflictException.class, () -> file.save(loaded.value(), loaded.revision()));
+		Files.delete(path);
+		Files.createDirectory(path);
+		ConfigFileException ioFailure = assertThrows(ConfigFileException.class,
+				() -> file.save(loaded.value(), loaded.revision()));
+		assertFalse(ioFailure instanceof ConfigConflictException);
+		assertEquals(ConfigStage.CHECK_CONFLICT, ioFailure.stage());
 	}
 
 	@Test void concurrentCreationDoesNotOverwriteWinner() throws Exception {
@@ -405,6 +432,30 @@ class ConfigFileTests {
 		server.port = 42;
 		mutable.overwrite(server);
 		assertEquals(42, mutable.load().value().port);
+	}
+
+	@Test void shapeCompatibleCustomReflectiveSerializerRoundTripsThroughConfigFile() throws Exception {
+		ObjectReaderFactory serializers = new ObjectReaderFactory();
+		serializers.registerSerializer(Server.class, (java.util.function.Function<Server, ValueElement>) server -> {
+			ObjectElement result = new ObjectElement();
+			result.put("host", PrimitiveElement.of(server.host()));
+			result.put("port", PrimitiveElement.of(server.port()));
+			return result;
+		});
+		Path path = directory.resolve("custom-reflective.json");
+		var file = ConfigFile.builder(path, ConfigCodecs.<Server>reflective(Server.class, serializers)).build();
+		Server expected = new Server(25565, "example.org");
+		file.overwrite(expected);
+		assertEquals(expected, file.load().value());
+		assertTrue(Files.readString(path).indexOf("host") < Files.readString(path).indexOf("port"));
+	}
+
+	@SuppressWarnings("deprecation")
+	@Test void correctlySpelledCommaOptionsAliasLegacyMethods() {
+		JsonWriterOptions options = JsonWriterOptions.builder().setOmitCommas(true).build();
+		assertTrue(options.shouldOmitCommas());
+		assertTrue(options.shouldOmmitCommas());
+		assertFalse(options.asBuilder().setOmmitCommas(false).build().shouldOmitCommas());
 	}
 
 	@Test void codecFailuresAreContextualAndDoNotTouchTarget() throws Exception {

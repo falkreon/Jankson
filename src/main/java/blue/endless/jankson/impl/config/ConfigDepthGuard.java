@@ -74,7 +74,7 @@ public final class ConfigDepthGuard {
 		}
 	}
 
-	/** Encode-only event limit; the ordinary parser transfer remains uncapped. */
+	/** Checks depth and duplicate keys while enforcing a positive non-EOF event limit. */
 	public static void transfer(StructuredDataReader reader, StructuredDataWriter writer, long maxEvents)
 			throws IOException, SyntaxError {
 		if (maxEvents <= 0) throw new IllegalArgumentException("maxEvents must be positive");
@@ -83,7 +83,7 @@ public final class ConfigDepthGuard {
 
 			@Override public void write(StructuredData data) throws IOException, SyntaxError {
 				if (data.type() != StructuredData.Type.EOF) {
-					if (remaining == 0) throw new IOException("Configuration encode events exceed " + maxEvents);
+					if (remaining == 0) throw new IOException("Configuration events exceed " + maxEvents);
 					remaining--; // Check before decrementing, even for Long.MAX_VALUE budgets.
 				}
 				writer.write(data);

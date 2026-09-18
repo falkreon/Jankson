@@ -81,6 +81,44 @@ class ConfigPipelineLimitsTests {
 		assertThrows(IOException.class, () -> limited(3).encode(List.of(1L, 2L)));
 	}
 
+	@Test void parseBudgetCountsAllEventsBeforeTreeAllocation() throws Exception {
+		assertEquals(1_000_000L, ConfigFile.DEFAULT_MAX_PARSE_EVENTS);
+		for (long invalid : new long[] {0, -1, Long.MIN_VALUE}) {
+			assertThrows(IllegalArgumentException.class, () -> ConfigFile.builder(
+					directory.resolve("config.json"), ConfigCodecs.document()).maxParseEvents(invalid));
+		}
+		Path path = directory.resolve("config.jsonc");
+		Files.writeString(path, "{/*comment*/\"key\":1}");
+		var rejected = ConfigFile.builder(path, ConfigCodecs.document()).maxParseEvents(4).build();
+		ConfigFileException failure = assertThrows(ConfigFileException.class, rejected::load);
+		assertEquals(ConfigStage.PARSE, failure.stage());
+		assertTrue(failure.getCause().getMessage().contains("events"));
+		assertNotNull(ConfigFile.builder(path, ConfigCodecs.document()).maxParseEvents(6).build().load().value());
+	}
+
+	@Test void shallowManyNodeInputAndGeneratedOutputRespectParseBudget() throws Exception {
+		Path path = directory.resolve("config.json");
+		Files.writeString(path, "[1,2,3,4]");
+		var file = ConfigFile.builder(path, ConfigCodecs.document()).maxParseEvents(5).build();
+		assertEquals(ConfigStage.PARSE, assertThrows(ConfigFileException.class, file::load).stage());
+		Files.writeString(path, "0");
+		byte[] before = Files.readAllBytes(path);
+		ArrayElement replacement = new ArrayElement();
+		for (long value = 1; value <= 4; value++) replacement.add(PrimitiveElement.of(value));
+		assertEquals(ConfigStage.PARSE, assertThrows(ConfigFileException.class,
+				() -> file.overwrite(replacement)).stage());
+		assertArrayEquals(before, Files.readAllBytes(path));
+	}
+
+	@Test void hjsonSpeculativeEventBufferUsesConfigParseBudget() throws Exception {
+		Path path = directory.resolve("config.hjson");
+		Files.writeString(path, "a: 1\nb: 2\nc: 3\n");
+		var file = ConfigFile.builder(path, ConfigCodecs.document()).maxParseEvents(4).build();
+		ConfigFileException failure = assertThrows(ConfigFileException.class, file::load);
+		assertEquals(ConfigStage.PARSE, failure.stage());
+		assertTrue(failure.getCause().getMessage().contains("events"));
+	}
+
 	@Test void everyNonEofEventCountsBeforeForwardingAndParserTransferIsUncapped() throws Exception {
 		List<StructuredData> events = List.of(StructuredData.OBJECT_START,
 				StructuredData.objectKey("key"), StructuredData.ARRAY_START,

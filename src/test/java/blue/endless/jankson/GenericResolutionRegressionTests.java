@@ -219,11 +219,11 @@ public class GenericResolutionRegressionTests {
 	}
 
 	@Test
-	public void usesObjectFallbackForRawAndRecursivelyBoundVariables() {
+	public void usesErasureFallbackForRawAndRecursivelyBoundVariables() {
 		Assertions.assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
 			Assertions.assertEquals(Object.class, property(Base.class, "value"));
-			Assertions.assertEquals(Object.class, property(Recursive.class, "value"));
-			Assertions.assertEquals(Object.class,
+			Assertions.assertEquals(Comparable.class, property(Recursive.class, "value"));
+			Assertions.assertEquals(Comparable.class,
 					ClassHierarchy.getActualTypeArguments(Recursive.class, Recursive.class).get("T"));
 			Assertions.assertEquals(String.class,
 					property(new SyntheticType<>(Recursive.class, String.class), "value"));

@@ -27,6 +27,7 @@ package blue.endless.jankson.impl.magic;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.RecordComponent;
+import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.LinkedHashMap;
@@ -40,6 +41,23 @@ import blue.endless.jankson.impl.TypeMagic;
 /** Shared reflective metadata for serialized object properties. */
 public record ReflectiveProperty(String javaName, String wireName, Type type, Field field, String comment) {
 	public Object get(Object instance) {
+		if (field.getDeclaringClass().isRecord()) {
+			for (RecordComponent component : field.getDeclaringClass().getRecordComponents()) {
+				if (!component.getName().equals(javaName)) continue;
+				Method accessor = component.getAccessor();
+				try {
+					boolean accessible = accessor.canAccess(instance);
+					if (!accessible) accessor.setAccessible(true);
+					try {
+						return accessor.invoke(instance);
+					} finally {
+						if (!accessible) accessor.setAccessible(false);
+					}
+				} catch (ReflectiveOperationException e) {
+					throw new IllegalStateException("Could not invoke record accessor "+accessor, e);
+				}
+			}
+		}
 		return TypeMagic.getFieldValue(field, instance);
 	}
 

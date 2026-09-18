@@ -85,6 +85,7 @@ public class CollectionDeserializer<V, T extends Collection<V>> extends Abstract
 				if (data.type().isSemantic()) throw new SyntaxError("Expected an array, found "+data.type());
 			}
 		} else if (!endFound) {
+			if (!data.type().isSemantic()) return;
 			switch(data.type()) {
 				case ARRAY_END -> {
 					endFound = true;

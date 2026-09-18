@@ -61,6 +61,8 @@ public final class ConfigCodecs {
 
 	/**
 	 * Canonical mapping: annotations are regenerated, but source comments and unknown fields are not retained.
+	 * The supplied factory customizes encoding only. Its serializers must emit a shape that the built-in
+	 * reflective decoder for {@code type} accepts; ConfigFile verifies this before publishing a write.
 	 * Built-in readers are depth-bounded while streaming. Custom serializers/readers must bound any
 	 * recursion inside their own callbacks; their returned stream is checked before tree construction.
 	 */
@@ -70,6 +72,8 @@ public final class ConfigCodecs {
 
 	/**
 	 * Canonical reflective mapping with a positive, per-encode expanded event budget.
+	 * As with the two-argument overload, the factory customizes encoding only and must
+	 * emit a shape accepted by the built-in reflective decoder for {@code type}.
 	 * Every non-EOF event counts, including keys, comments, formatting, and container boundaries.
 	 * Shared references are allowed, but each occurrence consumes the budget independently.
 	 * Exceeding the budget throws IOException before the excess event reaches the tree writer.

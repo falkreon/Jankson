@@ -41,7 +41,7 @@ public final class JsonWriterOptions {
 			.setUnquotedKeys(false)
 			.setComments(CommentStyle.NONE)
 			.setWhitespace(WhitespaceStyle.PRETTY)
-			.setOmmitCommas(false)
+			.setOmitCommas(false)
 			.build();
 	
 	public static final JsonWriterOptions ONE_LINE = STRICT.asBuilder()
@@ -56,7 +56,7 @@ public final class JsonWriterOptions {
 			.setBareRootObject(true)
 			.setKeyValueSeparator('=')
 			.setUnquotedKeys(true)
-			.setOmmitCommas(true)
+			.setOmitCommas(true)
 			.setWhitespace(WhitespaceStyle.PRETTY)
 			.build();
 	
@@ -80,7 +80,7 @@ public final class JsonWriterOptions {
 			this.bareRootObject = opts.isBareRootObject();
 			this.unquotedKeys = opts.isUnquotedKeys();
 			this.format = opts.getFormat();
-			this.ommitCommas = opts.shouldOmmitCommas();
+			this.ommitCommas = opts.shouldOmitCommas();
 			this.comments = opts.comments();
 			this.whitespace = opts.whitespace();
 			this.keyValueSeparator = opts.getKeyValueSeparator();
@@ -110,10 +110,14 @@ public final class JsonWriterOptions {
 			return this;
 		}
 
-		public Builder setOmmitCommas(boolean value) {
+		public Builder setOmitCommas(boolean value) {
 			ommitCommas = value;
 			return this;
 		}
+
+		/** @deprecated Use {@link #setOmitCommas(boolean)}. */
+		@Deprecated(forRemoval = false)
+		public Builder setOmmitCommas(boolean value) { return setOmitCommas(value); }
 		
 		public Builder setComments(CommentStyle value) {
 			this.comments = value;
@@ -177,7 +181,10 @@ public final class JsonWriterOptions {
 	public boolean isUnquotedKeys() { return unquotedKeys; }
 	/** Null selects the legacy output rules. */
 	public JsonFormat getFormat() { return format; }
-	public boolean shouldOmmitCommas() { return ommitCommas; }
+	public boolean shouldOmitCommas() { return ommitCommas; }
+	/** @deprecated Use {@link #shouldOmitCommas()}. */
+	@Deprecated(forRemoval = false)
+	public boolean shouldOmmitCommas() { return shouldOmitCommas(); }
 	public CommentStyle comments() { return comments; }
 	public WhitespaceStyle whitespace() { return whitespace; }
 	public char getKeyValueSeparator() { return keyValueSeparator; }

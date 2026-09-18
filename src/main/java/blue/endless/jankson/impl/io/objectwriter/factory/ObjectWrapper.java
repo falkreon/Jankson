@@ -352,14 +352,39 @@ public interface ObjectWrapper<T> {
 				default -> false;
 			};
 		}
+
+		private static Map<String, Class<?>> parameterTypes(Executable executable) {
+			Map<String, Class<?>> result = new HashMap<>();
+			for (Parameter parameter : executable.getParameters()) {
+				SerializedName annotation = parameter.getAnnotation(SerializedName.class);
+				result.put(annotation == null ? parameter.getName() : annotation.value(), parameter.getType());
+			}
+			return result;
+		}
+
+		private static boolean moreSpecific(Executable candidate, Executable other) {
+			Map<String, Class<?>> candidateTypes = parameterTypes(candidate);
+			Map<String, Class<?>> otherTypes = parameterTypes(other);
+			boolean strict = false;
+			for (Map.Entry<String, Class<?>> entry : candidateTypes.entrySet()) {
+				Class<?> candidateType = entry.getValue();
+				Class<?> otherType = otherTypes.get(entry.getKey());
+				if (otherType == null || !acceptsParameter(otherType, candidateType)) return false;
+				Class<?> boxedCandidate = MethodType.methodType(candidateType).wrap().returnType();
+				Class<?> boxedOther = MethodType.methodType(otherType).wrap().returnType();
+				strict |= boxedCandidate != boxedOther;
+			}
+			return strict;
+		}
 		
 		@SuppressWarnings("unchecked")
 		private InstanceFactory<T> getCanonicalFactory() {
 			boolean annotationFound = false;
-			List<InstanceFactory<T>> otherFactories = new ArrayList<>();
+			List<Executable> markedFactories = new ArrayList<>();
+			List<Executable> otherFactories = new ArrayList<>();
 			for(Constructor<?> cons : erasedType.getConstructors()) {
 				if (!matchesFields(cons)) continue;
-				otherFactories.add((InstanceFactory<T>) InstanceFactory.of(cons));
+				otherFactories.add(cons);
 			}
 			
 			for(Method m : erasedType.getDeclaredMethods()) {
@@ -372,11 +397,15 @@ public interface ObjectWrapper<T> {
 				if (!matchesFields(m)) continue;
 				
 				if (m.getAnnotation(Deserializer.class) != null) {
-					return (InstanceFactory<T>) InstanceFactory.of(m);
+					markedFactories.add(m);
 				} else {
-					otherFactories.add((InstanceFactory<T>) InstanceFactory.of(m));
+					otherFactories.add(m);
 				}
 			}
+
+			if (markedFactories.size() == 1) return (InstanceFactory<T>) InstanceFactory.of((Method) markedFactories.getFirst());
+			if (markedFactories.size() > 1) throw new IllegalArgumentException("Ambiguous @Deserializer factories for type "
+					+tType.getTypeName()+": "+markedFactories);
 			
 			if (annotationFound) throw new IllegalArgumentException(
 					"One or more @Deserializer annotations exist for type "+tType.getTypeName()+", but none of the marked methods can be used.\n"+
@@ -390,7 +419,18 @@ public interface ObjectWrapper<T> {
 					requirements.
 					""");
 			
-			if (otherFactories.size() > 0) return otherFactories.getFirst();
+			List<Executable> mostSpecific = otherFactories.stream()
+					.filter(candidate -> otherFactories.stream().noneMatch(other -> candidate != other
+							&& moreSpecific(other, candidate)))
+					.toList();
+			if (mostSpecific.size() == 1) {
+				Executable selected = mostSpecific.getFirst();
+				return selected instanceof Constructor<?> constructor
+						? (InstanceFactory<T>) InstanceFactory.of(constructor)
+						: (InstanceFactory<T>) InstanceFactory.of((Method) selected);
+			}
+			if (mostSpecific.size() > 1) throw new IllegalArgumentException("Ambiguous unmarked deserializers for type "
+					+tType.getTypeName()+": "+mostSpecific+". Mark the intended factory with @Deserializer.");
 			
 			throw new IllegalArgumentException(
 					"No candidate deserializers exist for type "+tType.getTypeName()+".\n"+
