@@ -24,8 +24,8 @@
 
 package blue.endless.jankson.impl.io.objectwriter.factory;
 
+import java.lang.invoke.MethodType;
 import java.lang.reflect.AccessFlag;
-import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
@@ -34,8 +34,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -50,6 +50,7 @@ import blue.endless.jankson.api.annotation.Mutable;
 import blue.endless.jankson.api.annotation.MutatorFor;
 import blue.endless.jankson.api.annotation.SerializedName;
 import blue.endless.jankson.impl.magic.ClassHierarchy;
+import blue.endless.jankson.impl.magic.ReflectiveProperty;
 
 /**
  * Wrapper around arbitrary Java objects to allow for creation or mutation
@@ -72,20 +73,18 @@ public interface ObjectWrapper<T> {
 			return (result != null) ? new MutableWrapper<>(result, t) : new MutableWrapper<>(t);
 		}
 		
-		Map<String, Field> fields = getFields(t);
-		// A class is mutable iff all these fields are mutable
-		boolean mutable = true;
-		for(Map.Entry<String, Field> entry : fields.entrySet()) {
-			if (entry.getKey().startsWith("this$") && entry.getValue().accessFlags().contains(AccessFlag.SYNTHETIC)) continue;
-			
-			if (!entry.getValue().accessFlags().contains(AccessFlag.PUBLIC)) {
-				// Non-POJO. Do we have a setter?
-				Method m = getMutator(t, entry.getValue().getType(), entry.getKey());
-				if (m == null) {
-					mutable = false;
-					break;
-				}
-			}
+		// Explicit factories take precedence over the automatic no-arg strategy.
+		// Let ImmutableWrapper validate marked factories, including malformed ones.
+		for (Method method : clazz.getDeclaredMethods()) {
+			if (method.isAnnotationPresent(Deserializer.class)) return new ImmutableWrapper<>(t);
+		}
+
+		boolean mutable;
+		try {
+			clazz.getDeclaredConstructor();
+			mutable = true;
+		} catch (NoSuchMethodException e) {
+			mutable = false;
 		}
 		
 		if (mutable) {
@@ -97,98 +96,90 @@ public interface ObjectWrapper<T> {
 	
 	
 	
-	private static Method getMutator(Type tType, Class<?> fieldType, String fieldName) {
+	private static Method getMutator(Type tType, Field field) {
 		Class<?> clazz = ClassHierarchy.getErasedClass(tType);
-		
-		for(Method m : clazz.getDeclaredMethods()) {
-			MutatorFor correspondingField = m.getAnnotation(MutatorFor.class);
-			if (correspondingField != null && correspondingField.value().equals(fieldName)) {
-				Parameter[] params = m.getParameters();
-				if (params.length == 1 && params[0].getType().equals(fieldType)) {
-					return m;
+		String fieldName = field.getName();
+		String setterName = "set" + Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1);
+		// Annotation priority is global; declaration depth breaks ties within it.
+		for (boolean annotated : new boolean[] {true, false}) {
+			for (Class<?> level = clazz; level != null && level != Object.class; level = level.getSuperclass()) {
+				Method selected = null;
+				for (Method method : level.getDeclaredMethods()) {
+					if (Modifier.isStatic(method.getModifiers()) || method.isBridge() || method.isSynthetic()) continue;
+					if (method.getParameterCount() != 1 || method.getParameterTypes()[0] != field.getType()) continue;
+					MutatorFor annotation = method.getAnnotation(MutatorFor.class);
+					if (annotated ? annotation == null || !annotation.value().equals(fieldName)
+							: annotation != null || !method.getName().equals(setterName)) continue;
+					if (!field.equals(nearestField(level, fieldName))) continue;
+					if (selected != null) throw new IllegalArgumentException("Ambiguous mutators for field "+field
+							+": "+selected+" and "+method);
+					selected = method;
+				}
+				if (selected != null) {
+					validateDispatch(clazz, selected, field);
+					return selected;
 				}
 			}
 		}
-		
-		String setterName = "get" + Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1);
-		
-		for(Method m : clazz.getDeclaredMethods()) {
-			if (m.getName().equals(setterName)) {
-				Parameter[] params = m.getParameters();
-				if (params.length == 1 && params[0].getType().equals(fieldType)) {
-					return m;
-				}
-			}
-		}
-		
 		return null;
 	}
-	
-	
-	private static Map<String, Field> getFields(Type tType) {
-		Map<String, Field> result = new HashMap<>();
-		Class<?> curLevel = ClassHierarchy.getErasedClass(tType);
-		if (curLevel == null) throw new IllegalStateException("erased class was null for type "+tType.getTypeName());
-		while(!curLevel.equals(Object.class)) {
-			for(Field field : curLevel.getDeclaredFields()) {
-				String fieldName = field.getName();
-				
-				SerializedName[] annos = field.getDeclaredAnnotationsByType(SerializedName.class);
-				if (annos != null && annos.length > 0) {
-					//System.out.println("Serialized name of field "+fieldName+" is "+serializedName.value());
-					fieldName = annos[0].value();
-				}
-				
-				if (result.containsKey(fieldName)) {
-					throw new IllegalArgumentException(
-							"Field \""+field.getName()+"\" ("+fieldName+") is shadowed in type "+tType.getTypeName()+".\n"+
-							"""
-							Cannot deserialize types having multiple fields with the same name.
-							You can resolve this by annotating duplicate fields with unique '@SerializedName' values.
-							""");
-				}
-				
-				result.put(fieldName, field);
+
+	private static Field nearestField(Class<?> declaringClass, String name) {
+		for (Class<?> level = declaringClass; level != null; level = level.getSuperclass()) {
+			try {
+				// Even excluded fields form a Java field-hiding boundary.
+				return level.getDeclaredField(name);
+			} catch (NoSuchFieldException ignored) {
+				// Continue toward the nearest declaration.
 			}
-			
-			curLevel = curLevel.getSuperclass();
-			if (curLevel == null) curLevel = Object.class;
 		}
-		
-		return result;
+		return null;
+	}
+
+	private static void validateDispatch(Class<?> runtimeClass, Method selected, Field field) {
+		if (Modifier.isPrivate(selected.getModifiers()) || Modifier.isFinal(selected.getModifiers())) return;
+		// Walk base-to-derived so package-private overrides that widen access are
+		// respected. Bridges are not candidates, but they DO participate in dispatch.
+		List<Class<?>> descendants = new ArrayList<>();
+		for (Class<?> level = runtimeClass; level != selected.getDeclaringClass(); level = level.getSuperclass()) {
+			descendants.add(level);
+		}
+		Method dispatched = selected;
+		for (int i = descendants.size() - 1; i >= 0; i--) {
+			Class<?> level = descendants.get(i);
+			int modifiers = dispatched.getModifiers();
+			if (!Modifier.isPublic(modifiers) && !Modifier.isProtected(modifiers)
+					&& !dispatched.getDeclaringClass().getPackageName().equals(level.getPackageName())) continue;
+			for (Method method : level.getDeclaredMethods()) {
+				if (Modifier.isPrivate(method.getModifiers()) || Modifier.isStatic(method.getModifiers())) continue;
+				if (!method.getName().equals(selected.getName())
+						|| !Arrays.equals(method.getParameterTypes(), selected.getParameterTypes())) continue;
+				MutatorFor annotation = method.getAnnotation(MutatorFor.class);
+				String name = annotation == null ? field.getName() : annotation.value();
+				if (!field.equals(nearestField(level, name))) {
+					throw new IllegalArgumentException("Mutator override crosses field boundary for "+field
+							+": "+selected+" dispatches to "+method);
+				}
+				dispatched = method;
+			}
+		}
 	}
 	
-	private static Type getFieldType(Type tType, Field field) {
-		Type result = field.getGenericType();
-		if (result instanceof TypeVariable var) {
-			Type resolved = ClassHierarchy.getActualTypeArguments(tType, field.getDeclaringClass()).get(var.getName());
-			if (resolved == null) throw new IllegalStateException(
-					"Could not resolve type variable "+var.getName()+" on type "+tType.getTypeName()+
-					" (declared in class "+field.getDeclaringClass().getCanonicalName()+")");
-			
-			return resolved;
-		}
-		
-		return field.getGenericType();
-	}
 	
-	private static Map<String, Type> getFieldTypes(Type tType, Map<String, Field> fields) {
-		Map<String, Type> result = new HashMap<>();
-		for(Map.Entry<String, Field> entry : fields.entrySet()) {
-			result.put(entry.getKey(), getFieldType(tType, entry.getValue()));
-		}
-		
+	private static Map<String, ReflectiveProperty> getFields(Type tType) {
+		Map<String, ReflectiveProperty> result = new HashMap<>();
+		for (ReflectiveProperty property : ReflectiveProperty.of(tType)) result.put(property.wireName(), property);
 		return result;
 	}
 	
 	public static class MutableWrapper<T> implements ObjectWrapper<T> {
-		private final Type tType;
 		private final T result;
-		private final Map<String, Field> fieldNames;
-		private final Map<String, Type> fieldTypes;
+		private final Map<String, ReflectiveProperty> fieldNames;
+		private final Map<String, Method> mutators;
 		
 		public MutableWrapper(Type tType) {
-			this.tType = tType;
+			fieldNames = getFields(tType);
+			mutators = getMutators(tType, fieldNames);
 			
 			try {
 				Class<?> clazz = ClassHierarchy.getErasedClass(tType);
@@ -207,8 +198,14 @@ public interface ObjectWrapper<T> {
 					}
 				}
 				@SuppressWarnings("unchecked")
-				Constructor<T> constructor = (Constructor<T>) clazz.getConstructor();
-				result = constructor.newInstance();
+				Constructor<T> constructor = (Constructor<T>) clazz.getDeclaredConstructor();
+				boolean accessible = constructor.canAccess(null);
+				if (!accessible) constructor.setAccessible(true);
+				try {
+					result = constructor.newInstance();
+				} finally {
+					if (!accessible) constructor.setAccessible(false);
+				}
 			} catch (NoSuchMethodException t) {
 				throw new IllegalArgumentException("Cannot create an object of type "+tType.getTypeName()+".\n"+
 						"""
@@ -220,15 +217,24 @@ public interface ObjectWrapper<T> {
 				throw new RuntimeException("An unexpected error occurred creating this object.", t);
 			}
 			
-			fieldNames = getFields(tType);
-			fieldTypes = getFieldTypes(tType, fieldNames);
 		}
 		
 		public MutableWrapper(T t, Type tType) {
-			this.tType = tType;
 			result = t;
 			fieldNames = getFields(tType);
-			fieldTypes = getFieldTypes(tType, fieldNames);
+			mutators = getMutators(tType, fieldNames);
+			for (Map.Entry<String, Method> entry : mutators.entrySet()) {
+				validateDispatch(t.getClass(), entry.getValue(), fieldNames.get(entry.getKey()).field());
+			}
+		}
+
+		private static Map<String, Method> getMutators(Type type, Map<String, ReflectiveProperty> properties) {
+			Map<String, Method> result = new HashMap<>();
+			for (ReflectiveProperty property : properties.values()) {
+				Method mutator = getMutator(type, property.field());
+				if (mutator != null) result.put(property.wireName(), mutator);
+			}
+			return result;
 		}
 		
 		@Override
@@ -238,26 +244,29 @@ public interface ObjectWrapper<T> {
 		
 		@Override
 		public void setField(String serializedName, Object value) throws ReflectiveOperationException {
-			Field f = fieldNames.get(serializedName);
-			if (f == null) throw new IllegalArgumentException("No field with name \""+serializedName+"\"");
+			ReflectiveProperty property = fieldNames.get(serializedName);
+			if (property == null) throw new IllegalArgumentException("No field with name \""+serializedName+"\"");
+			Field f = property.field();
 			
-			Method m = getMutator(tType, f.getType(), serializedName);
+			Method m = mutators.get(serializedName);
 			if (m != null) {
+				boolean access = m.canAccess(result);
 				try {
-					boolean access = m.canAccess(result);
 					if (!access) m.setAccessible(true);
 					m.invoke(result, value);
-					if (!access) m.setAccessible(false);
 					return;
 				} catch (Throwable t) {
 					throw new ReflectiveOperationException(t);
+				} finally {
+					if (!access) m.setAccessible(false);
 				}
 			}
+			if (Modifier.isFinal(f.getModifiers())) return;
 			
 			boolean access = f.canAccess(result);
 			if (!access) f.setAccessible(true);
 			try {
-				f.set(result, value); // TODO: Look for a setter!
+				f.set(result, value);
 			} catch (Throwable t) {
 				throw new IllegalStateException("Cannot set field \""+serializedName+"\".", t);
 			} finally {
@@ -272,7 +281,8 @@ public interface ObjectWrapper<T> {
 
 		@Override
 		public Type getType(String serializedName) {
-			return fieldTypes.get(serializedName);
+			ReflectiveProperty property = fieldNames.get(serializedName);
+			return property == null ? null : property.type();
 		}
 
 		@Override
@@ -284,18 +294,13 @@ public interface ObjectWrapper<T> {
 	public static class ImmutableWrapper<T> implements ObjectWrapper<T> {
 		private final Type tType;
 		private final Class<T> erasedType;
-		private final Map<String, Field> fieldNames;
-		private final Map<String, Type> fieldTypes;
+		private final Map<String, ReflectiveProperty> fieldNames;
 		private final Map<String, Object> fieldValues = new HashMap<>();
 		
 		private final InstanceFactory<T> factory;
 		
 		public ImmutableWrapper(Class<T> clazz) {
-			this.tType = clazz;
-			this.erasedType = clazz;
-			fieldNames = getFields(tType);
-			fieldTypes = getFieldTypes(tType, fieldNames);
-			factory = getCanonicalFactory();
+			this((Type) clazz);
 		}
 		
 		@SuppressWarnings("unchecked")
@@ -303,7 +308,6 @@ public interface ObjectWrapper<T> {
 			this.tType = tType;
 			this.erasedType = (Class<T>) ClassHierarchy.getErasedClass(tType);
 			fieldNames = getFields(tType);
-			fieldTypes = getFieldTypes(tType, fieldNames);
 			factory = getCanonicalFactory();
 		}
 		
@@ -317,41 +321,55 @@ public interface ObjectWrapper<T> {
 			}
 			return paramNames;
 		}
+
+		private boolean matchesFields(Executable executable) {
+			Set<String> names = getParameters(executable);
+			// Each property must occur exactly once, not just once after deduplication.
+			if (executable.getParameterCount() != names.size() || !names.equals(fieldNames.keySet())) return false;
+			for (Parameter parameter : executable.getParameters()) {
+				SerializedName annotation = parameter.getAnnotation(SerializedName.class);
+				String name = annotation == null ? parameter.getName() : annotation.value();
+				Class<?> propertyType = ClassHierarchy.getErasedClass(fieldNames.get(name).type());
+				if (!acceptsParameter(parameter.getType(), propertyType)) return false;
+			}
+			return true;
+		}
+
+		private static boolean acceptsParameter(Class<?> parameter, Class<?> property) {
+			Class<?> boxedProperty = MethodType.methodType(property).wrap().returnType();
+			if (!parameter.isPrimitive()) return parameter.isAssignableFrom(boxedProperty);
+			Class<?> unboxedProperty = MethodType.methodType(boxedProperty).unwrap().returnType();
+			if (parameter == unboxedProperty) return true;
+			// Reflection permits unboxing followed by primitive widening, but never narrowing.
+			return switch (unboxedProperty.getName()) {
+				case "byte" -> parameter == short.class || parameter == int.class || parameter == long.class
+						|| parameter == float.class || parameter == double.class;
+				case "short", "char" -> parameter == int.class || parameter == long.class
+						|| parameter == float.class || parameter == double.class;
+				case "int" -> parameter == long.class || parameter == float.class || parameter == double.class;
+				case "long" -> parameter == float.class || parameter == double.class;
+				case "float" -> parameter == double.class;
+				default -> false;
+			};
+		}
 		
 		@SuppressWarnings("unchecked")
 		private InstanceFactory<T> getCanonicalFactory() {
 			boolean annotationFound = false;
 			List<InstanceFactory<T>> otherFactories = new ArrayList<>();
 			for(Constructor<?> cons : erasedType.getConstructors()) {
-				if (cons.getAnnotation(Deserializer.class) != null) annotationFound = true;
-				
-				Set<String> paramNames = getParameters(cons);
-				if (paramNames.size() != fieldNames.size()) continue; // Fast-reject for the cases below.
-				// Accept the constructor only if it has a parameter for every field
-				if (!paramNames.containsAll(fieldNames.keySet())) continue;
-				// Reject the constructor if it has any parameter that is not a field
-				if (!fieldNames.keySet().containsAll(paramNames)) continue;
-				
-				if (cons.getAnnotation(Deserializer.class) != null) {
-					// We can short-circuit if we have a matching Deserializer-annotated constructor
-					return (InstanceFactory<T>) InstanceFactory.of(cons);
-					//annotatedFactories.add((InstanceFactory<T>) InstanceFactory.of(cons));
-				} else {
-					otherFactories.add((InstanceFactory<T>) InstanceFactory.of(cons));
-				}
+				if (!matchesFields(cons)) continue;
+				otherFactories.add((InstanceFactory<T>) InstanceFactory.of(cons));
 			}
 			
 			for(Method m : erasedType.getDeclaredMethods()) {
+				if (m.getAnnotation(Deserializer.class) != null) annotationFound = true;
+
 				// Quickly reject nonstatic methods, or methods which do not return the target type.
 				if (!m.accessFlags().contains(AccessFlag.STATIC)) continue;
 				if (!m.getReturnType().equals(erasedType)) continue;
 				
-				if (m.getAnnotation(Deserializer.class) != null) annotationFound = true;
-				
-				Set<String> paramNames = getParameters(m);
-				if (paramNames.size() != fieldNames.size()) continue;
-				if (!paramNames.containsAll(fieldNames.keySet())) continue;
-				if (!fieldNames.keySet().containsAll(paramNames)) continue;
+				if (!matchesFields(m)) continue;
 				
 				if (m.getAnnotation(Deserializer.class) != null) {
 					return (InstanceFactory<T>) InstanceFactory.of(m);
@@ -365,7 +383,7 @@ public interface ObjectWrapper<T> {
 					"""
 					Since this class has been judged to be immutable, it can only be created with a constructor
 					or factory method. Constructors and factory methods must account for each field in their
-					parameter lists, including superclass fields.
+					parameter lists exactly once, including superclass fields, with compatible parameter types.
 					Factory methods must be static and return the type that declares them.
 					
 					At least one method on this class was marked for this purpose, but did not meet these
@@ -398,7 +416,8 @@ public interface ObjectWrapper<T> {
 		
 		@Override
 		public Type getType(String serializedName) {
-			return fieldTypes.get(serializedName);
+			ReflectiveProperty property = fieldNames.get(serializedName);
+			return property == null ? null : property.type();
 		}
 		
 		@Override

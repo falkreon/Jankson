@@ -14,6 +14,8 @@ For 2.x object-key behavior and escaping, see [Object key syntax](docs/object_ke
 Recent fixes and compatibility notes are recorded in [CHANGELOG.md](CHANGELOG.md).
 For full JSON/JSONC/JSON5/HJSON profiles and file-extension-based loading, see
 [Document formats](docs/formats.md).
+For typed JSON/JSONC/JSON5/HJSON configuration values, `@Comment`, defaults, revision
+checks and safe file replacement, see [Configuration management](docs/config_files.md).
 
 ## [Compiling](https://falkreon.github.io/Jankson/getting_started)
 

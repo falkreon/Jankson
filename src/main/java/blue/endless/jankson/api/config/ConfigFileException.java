@@ -22,15 +22,26 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.api.annotation;
+package blue.endless.jankson.api.config;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.io.IOException;
+import java.nio.file.Path;
+import blue.endless.jankson.api.io.json.JsonFormat;
 
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.FIELD, ElementType.PARAMETER, ElementType.RECORD_COMPONENT })
-public @interface SerializedName {
-	String value();
+/** Contextual failure. Parser locations remain available in the cause chain. */
+public class ConfigFileException extends IOException {
+	private final Path path;
+	private final JsonFormat format;
+	private final ConfigStage stage;
+
+	public ConfigFileException(Path path, JsonFormat format, ConfigStage stage, Throwable cause) {
+		super(stage + " failed for " + path + " (" + format + ")", cause);
+		this.path = path;
+		this.format = format;
+		this.stage = stage;
+	}
+
+	public Path path() { return path; }
+	public JsonFormat format() { return format; }
+	public ConfigStage stage() { return stage; }
 }

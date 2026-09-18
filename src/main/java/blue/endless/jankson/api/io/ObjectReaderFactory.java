@@ -128,9 +128,13 @@ public class ObjectReaderFactory {
 		
 		Function<Object, StructuredDataReader> function = functionMap.get(type);
 		if (function != null) return function.apply(objectOfType);
+		if (objectOfType != null) {
+			function = functionMap.get(objectOfType.getClass());
+			if (function != null) return function.apply(objectOfType);
+		}
 		
 		if (!precise) {
-			Class<?> targetClass = TypeMagic.getErasedClass(type);
+			Class<?> targetClass = objectOfType == null ? TypeMagic.getErasedClass(type) : objectOfType.getClass();
 			for(Map.Entry<Type, Function<Object, StructuredDataReader>> entry : functionMap.entrySet()) {
 				Class<?> curClass = TypeMagic.getErasedClass(entry.getKey());
 				if (curClass.isAssignableFrom(targetClass)) return entry.getValue().apply(objectOfType);

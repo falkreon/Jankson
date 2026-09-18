@@ -32,9 +32,12 @@ import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -83,7 +86,7 @@ public class ClassHierarchy {
 		
 		Type genericSuper = erasedChild.getGenericSuperclass();
 		Class<?> erasedSuper = getErasedClass(genericSuper);
-		if (target.isAssignableFrom(erasedSuper)) return genericSuper;
+		if (genericSuper != null && target.isAssignableFrom(erasedSuper)) return genericSuper;
 		
 		for(Type interfaceType : erasedChild.getGenericInterfaces()) {
 			Class<?> erasedInterface = getErasedClass(interfaceType);
@@ -93,6 +96,7 @@ public class ClassHierarchy {
 		// Couldn't find the target in this class's superclass or superinterfaces!
 		// Does this class actually extend target???
 		if (!target.isAssignableFrom(erasedChild)) throw new IllegalArgumentException("Target class "+target.getCanonicalName()+" is not an ancestor of type "+child.getTypeName());
+		if (target == Object.class) return Object.class;
 		
 		return null;
 	}
@@ -114,7 +118,7 @@ public class ClassHierarchy {
 			// If we see the following, GIVE UP IMMEDIATELY. We clearly do not understand this information!
 			if (typeVars.length != typeArgs.length) return new HashMap<>();
 			
-			Map<TypeVariable<?>, Type> result = new HashMap<>();
+			Map<TypeVariable<?>, Type> result = getDeclaredGenerics(pType.getOwnerType());
 			
 			for(int i=0; i<typeVars.length; i++) {
 				result.put(typeVars[i], typeArgs[i]);
@@ -130,38 +134,99 @@ public class ClassHierarchy {
 	
 	
 	public static Map<String, Type> getActualTypeArguments(Type baseType, Class<?> targetType) {
-		Map<TypeVariable<?>, Type> generics = getDeclaredGenerics(baseType);
-		
-		Type cur = baseType;
-		do {
-			if (!getErasedClass(cur).equals(targetType)) { // In case we were originally given the target type
-				cur = getNextAncestor(cur, targetType);
-			}
-			
-			for(Map.Entry<TypeVariable<?>, Type> entry : getDeclaredGenerics(cur).entrySet()) {
-				if (entry.getValue() instanceof TypeVariable<?> var) {
-					if (generics.containsKey(var)) {
-						generics.put(entry.getKey(), generics.get(var));
-					}
-				} else {
-					generics.put(entry.getKey(), entry.getValue());
-				}
-			}
-			
-		} while (!getErasedClass(cur).equals(targetType));
-		
-		// We've reified all the type arguments, now build the result
+		Map<TypeVariable<?>, Type> generics = getTypeBindings(baseType, targetType);
+		// Compatibility view: names are safe only within this one declaring class.
 		Map<String, Type> result = new HashMap<>();
-		
 		for(TypeVariable<?> var : targetType.getTypeParameters()) {
-			if (generics.containsKey(var)) {
-				result.put(var.getName(), generics.get(var));
-			} else {
-				result.put(var.getName(), Object.class);
+			result.put(var.getName(), substitute(var, generics));
+		}
+		return result;
+	}
+
+	/**
+	 * Derives declaration-keyed bindings in each ancestor's context, including its
+	 * parameterized owner. Resolve each hop before rebinding: the same declaration
+	 * can have different arguments as an enclosing owner and as a superclass.
+	 */
+	public static Map<TypeVariable<?>, Type> getTypeBindings(Type baseType, Class<?> targetType) {
+		if (!targetType.isAssignableFrom(getErasedClass(baseType))) {
+			throw new IllegalArgumentException(targetType.getTypeName()+" is not an ancestor of "+baseType.getTypeName());
+		}
+		Type current = baseType;
+		while (true) {
+			Map<TypeVariable<?>, Type> result = getDeclaredGenerics(current);
+			if (getErasedClass(current).equals(targetType)) return result;
+			Type next = getNextAncestor(current, targetType);
+			if (next == null) throw new IllegalArgumentException("Cannot resolve ancestor "+targetType.getTypeName());
+			current = substitute(next, result, new HashSet<>(), false);
+		}
+	}
+
+	/**
+	 * Resolves variables by their declaring identity, never by their name. Unbound
+	 * variables and cyclic references fall back to Object, rather than expanding
+	 * bounds (which may themselves be recursive). Known surrounding types survive.
+	 */
+	public static Type substitute(Type candidate, Map<TypeVariable<?>, Type> arguments) {
+		return substitute(candidate, arguments, new HashSet<>(), true);
+	}
+
+	private static Type substitute(Type candidate, Map<TypeVariable<?>, Type> arguments,
+			Set<TypeVariable<?>> visiting, boolean finalSubstitution) {
+		if (candidate instanceof AnnotatedType annotated) candidate = annotated.getType();
+		if (candidate instanceof TypeVariable<?> variable) {
+			if (!visiting.add(variable)) return finalSubstitution ? Object.class : variable;
+			try {
+				Type resolved = arguments.get(variable);
+				return resolved == null ? (finalSubstitution ? Object.class : variable)
+						: substitute(resolved, arguments, visiting, finalSubstitution);
+			} finally {
+				visiting.remove(variable);
 			}
 		}
-		
-		return result;
+		if (candidate instanceof ParameterizedType parameterized) {
+			Type[] source = parameterized.getActualTypeArguments();
+			Type[] resolved = new Type[source.length];
+			for (int i = 0; i < source.length; i++) resolved[i] = substitute(source[i], arguments, visiting, finalSubstitution);
+			Type owner = parameterized.getOwnerType();
+			return SyntheticType.withOwner(owner == null ? null : substitute(owner, arguments, visiting, finalSubstitution),
+					getErasedClass(parameterized), resolved);
+		}
+		if (candidate instanceof GenericArrayType array) {
+			Type component = substitute(array.getGenericComponentType(), arguments, visiting, finalSubstitution);
+			if (component instanceof Class<?> componentClass) return Array.newInstance(componentClass, 0).getClass();
+			return new ResolvedGenericArrayType(component);
+		}
+		if (candidate instanceof WildcardType wildcard) {
+			Type[] upper = wildcard.getUpperBounds();
+			Type[] lower = wildcard.getLowerBounds();
+			for (int i = 0; i < upper.length; i++) upper[i] = substitute(upper[i], arguments, visiting, finalSubstitution);
+			for (int i = 0; i < lower.length; i++) lower[i] = substitute(lower[i], arguments, visiting, finalSubstitution);
+			return new ResolvedWildcardType(upper, lower);
+		}
+		return candidate;
+	}
+
+	private record ResolvedGenericArrayType(Type getGenericComponentType) implements GenericArrayType {
+		@Override public String getTypeName() { return getGenericComponentType.getTypeName()+"[]"; }
+		@Override public boolean equals(Object other) {
+			return other instanceof GenericArrayType array && getGenericComponentType.equals(array.getGenericComponentType());
+		}
+		@Override public int hashCode() { return getGenericComponentType.hashCode(); }
+	}
+
+	private record ResolvedWildcardType(Type[] upper, Type[] lower) implements WildcardType {
+		@Override public Type[] getUpperBounds() { return upper.clone(); }
+		@Override public Type[] getLowerBounds() { return lower.clone(); }
+		@Override public boolean equals(Object other) {
+			return other instanceof WildcardType wildcard && Arrays.equals(upper, wildcard.getUpperBounds())
+					&& Arrays.equals(lower, wildcard.getLowerBounds());
+		}
+		@Override public int hashCode() { return Arrays.hashCode(upper) ^ Arrays.hashCode(lower); }
+		@Override public String getTypeName() {
+			if (lower.length > 0) return "? super "+lower[0].getTypeName();
+			return upper.length == 0 || upper[0] == Object.class ? "?" : "? extends "+upper[0].getTypeName();
+		}
 	}
 	
 	/**
@@ -173,15 +238,11 @@ public class ClassHierarchy {
 	 * @return the type of object that can be added to a Collection of this type
 	 */
 	public static Type getCollectionTypeArgument(Type collectionType) {
-		if (collectionType instanceof Class) return Object.class;
-		
 		Map<String, Type> realTypeArguments = getActualTypeArguments(collectionType, Collection.class);
 		return realTypeArguments.get("E");
 	}
 	
 	public static MapTypeArguments getMapTypeArguments(Type mapType) {
-		if (mapType instanceof Class) return new MapTypeArguments(Object.class, Object.class);
-		
 		Map<String, Type> realTypeArguments = getActualTypeArguments(mapType, Map.class);
 		return new MapTypeArguments(realTypeArguments.get("K"), realTypeArguments.get("V"));
 	}

@@ -26,6 +26,7 @@ package blue.endless.jankson.impl.io.objectwriter;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 
@@ -39,16 +40,24 @@ import blue.endless.jankson.impl.magic.ClassHierarchy;
 public class ArrayDeserializer<V> extends AbstractDeserializer<Object> {
 	
 	private ArrayList<V> result = new ArrayList<>();
-	//private final Class<?> arrayType;
 	private final Type elementType;
 	private boolean foundStart = false;
 	private boolean foundEnd = false;
 	private Deserializer<V> delegate;
 	
 	public ArrayDeserializer(Class<?> arrayType) {
-		//this.arrayType = arrayType;
-		if (!arrayType.isArray()) throw new IllegalArgumentException("Expected: Array type, got "+arrayType.getCanonicalName()+" instead.");
-		this.elementType = arrayType.getComponentType();
+		this((Type) arrayType);
+	}
+
+	public ArrayDeserializer(Type arrayType) {
+		if (arrayType instanceof GenericArrayType genericArray) {
+			this.elementType = genericArray.getGenericComponentType();
+		} else {
+			// Also accept existing SyntheticType wrappers around concrete array classes.
+			Class<?> clazz = ClassHierarchy.getErasedClass(arrayType);
+			if (!clazz.isArray()) throw new IllegalArgumentException("Expected: Array type, got "+arrayType.getTypeName()+" instead.");
+			this.elementType = clazz.getComponentType();
+		}
 	}
 	
 	//@SuppressWarnings("unchecked")

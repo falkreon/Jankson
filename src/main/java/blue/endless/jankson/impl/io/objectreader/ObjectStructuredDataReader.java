@@ -25,19 +25,17 @@
 package blue.endless.jankson.impl.io.objectreader;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.ArrayDeque;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
-import blue.endless.jankson.api.annotation.SerializedName;
+import blue.endless.jankson.api.document.CommentType;
 import blue.endless.jankson.api.document.PrimitiveElement;
 import blue.endless.jankson.api.io.ObjectReaderFactory;
 import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.StructuredDataReader;
-import blue.endless.jankson.impl.TypeMagic;
+import blue.endless.jankson.impl.magic.EnumNames;
+import blue.endless.jankson.impl.magic.ReflectiveProperty;
 
 /**
  * StructuredDataReader which reads data directly from an arbitrary Java object.
@@ -50,24 +48,14 @@ import blue.endless.jankson.impl.TypeMagic;
 public class ObjectStructuredDataReader extends DelegatingStructuredDataReader {
 	private final Object obj;
 	private final ObjectReaderFactory factory;
-	private ArrayDeque<Field> pendingFields = new ArrayDeque<>();
+	private ArrayDeque<ReflectiveProperty> pendingFields = new ArrayDeque<>();
 	
 	private ObjectStructuredDataReader(Object object, ObjectReaderFactory factory) {
 		this.obj = object;
 		this.buffer(StructuredData.OBJECT_START);
 		this.factory = (factory == null) ? new ObjectReaderFactory() : factory;
 		
-		Set<String> alreadyTaken = new HashSet<>();
-		for(Field f : obj.getClass().getDeclaredFields()) {
-			if (alreadyTaken.contains(f.getName())) continue;
-			alreadyTaken.add(f.getName());
-			pendingFields.addLast(f);
-		}
-		for(Field f : obj.getClass().getFields()) {
-			if (alreadyTaken.contains(f.getName())) continue;
-			alreadyTaken.add(f.getName());
-			pendingFields.addLast(f);
-		}
+		pendingFields.addAll(ReflectiveProperty.of(obj.getClass()));
 	}
 	
 	@Override
@@ -78,20 +66,21 @@ public class ObjectStructuredDataReader extends DelegatingStructuredDataReader {
 			return;
 		}
 		
-		Field cur = pendingFields.removeFirst();
-		String fieldName = cur.getName();
-		SerializedName[] serializedNames = cur.getDeclaredAnnotationsByType(SerializedName.class);
-		if (serializedNames.length > 0) fieldName = serializedNames[0].value();
+		ReflectiveProperty cur = pendingFields.removeFirst();
+		String fieldName = cur.wireName();
+		for (String line : cur.comment().split("\\R", -1)) {
+			if (!line.isBlank()) buffer(StructuredData.comment(line, CommentType.LINE_END));
+		}
 		buffer(StructuredData.objectKey(fieldName));
 		try {
-			Object value = TypeMagic.getFieldValue(cur, obj);
+			Object value = cur.get(obj);
 			if (value == null) {
 				buffer(StructuredData.NULL);
 			} else {
 				setDelegate(factory.getReader(value));
 			}
 		} catch (Throwable t) {
-			throw new IOException("Could not access field data for field \""+fieldName+"\" ("+cur.getName()+").", t);
+			throw new IOException("Could not access field data for field \""+fieldName+"\" ("+cur.javaName()+").", t);
 		}
 	}
 	
@@ -109,6 +98,9 @@ public class ObjectStructuredDataReader extends DelegatingStructuredDataReader {
 	 * @see ObjectReaderFactory
 	 */
 	public static StructuredDataReader of(Object o, ObjectReaderFactory factory) {
+		if (o instanceof Enum<?> value) {
+			return new PrimitiveStructuredDataReader(EnumNames.wireName(value));
+		}
 		if (o.getClass().isArray()) return new ArrayStructuredDataReader(o, factory);
 		if (o instanceof Collection val) return new CollectionStructuredDataReader(val, factory);
 		if (o instanceof Map val) return new MapStructuredDataReader(val, factory);

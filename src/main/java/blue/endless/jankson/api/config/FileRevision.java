@@ -22,15 +22,28 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.api.annotation;
+package blue.endless.jankson.api.config;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
+import java.util.Objects;
 
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.FIELD, ElementType.PARAMETER, ElementType.RECORD_COMPONENT })
-public @interface SerializedName {
-	String value();
+/** Immutable content revision, bound to an absolute normalized path. */
+public record FileRevision(Path path, String sha256, long size) {
+	public FileRevision {
+		path = Objects.requireNonNull(path).toAbsolutePath().normalize();
+		Objects.requireNonNull(sha256);
+		if (size < 0) throw new IllegalArgumentException("Negative size");
+	}
+
+	static FileRevision of(Path path, byte[] bytes) {
+		try {
+			return new FileRevision(path, HexFormat.of().formatHex(
+					MessageDigest.getInstance("SHA-256").digest(bytes)), bytes.length);
+		} catch (NoSuchAlgorithmException ex) {
+			throw new AssertionError("SHA-256 is required by Java", ex);
+		}
+	}
 }

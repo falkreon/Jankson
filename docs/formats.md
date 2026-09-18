@@ -140,10 +140,12 @@ and comment content are retained where supported by the document model; exact
 whitespace, original quote style, numeric spelling and comment delimiters are not.
 
 The JSONC writer never intentionally emits trailing commas, even when its output
-will be read with tolerant options. Comments do not force a pending separator before
-a closing delimiter. `CommentStyle.ALL` remains an explicitly format-unsafe escape
-hatch and may produce text that the selected profile cannot read; use `STRICT` for
-the profile validity guarantee or `NONE` for comment-free JSON-compatible output.
+will be read with tolerant options. A separator is emitted before the next entry or
+item's prologue comments, while footer comments remain before the closing delimiter
+without forcing a trailing separator. This also applies across nested containers.
+`CommentStyle.ALL` remains an explicitly format-unsafe escape hatch and may produce
+text that the selected profile cannot read; use `STRICT` for the profile validity
+guarantee or `NONE` for comment-free JSON-compatible output.
 
 Non-finite Java doubles are rejected by JSON/JSONC/HJSON writers rather than silently
 converted to strings or null. JSON5 represents them as `Infinity`, `-Infinity`, or
@@ -164,8 +166,12 @@ decisions about such values.
 - A direct `JsonReader` consumer may receive valid prefix events before a later
   syntax error. `Jankson.read(...)` consumes and validates the whole document before
   returning its tree; it still needs memory proportional to the resulting tree.
-- Nesting is limited to 256 containers, producing a syntax error rather than a stack
-  overflow.
+- The explicit-profile parser defaults to a limit of 256 simultaneously open containers.
+  Configure it with `JsonReaderOptions.Builder.setMaxContainerDepth(...)`; exceeding it
+  produces a syntax error. Increasing this limit does not make downstream tree builders
+  or consumers iterative. The [configuration API](config_files.md) applies stronger
+  structural checks and its own value-depth limit of 256, with the root at depth 0, and
+  overrides this parser option accordingly.
 - Numbers use Jankson's `long`/`double` model, not arbitrary precision. Large integers
   may be rounded as doubles. JSON/JSONC numbers overflowing finite double range are rejected;
   JSON5 permits infinity; HJSON treats such numeric text as a quoteless string.

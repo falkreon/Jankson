@@ -55,6 +55,7 @@ import blue.endless.jankson.impl.io.objectwriter.ObjectDeserializer;
 import blue.endless.jankson.impl.io.objectwriter.RecordDeserializer;
 import blue.endless.jankson.impl.io.objectwriter.PrimitiveDeserializer;
 import blue.endless.jankson.impl.magic.ClassHierarchy;
+import blue.endless.jankson.impl.magic.EnumNames;
 
 @SuppressWarnings("unchecked")
 public class ObjectWriter<T> implements StructuredDataWriter {
@@ -98,6 +99,24 @@ public class ObjectWriter<T> implements StructuredDataWriter {
 		if (!data.type().isSemantic()) throw new IllegalArgumentException("Can't get objectWriter for non-semantic data: "+data);
 		
 		Class<?> targetClass = ClassHierarchy.getErasedClass(type);
+		if (data.type() == StructuredData.Type.PRIMITIVE && data.value() == null) {
+			return new Deserializer.Mapper<>(new PrimitiveDeserializer(), primitive -> {
+				if (targetClass.isPrimitive()) {
+					throw new SyntaxError("Cannot assign null to primitive "+targetClass.getTypeName());
+				}
+				return null;
+			});
+		}
+
+		if (targetClass.isEnum()) {
+			return new Deserializer.Mapper<>(new PrimitiveDeserializer(), primitive -> {
+				String wireName = primitive.asString().orElseThrow(() -> new SyntaxError(
+						"Required enum name for "+targetClass.getTypeName()));
+				Object match = EnumNames.of(targetClass).get(wireName);
+				if (match == null) throw new SyntaxError("Unknown "+targetClass.getTypeName()+" value '"+wireName+"'");
+				return match;
+			});
+		}
 		if (Collection.class.isAssignableFrom(targetClass)) {
 			Type elementType = ClassHierarchy.getCollectionTypeArgument(type);
 			
@@ -171,11 +190,11 @@ public class ObjectWriter<T> implements StructuredDataWriter {
 		}
 		
 		if (targetClass.isRecord()) {
-			return new RecordDeserializer<>(targetClass);
+			return new RecordDeserializer<>(type);
 		}
 		
 		if (targetClass.isArray()) {
-			return new ArrayDeserializer<>(targetClass);
+			return new ArrayDeserializer<>(type);
 		}
 		
 		CheckedFunction<PrimitiveElement, Object, SyntaxError> selectedMapper = primitiveMappers.get(targetClass);
@@ -304,17 +323,18 @@ public class ObjectWriter<T> implements StructuredDataWriter {
 		
 		primitiveMappers.put(Integer.class, (prim) -> prim.mapAsInt((it)-> it).orElseThrow(()->new SyntaxError("Required: Int")));
 		primitiveMappers.put(Long.class,    (prim) -> prim.mapAsLong((it)-> it).orElseThrow(()->new SyntaxError("Required: Long")));
-		primitiveMappers.put(Short.class,   (prim) -> prim.mapAsInt((it) -> (short) it).orElseThrow(()->new SyntaxError("Required: Short")));
-		primitiveMappers.put(Byte.class,    (prim) -> prim.mapAsInt((it) -> (byte) it).orElseThrow(()->new SyntaxError("Required: Byte")));
+		primitiveMappers.put(Short.class,   ObjectWriter::asShort);
+		primitiveMappers.put(Byte.class,    ObjectWriter::asByte);
 		primitiveMappers.put(Double.class,  (prim) -> prim.mapAsDouble((it)-> it).orElseThrow(()->new SyntaxError("Required: Double")));
 		primitiveMappers.put(Float.class,   (prim) -> prim.mapAsDouble((it) -> (float) it).orElseThrow(()->new SyntaxError("Required: Float")));
 		primitiveMappers.put(Boolean.class, (prim) -> prim.mapAsBoolean((it) -> it).orElseThrow(()->new SyntaxError("Required: Boolean")));
 		primitiveMappers.put(Integer.TYPE,  (prim) -> prim.mapAsInt((it)-> it).orElseThrow(()->new SyntaxError("Required: Int")));
 		primitiveMappers.put(Long.TYPE,     (prim) -> prim.mapAsLong((it)-> it).orElseThrow(()->new SyntaxError("Required: Long")));
 		primitiveMappers.put(Double.TYPE,   (prim) -> prim.mapAsDouble((it) -> it).orElseThrow(()->new SyntaxError("Required: Double")));
-		primitiveMappers.put(Short.TYPE,    (prim) -> prim.mapAsInt((it) -> (short) it).orElseThrow(()->new SyntaxError("Required: Short")));
+		primitiveMappers.put(Short.TYPE,    ObjectWriter::asShort);
 		primitiveMappers.put(Float.TYPE,    (prim) -> prim.mapAsDouble((it) -> (float) it).orElseThrow(()->new SyntaxError("Required: Float")));
 		primitiveMappers.put(Boolean.TYPE,  (prim) -> prim.mapAsBoolean((it) -> it).orElseThrow(()->new SyntaxError("Required: Boolean")));
+		primitiveMappers.put(Byte.TYPE,     ObjectWriter::asByte);
 		
 		// This one's complex because no good canonical serialization makes sense
 		primitiveMappers.put(Character.class, (prim) -> {
@@ -327,14 +347,26 @@ public class ObjectWriter<T> implements StructuredDataWriter {
 				return prim.mapAsInt((it) -> (char) it).orElseThrow(()->new SyntaxError("Required: Character"));
 			}
 		});
+		primitiveMappers.put(Character.TYPE, primitiveMappers.get(Character.class));
 		
 		// PrimitiveElement has convenience methods for these two, so let's set consistent expectations
-		// It's truly unfortunate that Java can't tell that e.g. Optional<BigInteger> is castable to Optional<Object>
-		primitiveMappers.put(BigInteger.class, (prim) -> (Optional<Object>) (Object) prim.asBigInteger().orElseThrow(()->new SyntaxError("Required: BigInteger")));
-		primitiveMappers.put(BigDecimal.class, (prim) -> (Optional<Object>) (Object) prim.asBigDecimal().orElseThrow(()->new SyntaxError("Required: BigDecimal")));
+		primitiveMappers.put(BigInteger.class, (prim) -> prim.asBigInteger().orElseThrow(()->new SyntaxError("Required: BigInteger")));
+		primitiveMappers.put(BigDecimal.class, (prim) -> prim.asBigDecimal().orElseThrow(()->new SyntaxError("Required: BigDecimal")));
 		
 		primitiveMappers.put(LocalDate.class, (prim) -> prim.mapAsString(LocalDate::parse).orElseThrow(() -> new SyntaxError("Required: LocalDate")));
 		primitiveMappers.put(LocalTime.class, (prim) -> prim.mapAsString(LocalTime::parse).orElseThrow(() -> new SyntaxError("Required: LocalTime")));
 		primitiveMappers.put(LocalDateTime.class, (prim) -> prim.mapAsString(LocalDateTime::parse).orElseThrow(() -> new SyntaxError("Required: LocalDateTime")));
+	}
+
+	private static Object asShort(PrimitiveElement primitive) throws SyntaxError {
+		int value = primitive.asInt().orElseThrow(() -> new SyntaxError("Required: Short"));
+		if (value < Short.MIN_VALUE || value > Short.MAX_VALUE) throw new SyntaxError("Short out of range: " + value);
+		return (short) value;
+	}
+
+	private static Object asByte(PrimitiveElement primitive) throws SyntaxError {
+		int value = primitive.asInt().orElseThrow(() -> new SyntaxError("Required: Byte"));
+		if (value < Byte.MIN_VALUE || value > Byte.MAX_VALUE) throw new SyntaxError("Byte out of range: " + value);
+		return (byte) value;
 	}
 }

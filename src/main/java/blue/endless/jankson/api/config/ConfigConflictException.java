@@ -22,15 +22,15 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.api.annotation;
+package blue.endless.jankson.api.config;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.io.IOException;
+import java.nio.file.Path;
+import blue.endless.jankson.api.io.json.JsonFormat;
 
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.FIELD, ElementType.PARAMETER, ElementType.RECORD_COMPONENT })
-public @interface SerializedName {
-	String value();
+public final class ConfigConflictException extends ConfigFileException {
+	public ConfigConflictException(Path path, JsonFormat format) {
+		super(path, format, ConfigStage.CHECK_CONFLICT,
+				new IOException("Configuration changed since the expected revision"));
+	}
 }

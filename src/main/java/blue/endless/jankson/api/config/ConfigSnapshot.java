@@ -22,15 +22,17 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.api.annotation;
+package blue.endless.jankson.api.config;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.util.Objects;
 
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.FIELD, ElementType.PARAMETER, ElementType.RECORD_COMPONENT })
-public @interface SerializedName {
-	String value();
+/**
+ * The revision identifies the file bytes. The value belongs to the caller and may be mutable or
+ * normalized differently from those bytes; values supplied to writes are returned by identity.
+ */
+public record ConfigSnapshot<T>(T value, FileRevision revision, ConfigOrigin origin) {
+	public ConfigSnapshot {
+		Objects.requireNonNull(revision);
+		Objects.requireNonNull(origin);
+	}
 }

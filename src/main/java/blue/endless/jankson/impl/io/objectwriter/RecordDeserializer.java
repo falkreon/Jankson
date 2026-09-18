@@ -25,77 +25,46 @@
 package blue.endless.jankson.impl.io.objectwriter;
 
 import java.io.IOException;
-import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.RecordComponent;
 import java.lang.reflect.Type;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import blue.endless.jankson.api.SyntaxError;
-import blue.endless.jankson.api.annotation.SerializedName;
 import blue.endless.jankson.api.io.ObjectWriter;
 import blue.endless.jankson.api.io.AbstractDeserializer;
 import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.Deserializer;
+import blue.endless.jankson.impl.magic.ClassHierarchy;
+import blue.endless.jankson.impl.magic.ReflectiveProperty;
 
 public class RecordDeserializer<T> extends AbstractDeserializer<T> {
-	private Class<T> clazz;
+	private final Class<T> clazz;
 	private boolean foundStart = false;
 	private boolean foundEnd = false;
 	private T result = null;
-	private Map<String, Object> values = new HashMap<>();
-	private Map<String, String> serializedNameToFieldName = new HashMap<>();
-	private Set<String> requiredValues = new HashSet<>();
+	private final Map<String, Object> values = new HashMap<>();
+	private final Map<String, ReflectiveProperty> properties = new HashMap<>();
+	private final Set<String> requiredValues = new LinkedHashSet<>();
 	private String delegateKey = null;
 	private Deserializer<Object> delegate = null;
 	
-	public RecordDeserializer(Class<T> clazz) {
-		this.clazz = clazz;
-		
-		try {
-			Constructor<T> constructor = getCanonicalConstructor();
-			
-			RecordComponent[] components = clazz.getRecordComponents();
-			AnnotatedType[] annoTypes = constructor.getAnnotatedParameterTypes();
-			Field[] fields = clazz.getDeclaredFields();
-			
-			if (components.length != annoTypes.length) throw new IllegalStateException(); // Yikes!
-			
-			for(int i=0; i<components.length; i++) {
-				String baseName = components[i].getName();
-				requiredValues.add(baseName);
-				
-				String altNameValue = baseName;
-				
-				SerializedName altName = annoTypes[i].getAnnotation(SerializedName.class);
-				if (altName != null) {
-					altNameValue = altName.value();
-				} else {
-					for(Field f : fields) {
-						if (f.getName().equals(baseName)) {
-							SerializedName[] altNames = f.getAnnotationsByType(SerializedName.class);
-							if (altNames.length != 0) {
-								altNameValue = altNames[0].value();
-							}
-						}
-					}
-				}
-				
-				serializedNameToFieldName.put(altNameValue, baseName);
-			}
-		} catch (Throwable t) {
-			// Okay, fall back to a more durable system, ignoring SerializedName
-			requiredValues.clear();
-			serializedNameToFieldName.clear();
-			for (RecordComponent c : clazz.getRecordComponents()) {
-				requiredValues.add(c.getName());
-				serializedNameToFieldName.put(c.getName(), c.getName());
-			}
+	@SuppressWarnings("unchecked")
+	public RecordDeserializer(Type type) {
+		this.clazz = (Class<T>) ClassHierarchy.getErasedClass(type);
+		List<ReflectiveProperty> metadata = ReflectiveProperty.of(type);
+		for (ReflectiveProperty property : metadata) {
+			requiredValues.add(property.javaName());
+			properties.put(property.wireName(), property);
 		}
+	}
+
+	public RecordDeserializer(Class<T> type) {
+		this((Type) type);
 	}
 	
 	@Override
@@ -104,11 +73,7 @@ public class RecordDeserializer<T> extends AbstractDeserializer<T> {
 	}
 	
 	/**
-	 * This is a hack and a half. There is no "correct" way to access a canonical constructor. By
-	 * convention, it appears last in the bytecode and reflection, but this is not guaranteed.
-	 * Luckily, we ARE guaranteed that record components (inside the parentheses in the record
-	 * declaration) are in the order they're declared in, which is also guaranteed to be the order
-	 * they appear in, in the canonical constructor.
+	 * Finds the canonical constructor using the record components in declaration order.
 	 * 
 	 * <p>Note that we use getType here. If we attempt to call clazz.getDeclaredConstructor with an
 	 * array of AnnotatedType or GenericType, this method will fail. Generic types are erased in
@@ -132,35 +97,37 @@ public class RecordDeserializer<T> extends AbstractDeserializer<T> {
 	
 	private void checkDelegate() throws SyntaxError {
 		if (delegate != null && delegate.isComplete()) {
-			String fieldName = serializedNameToFieldName.get(delegateKey);
-			if (fieldName != null) {
-				values.put(fieldName, delegate.getResult());
-				requiredValues.remove(fieldName);
+			ReflectiveProperty property = properties.get(delegateKey);
+			if (property != null) {
+				if (values.containsKey(property.javaName())) {
+					throw new SyntaxError("Duplicate record component '"+property.wireName()+"'");
+				}
+				values.put(property.javaName(), delegate.getResult());
+				requiredValues.remove(property.javaName());
 			}
 			
 			delegate = null;
 			delegateKey = null;
 		}
-		
-		if (result == null && requiredValues.isEmpty()) {
-			RecordComponent[] components = clazz.getRecordComponents();
-			
-			Class<?>[] types = new Class<?>[components.length];
-			Object[] args = new Object[components.length];
-			for(int i = 0; i<components.length; i++) {
-				RecordComponent component = components[i];
-				types[i] = component.getType();
-				args[i] = values.get(component.getName());
-			}
+	}
+
+	private void instantiate() throws SyntaxError {
+		RecordComponent[] components = clazz.getRecordComponents();
+		Object[] args = new Object[components.length];
+		for(int i = 0; i<components.length; i++) {
+			args[i] = values.get(components[i].getName());
+		}
+		try {
+			Constructor<T> c = getCanonicalConstructor();
+			boolean accessible = c.canAccess(null);
+			if (!accessible) c.setAccessible(true);
 			try {
-				Constructor<T> c = getCanonicalConstructor();
-				boolean accessible = c.canAccess(null);
-				if (!accessible) c.setAccessible(true);
 				result = c.newInstance(args);
+			} finally {
 				if (!accessible) c.setAccessible(false);
-			} catch (Throwable t) {
-				throw new SyntaxError("Could not create record of type '"+clazz.getSimpleName()+"'.", t);
 			}
+		} catch (ReflectiveOperationException | IllegalArgumentException t) {
+			throw new SyntaxError("Could not create record of type '"+clazz.getSimpleName()+"'.", t);
 		}
 	}
 	
@@ -187,37 +154,25 @@ public class RecordDeserializer<T> extends AbstractDeserializer<T> {
 			
 			if (data.type() == StructuredData.Type.OBJECT_END) {
 				if (delegateKey != null) throw new SyntaxError("Got a key with no value while unpacking a record type");
+				if (!requiredValues.isEmpty()) throw new SyntaxError("Missing required record component(s) for "
+						+clazz.getTypeName()+": "+String.join(", ", requiredValues));
+				instantiate();
 				foundEnd = true;
 			} else if (data.type() == StructuredData.Type.OBJECT_KEY) {
 				if (delegateKey != null) throw new SyntaxError("Got two keys in a row while unpacking a record type. The value is missing! (keys: "+delegateKey+", "+data.value().toString()+")");
 				delegateKey = data.value().toString();
 			} else {
-				String fieldName = serializedNameToFieldName.get(delegateKey);
-				if (fieldName == null) {
+				ReflectiveProperty property = properties.get(delegateKey);
+				if (property == null) {
 					delegate = AbstractDeserializer.discard();
 					delegate.write(data);
 					checkDelegate();
 					return;
 				}
 				
-				Type fieldType = null;
-				for(RecordComponent comp : clazz.getRecordComponents()) {
-					if (comp.getName().equals(fieldName)) {
-						fieldType = comp.getGenericType();
-					}
-				}
-
-				if (fieldType != null) {
-					
-					delegate = (Deserializer<Object>) ObjectWriter.getObjectWriter(fieldType, data, null);
-					if (delegate != null) {
-						delegate.write(data);
-					}
-				} else {
-					// This key doesn't correspond to anything recognizeable in the record.
-					delegate = AbstractDeserializer.discard();
-					delegate.write(data);
-				}
+				delegate = (Deserializer<Object>) ObjectWriter.getObjectWriter(property.type(), data, null);
+				delegate.write(data);
+				checkDelegate();
 			}
 		} else {
 			if (data.type() != StructuredData.Type.EOF && data.type().isSemantic()) {

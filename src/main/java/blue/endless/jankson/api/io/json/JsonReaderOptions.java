@@ -40,6 +40,7 @@ public final class JsonReaderOptions {
 	private final boolean allowTrailingCommas;
 	private final JsonFormat format;
 	private final char keyValueSeparator;
+	private final int maxContainerDepth;
 	public boolean isBareRootObject() { return bareRootObject; }
 	public boolean isUnquotedKeys() { return unquotedKeys; }
 	/** Whether an explicit format accepts a comma immediately before a closing brace or bracket. */
@@ -47,12 +48,19 @@ public final class JsonReaderOptions {
 	/** Null selects the original permissive Jankson parser. */
 	public JsonFormat getFormat() { return format; }
 	public char getKeyValueSeparator() { return keyValueSeparator; }
+	/**
+	 * Maximum simultaneously open containers for explicit format profiles (default 256).
+	 * A root container counts as one; primitive values do not add a container level.
+	 * This is distinct from the configuration pipeline's root-zero value-depth limit.
+	 */
+	public int getMaxContainerDepth() { return maxContainerDepth; }
 	private JsonReaderOptions(Builder opts) {
 		bareRootObject = opts.bareRootObject;
 		unquotedKeys = opts.unquotedKeys;
 		allowTrailingCommas = opts.allowTrailingCommas == null || opts.allowTrailingCommas;
 		format = opts.format;
 		keyValueSeparator = opts.keyValueSeparator;
+		maxContainerDepth = opts.maxContainerDepth;
 		if (format == null && opts.allowTrailingCommas != null) {
 			throw new IllegalArgumentException("Trailing-comma options require an explicit JsonFormat");
 		}
@@ -75,6 +83,7 @@ public final class JsonReaderOptions {
 		private Boolean allowTrailingCommas = null;
 		private JsonFormat format = null;
 		private char keyValueSeparator = ':';
+		private int maxContainerDepth = 256;
 		
 		public Builder() {}
 		
@@ -84,6 +93,7 @@ public final class JsonReaderOptions {
 			this.allowTrailingCommas = opts.getFormat() == null ? null : opts.allowsTrailingCommas();
 			this.format = opts.getFormat();
 			this.keyValueSeparator = opts.getKeyValueSeparator();
+			this.maxContainerDepth = opts.getMaxContainerDepth();
 		}
 
 		
@@ -92,6 +102,15 @@ public final class JsonReaderOptions {
 		public Builder setUnquotedKeys(boolean value) { unquotedKeys = value; return this;}
 		/** Allows a comma immediately before a closing brace or bracket. Requires an explicit format profile. */
 		public Builder setAllowTrailingCommas(boolean value) { allowTrailingCommas = value; return this; }
+		/**
+		 * Sets the container limit for explicit format profiles. The root container counts as one.
+		 * ConfigFile uses its own fixed value-depth policy and overrides this parser limit.
+		 */
+		public Builder setMaxContainerDepth(int value) {
+			if (value < 1) throw new IllegalArgumentException("Container depth must be positive");
+			maxContainerDepth = value;
+			return this;
+		}
 		/** Selects an entire grammar and resets grammar-related switches to its defaults. */
 		public Builder setFormat(JsonFormat value) {
 			format = Objects.requireNonNull(value);

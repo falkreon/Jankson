@@ -25,6 +25,7 @@
 package blue.endless.jankson.impl.io.objectreader;
 
 import java.io.IOException;
+import java.util.ArrayDeque;
 
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.StructuredData;
@@ -32,6 +33,63 @@ import blue.endless.jankson.api.io.StructuredDataBuffer;
 import blue.endless.jankson.api.io.StructuredDataReader;
 
 public abstract class DelegatingStructuredDataReader implements StructuredDataReader {
+	// Only bypass the public protocol when both methods still use our implementation.
+	// ClassValue avoids repeated reflection per event and does not retain plugin class loaders.
+	private static final ClassValue<Boolean> USE_BASE_PROTOCOL = new ClassValue<>() {
+		@Override protected Boolean computeValue(Class<?> type) {
+			try {
+				return type.getMethod("next").getDeclaringClass() == DelegatingStructuredDataReader.class
+						&& type.getMethod("hasNext").getDeclaringClass() == DelegatingStructuredDataReader.class;
+			} catch (NoSuchMethodException | SecurityException ex) {
+				return false;
+			}
+		}
+	};
+
+	/**
+	 * Drains built-in delegates iteratively, without their recursive lookahead. This is important
+	 * for bounded consumers: they must see a container start before its descendants are read.
+	 * Public next()/hasNext() overrides are respected, including inherited custom overrides.
+	 * Custom readers remain responsible for recursion and allocation inside their own callbacks;
+	 * an override calling super.next() can still perform recursive lookahead before returning data.
+	 */
+	public static StructuredDataReader iterative(StructuredDataReader root) {
+		return new StructuredDataReader() {
+			private final ArrayDeque<StructuredDataReader> stack = new ArrayDeque<>();
+			{ stack.push(root); }
+
+			@Override public boolean hasNext() { return !stack.isEmpty(); }
+
+			@Override public StructuredData next() throws IOException, SyntaxError {
+				while (!stack.isEmpty()) {
+					StructuredDataReader current = stack.peek();
+					StructuredData data;
+					if (current instanceof DelegatingStructuredDataReader reader && USE_BASE_PROTOCOL.get(current.getClass())) {
+						if (reader.buffer.isEmpty()) {
+							if (reader.delegate != null) {
+								stack.push(reader.delegate);
+								reader.delegate = null;
+								continue;
+							}
+							reader.onDelegateEmpty();
+							if (reader.buffer.isEmpty()) {
+								if (reader.delegate == null) throw new IOException("Reader produced no data");
+								continue;
+							}
+						}
+						data = reader.buffer.pop();
+					} else {
+						if (!current.hasNext()) { stack.pop(); continue; }
+						data = current.next();
+					}
+					if (data.type() == StructuredData.Type.EOF) { stack.pop(); continue; }
+					return data;
+				}
+				return StructuredData.EOF;
+			}
+		};
+	}
+
 	private StructuredDataReader delegate = null;
 	private final StructuredDataBuffer buffer = new StructuredDataBuffer();
 	private StructuredData latestEntry = null;

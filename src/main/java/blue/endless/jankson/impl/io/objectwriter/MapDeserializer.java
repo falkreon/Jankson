@@ -29,7 +29,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
 
 import blue.endless.jankson.api.SyntaxError;
 import blue.endless.jankson.api.io.ObjectWriter;
@@ -37,12 +36,18 @@ import blue.endless.jankson.api.io.AbstractDeserializer;
 import blue.endless.jankson.api.io.StructuredData;
 import blue.endless.jankson.api.io.Deserializer;
 import blue.endless.jankson.impl.magic.ClassHierarchy;
+import blue.endless.jankson.impl.magic.EnumNames;
 
 public class MapDeserializer<K, V> extends AbstractDeserializer<Map<K, V>> {
 	
 	private final Type keyType;
 	private final Type valueType;
-	private final Function<String, K> toKFunction;
+	@FunctionalInterface
+	private interface KeyParser<K> {
+		K parse(String name) throws SyntaxError;
+	}
+
+	private final KeyParser<K> toKFunction;
 	private final Map<K, V> result;
 	private K bufferedKey = null;
 	
@@ -83,10 +88,18 @@ public class MapDeserializer<K, V> extends AbstractDeserializer<Map<K, V>> {
 	}
 	
 	@SuppressWarnings("unchecked")
-	private static <K> Function<String, K> getKeyFunction(Type keyType) throws IllegalArgumentException {
+	private static <K> KeyParser<K> getKeyFunction(Type keyType) throws IllegalArgumentException {
 		if (keyType.equals(String.class)) return (it) -> (K) it;
 		
 		Class<K> keyClass = (Class<K>) ClassHierarchy.getErasedClass(keyType);
+		if (keyClass.isEnum()) {
+			Map<String, Enum<?>> names = EnumNames.of(keyClass);
+			return wireName -> {
+				Enum<?> value = names.get(wireName);
+				if (value == null) throw new SyntaxError("Unknown "+keyClass.getTypeName()+" value '"+wireName+"'");
+				return (K) value;
+			};
+		}
 		try {
 			Constructor<K> cons = keyClass.getConstructor(String.class);
 			return (it) -> {
@@ -134,7 +147,7 @@ public class MapDeserializer<K, V> extends AbstractDeserializer<Map<K, V>> {
 			if (bufferedKey == null) {
 				switch(data.type()) {
 					case OBJECT_KEY -> {
-						bufferedKey = toKFunction.apply(data.value().toString());
+						bufferedKey = toKFunction.parse(data.value().toString());
 					}
 					
 					case OBJECT_END -> {

@@ -50,6 +50,7 @@ nav:
       - "Quirks": 'quirks.md'
       - "Object keys (2.x)": 'object_keys.md'
       - "Document formats (2.x)": 'formats.md'
+      - "Configuration management (2.x)": 'config_files.md'
   - 1.2.x:
       - "Loading POJOs": "v1/loading_pojos.md"
       - "Combine with Gson/Jackson": "v1/jankson_preprocessor.md"

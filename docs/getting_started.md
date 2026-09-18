@@ -68,5 +68,10 @@ The latest version of Jankson is
 
 Wasn't that painless? Now you can move on to the next step.
 
+=== "Jankson 2.x"
+    - [Document formats](formats.md)
+    - [Configuration management](config_files.md)
+    - [Object key syntax](object_keys.md)
+
 === "Jankson 1.2.x"
     - [Loading and Saving POJOs](v1/loading_pojos.md)

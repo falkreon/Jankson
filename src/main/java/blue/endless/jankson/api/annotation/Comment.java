@@ -29,8 +29,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/** Generates line comments before a reflectively serialized field in comment-capable formats. */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.FIELD)
+@Target({ ElementType.FIELD, ElementType.RECORD_COMPONENT })
 public @interface Comment {
 	String value() default "";
 }

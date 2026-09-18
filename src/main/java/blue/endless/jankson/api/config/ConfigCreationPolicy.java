@@ -22,15 +22,12 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.api.annotation;
+package blue.endless.jankson.api.config;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.FIELD, ElementType.PARAMETER, ElementType.RECORD_COMPONENT })
-public @interface SerializedName {
-	String value();
+/** How a complete new configuration is published when the target is missing. */
+public enum ConfigCreationPolicy {
+	/** Default: uses a portable non-replacing move, without an atomic no-clobber guarantee against external writers. */
+	PORTABLE_BEST_EFFORT,
+	/** Requires atomic no-clobber hard-link publication; unsupported filesystems fail without fallback. */
+	REQUIRE_ATOMIC_NO_CLOBBER
 }

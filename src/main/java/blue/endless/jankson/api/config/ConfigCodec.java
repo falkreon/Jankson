@@ -22,15 +22,14 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.api.annotation;
+package blue.endless.jankson.api.config;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.io.IOException;
+import blue.endless.jankson.api.SyntaxError;
+import blue.endless.jankson.api.document.ValueElement;
 
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.FIELD, ElementType.PARAMETER, ElementType.RECORD_COMPONENT })
-public @interface SerializedName {
-	String value();
+/** Mapping is separate from the file's format. Implementations must support concurrent calls. */
+public interface ConfigCodec<T> {
+	T decode(ValueElement document) throws IOException, SyntaxError;
+	ValueElement encode(T value) throws IOException, SyntaxError;
 }

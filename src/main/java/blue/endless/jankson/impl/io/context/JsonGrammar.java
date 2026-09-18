@@ -87,7 +87,9 @@ final class JsonGrammar {
 		JsonFormat format = opts.getFormat();
 		int ch = r.peek();
 		if (ch == '{' || ch == '[') {
-			if (depth >= 256) throw error(r, "Maximum nesting depth of 256 exceeded.");
+			if (depth >= opts.getMaxContainerDepth()) {
+				throw error(r, "Maximum nesting depth of " + opts.getMaxContainerDepth() + " exceeded.");
+			}
 			push.accept(ch == '{' ? new ObjectParserContext(opts, true, depth + 1) : new ArrayParserContext(opts, depth + 1));
 		} else if (ch == '"' || ch == '\'') {
 			if ((format == JsonFormat.JSON || format == JsonFormat.JSONC) && ch == '\'') {

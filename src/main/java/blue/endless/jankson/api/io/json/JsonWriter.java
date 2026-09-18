@@ -27,6 +27,8 @@ package blue.endless.jankson.api.io.json;
 import java.io.IOException;
 import java.io.Writer;
 import java.lang.Character.UnicodeBlock;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import blue.endless.jankson.api.Escaper;
@@ -45,6 +47,8 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 	private int line = 0;
 	private int column = 0;
 	private boolean skipNewline = false;
+	// JSONC needs the next structural token to distinguish an item prologue from a container footer.
+	private final List<StructuredData> deferredTrivia = new ArrayList<>();
 	
 	public JsonWriter(Writer destination) {
 		this(destination, JsonWriterOptions.DEFAULTS);
@@ -81,6 +85,33 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 	
 	@Override
 	public void write(StructuredData data) throws IOException {
+		if (shouldDefer(data)) {
+			deferredTrivia.add(data);
+			return;
+		}
+		if (!deferredTrivia.isEmpty()) {
+			if (data.type() != StructuredData.Type.OBJECT_END && data.type() != StructuredData.Type.ARRAY_END
+					&& data.type() != StructuredData.Type.EOF) {
+				addCommas();
+			}
+			for (StructuredData trivia : deferredTrivia) writeImmediately(trivia, true);
+			deferredTrivia.clear();
+		}
+		writeImmediately(data, false);
+	}
+
+	private boolean shouldDefer(StructuredData data) {
+		if (options.getFormat() != JsonFormat.JSONC) return false;
+		if (!deferredTrivia.isEmpty()) {
+			return data.type() == StructuredData.Type.COMMENT || data.type() == StructuredData.Type.NEWLINE
+					|| data.type() == StructuredData.Type.WHITESPACE;
+		}
+		State state = peek();
+		return data.type() == StructuredData.Type.COMMENT
+				&& (state == State.ARRAY_BEFORE_COMMA || state == State.DICTIONARY_BEFORE_COMMA);
+	}
+
+	private void writeImmediately(StructuredData data, boolean deferred) throws IOException {
 		switch(data.type()) {
 			case PRIMITIVE -> {
 				if (data.value() == null) {
@@ -104,11 +135,11 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 			case OBJECT_KEY -> writeKey(data.value().toString());
 			case COMMENT -> {
 				if (data.value() == null) {
-					writeComment("", CommentType.MULTILINE);
+					writeComment("", CommentType.MULTILINE, deferred);
 				} else if (data.value() instanceof CommentElement c) {
-					writeComment(c.getValue(), c.getCommentType());
+					writeComment(c.getValue(), c.getCommentType(), deferred);
 				} else {
-					writeComment(data.value().toString(), CommentType.MULTILINE);
+					writeComment(data.value().toString(), CommentType.MULTILINE, deferred);
 				}
 			}
 			case WHITESPACE -> {
@@ -123,10 +154,10 @@ public class JsonWriter extends AbstractStructuredDataWriter {
 		}
 	}
 	
-	private void writeComment(String value, CommentType type) throws IOException {
+	private void writeComment(String value, CommentType type, boolean deferred) throws IOException {
 		if (options.comments() == CommentStyle.NONE) return;
 		State state = peek();
-		boolean deferSeparator = options.getFormat() == JsonFormat.JSONC
+		boolean deferSeparator = deferred || options.getFormat() == JsonFormat.JSONC
 				&& (state == State.ARRAY_BEFORE_COMMA || state == State.DICTIONARY_BEFORE_COMMA);
 		if (options.comments() == CommentStyle.STRICT && options.getFormat() != null) {
 			// Normalize each physical line so comment text cannot terminate a block

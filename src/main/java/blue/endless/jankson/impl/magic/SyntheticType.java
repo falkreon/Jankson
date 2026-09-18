@@ -39,9 +39,18 @@ public class SyntheticType<T> implements ParameterizedType {
 	private final Type ownerType;
 	
 	public SyntheticType(Class<T> clazz, Type... typeArgs) {
+		this(clazz.getEnclosingClass(), clazz, typeArgs);
+	}
+
+	/** Creates a parameterized member type without erasing its enclosing type. */
+	public static <T> SyntheticType<T> withOwner(Type owner, Class<T> clazz, Type... typeArgs) {
+		return new SyntheticType<>(owner, clazz, typeArgs);
+	}
+
+	private SyntheticType(Type owner, Class<T> clazz, Type[] typeArgs) {
 		this.erasure = clazz;
-		this.typeArguments = typeArgs;
-		this.ownerType = clazz.getEnclosingClass();
+		this.typeArguments = typeArgs.clone();
+		this.ownerType = owner;
 		if (clazz.getTypeParameters().length != typeArgs.length) {
 			String typeArgList = Arrays.stream(clazz.getTypeParameters())
 					.map(it -> it.getName())
@@ -63,7 +72,7 @@ public class SyntheticType<T> implements ParameterizedType {
 		
 		if (reified instanceof SyntheticType synthetic) {
 			this.erasure = synthetic.erasure;
-			this.typeArguments = synthetic.typeArguments;
+			this.typeArguments = synthetic.typeArguments.clone();
 			this.ownerType = synthetic.ownerType;
 		} else if (reified instanceof Class clazz) {
 			this.erasure = clazz;
@@ -72,7 +81,7 @@ public class SyntheticType<T> implements ParameterizedType {
 			this.ownerType = clazz.getEnclosingClass();
 		} else if (reified instanceof ParameterizedType param) {
 			this.erasure = (Class<T>) ClassHierarchy.getErasedClass(reified);
-			this.typeArguments = param.getActualTypeArguments();
+			this.typeArguments = param.getActualTypeArguments().clone();
 			this.ownerType = param.getOwnerType();
 		} else {
 			throw new IllegalArgumentException("Unknown class for type \""+reified.getTypeName()+"\": "+reified.getClass().getCanonicalName());
@@ -81,7 +90,7 @@ public class SyntheticType<T> implements ParameterizedType {
 	
 	@Override
 	public Type[] getActualTypeArguments() {
-		return typeArguments;
+		return typeArguments.clone();
 	}
 
 	@Override
@@ -112,5 +121,23 @@ public class SyntheticType<T> implements ParameterizedType {
 	
 	public static SyntheticType<?> of(Field f) {
 		return new SyntheticType<>(f.getGenericType());
+	}
+
+	@Override
+	public int hashCode() {
+		return Arrays.hashCode(typeArguments) ^ Objects.hashCode(ownerType) ^ erasure.hashCode();
+	}
+
+	@Override
+	public String getTypeName() {
+		String name = ownerType == null ? erasure.getName()
+				: ownerType.getTypeName()+"$"+erasure.getSimpleName();
+		if (typeArguments.length == 0) return name;
+		return name+"<"+String.join(", ", Arrays.stream(typeArguments).map(Type::getTypeName).toList())+">";
+	}
+
+	@Override
+	public String toString() {
+		return getTypeName();
 	}
 }

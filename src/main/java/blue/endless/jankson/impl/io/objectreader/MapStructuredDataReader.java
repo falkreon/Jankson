@@ -31,6 +31,7 @@ import java.util.Objects;
 
 import blue.endless.jankson.api.io.ObjectReaderFactory;
 import blue.endless.jankson.api.io.StructuredData;
+import blue.endless.jankson.impl.magic.EnumNames;
 
 public class MapStructuredDataReader extends DelegatingStructuredDataReader {
 	private final Map<Object, Object> map;
@@ -56,7 +57,7 @@ public class MapStructuredDataReader extends DelegatingStructuredDataReader {
 		
 		Map.Entry<Object, Object> entry = iterator.next();
 		buffer(StructuredData.objectKey(
-				Objects.toString(entry.getKey())
+				entry.getKey() instanceof Enum<?> value ? EnumNames.wireName(value) : Objects.toString(entry.getKey())
 				));
 		setDelegate(factory.getReader(entry.getValue()));
 	}

@@ -22,15 +22,10 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.api.annotation;
+package blue.endless.jankson.api.config;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.FIELD, ElementType.PARAMETER, ElementType.RECORD_COMPONENT })
-public @interface SerializedName {
-	String value();
+/** Whether replacement may proceed on filesystems without atomic moves. */
+public enum AtomicWritePolicy {
+	REQUIRE_ATOMIC,
+	ALLOW_NON_ATOMIC_FALLBACK
 }

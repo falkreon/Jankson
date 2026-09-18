@@ -22,15 +22,9 @@
  * SOFTWARE.
  */
 
-package blue.endless.jankson.api.annotation;
+package blue.endless.jankson.api.config;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.FIELD, ElementType.PARAMETER, ElementType.RECORD_COMPONENT })
-public @interface SerializedName {
-	String value();
+public enum ConfigStage {
+	READ, PARSE, DECODE, VALIDATE, DEFAULTS, ENCODE, SERIALIZE, WRITE_TEMPORARY, CHECK_CONFLICT,
+	CREATE, REPLACE
 }

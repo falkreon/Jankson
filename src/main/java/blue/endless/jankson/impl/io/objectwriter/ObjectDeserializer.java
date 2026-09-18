@@ -41,8 +41,9 @@ public class ObjectDeserializer<T> extends AbstractDeserializer<T>{
 	private boolean foundEnd = false;
 	private String delegateKey = null;
 	private Deserializer<Object> delegate = null;
+	private boolean discarding = false;
 	
-	private ObjectWrapper<T> wrapper;
+	private final ObjectWrapper<T> wrapper;
 	
 	public ObjectDeserializer(Type t) {
 		tType = t;
@@ -62,13 +63,13 @@ public class ObjectDeserializer<T> extends AbstractDeserializer<T>{
 	private void checkDelegate() throws SyntaxError {
 		if (delegate != null && delegate.isComplete() && delegateKey != null) {
 				try {
-					Object o = delegate.getResult();
-					wrapper.setField(delegateKey, o);
+					if (!discarding) wrapper.setField(delegateKey, delegate.getResult());
 				} catch (ReflectiveOperationException e) {
 					throw new SyntaxError("Could not write to field \""+delegateKey+"\"", e);
 				} finally {
 					delegateKey = null;
 					delegate = null;
+					discarding = false;
 				}
 		}
 	}
@@ -127,6 +128,7 @@ public class ObjectDeserializer<T> extends AbstractDeserializer<T>{
 					
 					Type fieldType = wrapper.getType(delegateKey);
 					if (fieldType == null) {
+						discarding = true;
 						delegate = AbstractDeserializer.discard();
 						delegate.write(data);
 						checkDelegate();
