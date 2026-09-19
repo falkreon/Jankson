@@ -71,3 +71,18 @@ omitted, and instead two lines are printed: the exception's `getMessage()`, foll
 This will give the user the most relevant information available about how to fix the problem.
 If multiple JSON files are being parsed, it may also be necessary to indicate the name and/or path to the file
 so that the problem can be located.
+
+## Contributing
+
+I welcome and appreciate contributions from the FOSS community. I could really use the help! However, I expect the same things you would normally expect from a Contributor License Agreement:
+- You affirm authorship and responsibility for the contributed code.
+- You either transfer copyright to the project maintainer, or retain your copyright and grant the project maintainer the necessary republishing rights required to develop, promote, and release the project under the MIT license.
+
+
+Generative AI output is incompatible with these requirements, as it is not copyrightable. To avoid a patchwork of copyrightable and non-copyrightable code with no identification of which is which, it is my policy to reject **all** pull requests containing AI content.
+
+
+**This project does not and never will contain AI content.**
+
+
+Thank you for your understanding.
